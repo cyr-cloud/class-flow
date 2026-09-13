@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# playwright mcp 스크린샷/스냅샷
+.playwright-mcp
+/.classflow/

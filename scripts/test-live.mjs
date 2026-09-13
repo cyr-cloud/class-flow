@@ -1,0 +1,50 @@
+import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
+
+const base = process.env.TEST_BASE_URL || "http://localhost:3000";
+const id = `test-${randomUUID()}`;
+const token = randomUUID();
+const url = `${base}/api/live/${id}`;
+async function post(command, teacher = true, expected = 200) {
+  const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json", ...(teacher ? { "x-teacher-token": token } : {}) }, body: JSON.stringify(command) });
+  assert.equal(response.status, expected);
+  return response.json();
+}
+async function student() { return (await fetch(url)).json(); }
+let state = await post({ action: "sample" });
+assert.equal(state.deck.slides.length, 41);
+assert.equal(state.deck.slides.reduce((n, s) => n + s.items.length, 0), 41);
+assert.equal((await fetch(base + state.session.pdfKey)).status, 200);
+const quiz = state.deck.slides.find(s => s.kind === "quiz" && s.items.some(q => q.answers.length));
+assert.ok(quiz);
+await post({ action: "patch", partial: { currentSlide: quiz.slideNo } });
+const item = quiz.items[0];
+state = await student();
+assert.ok(state.deck.slides.every(s => s.items.every(q => q.answers.length === 0)), "No unrevealed answers sent to students");
+assert.equal(state.teacherToken, undefined);
+await Promise.all(Array.from({ length: 20 }, (_, i) => post({ action: "respond", itemId: item.id, responderId: `student-${i}`, choiceIndex: i % item.options.length }, false)));
+assert.equal((await student()).responses.length, 20, "Simultaneous votes preserved");
+await post({ action: "respond", itemId: item.id, responderId: "student-0", choiceIndex: 1 }, false);
+assert.equal((await student()).responses.length, 20, "Changing choice does not duplicate vote");
+await post({ action: "respond", itemId: item.id, responderId: "bad", choiceIndex: 99 }, false, 400);
+await post({ action: "patch", partial: { revealAnswer: true } }, false, 400);
+await post({ action: "patch", partial: { revealAnswer: true } });
+state = await student();
+assert.deepEqual(state.deck.slides.find(s => s.slideNo === quiz.slideNo).items[0].answers, item.answers);
+assert.ok(state.deck.slides.filter(s => s.slideNo !== quiz.slideNo).every(s => s.items.every(q => !q.answers.length)));
+await post({ action: "respond", itemId: item.id, responderId: "late", choiceIndex: 0 }, false, 400);
+await post({ action: "reset", itemId: item.id });
+assert.equal((await student()).responses.length, 0);
+await post({ action: "patch", partial: { currentSlide: 1 } });
+assert.equal((await student()).session.revealAnswer, false);
+await post({ action: "respond", itemId: item.id, responderId: "stale", choiceIndex: 0 }, false, 400);
+await post({ action: "patch", partial: { currentSlide: 26 } });
+state = await student();
+const multi = state.deck.slides.find(s => s.slideNo === 26).items[0];
+assert.equal(multi.multiple, true);
+await post({ action: "respond", itemId: multi.id, responderId: "multi", choiceIndex: 0, choiceIndices: [0, 2] }, false);
+assert.deepEqual((await student()).responses.find(r => r.responderId === "multi").choiceIndices, [0, 2]);
+await post({ action: "respond", itemId: multi.id, responderId: "multi", choiceIndex: 0, choiceIndices: [] }, false);
+assert.equal((await student()).responses.length, 0);
+assert.equal((await fetch(`${base}/api/live/missing-${randomUUID()}`)).status, 404);
+console.log("PASS: sample 41 pages / 41 questions, shared PDF, 20 concurrent participants, vote changes, hidden/revealed answers, authorization, reset, stale/invalid votes, late join.");

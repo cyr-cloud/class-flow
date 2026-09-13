@@ -1,26 +1,75 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/*
+  ClassFlow 디자인 토큰 — Pantone 2025 Mocha Mousse 팔레트 기반.
+  강의 교안의 액센트(#A47864)와 같은 색을 앱에서도 써서 슬라이드와 화면이 한 톤으로 묶인다.
+
+  - 잉크(#262626)는 교안 배경색과 같은 먹색. 순수 검정 대신 써서 따뜻한 중성으로 맞춘다.
+  - 종이(흰색)와 Gardenia(#f0e9e0) 사이 톤으로 면을 나누고, 선은 옅게.
+  - 액센트는 Mocha 하나로 통일하고, 나머지 색은 의미가 있을 때만 (정답=Tendril 등).
+*/
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  /* 중성 */
+  --color-ink: #262626;
+  --color-ink-soft: #554d47;
+  --color-mute: #8d837b;
+  --color-line: #e8e0d6;
+  --color-line-strong: #d6cabb;
+  --color-paper: #ffffff;
+  --color-cream: #faf7f3;
+  --color-gardenia: #f0e9e0;
+
+  /* 브랜드 액센트 */
+  --color-mocha: #a47864;
+  --color-mocha-deep: #855e4c;
+  --color-mocha-tint: #f3ebe6;
+
+  /* 보조 (의미 있는 곳에만) */
+  --color-tendril: #8ba475;
+  --color-tendril-tint: #eef3ea;
+  --color-rosetan: #d19c97;
+  --color-cornflower: #7391c8;
+  --color-viola: #a692ba;
+  --color-cobblestone: #a89a8e;
+  --color-willow: #9a8b4f;
+
+  --font-sans: var(--font-sans-kr);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  background: var(--color-cream);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-cream);
+  color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 큰 제목은 자간을 좁혀 편집 디자인 느낌으로 */
+h1,
+h2 {
+  letter-spacing: -0.02em;
+}
+
+/* 섹션 라벨 — 작게, 넓은 자간, 대문자 */
+.eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-mute);
+}
+
+::selection {
+  background: var(--color-mocha);
+  color: #fff;
+}
+
+/* 포커스 링도 브랜드 색으로 */
+:focus-visible {
+  outline: 2px solid var(--color-mocha);
+  outline-offset: 2px;
 }

@@ -1,0 +1,83 @@
+# ClassFlow — 작업 로드맵
+
+> 현재 결정: **Supabase 없이 시작.** 저장/동기화는 인터페이스(`SyncProvider`, `BoardStore`)로
+> 추상화하고, 초기엔 로컬(localStorage / IndexedDB / BroadcastChannel)로 구현. 나중에 Supabase로 교체.
+>
+> **우선순위 변경(2026-08-23):** 슬라이드 동기화보다 **결과물 게시판**을 먼저 만든다.
+
+---
+
+## Phase A — 결과물 게시판 (현재 진행 중)
+- [x] 데이터 타입: `ClassRoom` / `Board` / `Post` — `lib/types.ts`
+- [x] `BoardStore` 인터페이스 + 로컬 구현 — `lib/board/boardStore.ts`
+- [x] 이미지 바이트 저장소(IndexedDB) — `lib/store/blobStore.ts` (PDF 저장소와 공용)
+- [x] `/board`: 수업 만들기 / 코드로 들어가기 / 내 수업 목록
+- [x] `/board/[classId]`: 실습 게시판 목록, 실습 추가 · N개 한 번에 만들기 · 이름 수정 · 삭제
+- [x] `/board/[classId]/[boardId]`: 리스트형 ↔ 갤러리형 전환 (게시판별로 기억), 정렬, 검색
+- [x] 결과물 올리기: 이름(비우면 익명) · 제목 · 이미지(선택/드롭/붙여넣기) · 링크 · 설명
+- [x] 이미지 자동 축소·재인코딩 (긴 변 1600px, webp)
+- [x] 결과물 상세 모달 + 올린 사람만 수정/삭제
+- [ ] 댓글 / 좋아요
+- [ ] 결과물 정렬 수동 조정(드래그)
+- [ ] 게시판별 마감 시간·제출 현황
+
+---
+
+## Phase 0 — 프로젝트 셋업
+- [x] Next.js(App Router) + TypeScript 스캐폴딩
+- [x] 스타일 도구 결정 및 설정 (Tailwind 4)
+- [x] 기본 폴더 구조: `app/`, `components/`, `lib/sync/`, `lib/types.ts`
+- [x] 공통 타입 정의 (`Session`, `Slide`, `Activity`, `ActivityResponse`, `GalleryPost`)
+- [x] `SyncProvider` 인터페이스 정의 (현재 슬라이드 구독/변경 등) — `lib/sync/types.ts`
+
+## Phase 1 — 슬라이드 뷰어 + 화면 분리 + 슬라이드 동기화 (Supabase 없이)
+- [x] PDF.js 연동: PDF 파일을 Canvas에 한 장씩 렌더 — `components/SlideViewer.tsx`
+- [x] PDF 업로드/선택 UI (로컬 파일 → IndexedDB 저장)
+- [x] `/teacher/[sessionId]`: 현재 슬라이드 표시 + 이전/다음 버튼 + 키보드(←/→)
+- [x] `/student/[sessionId]`: 강사가 넘긴 슬라이드 자동 반영 (보기 전용)
+- [x] 로컬 `SyncProvider` 구현 (BroadcastChannel + localStorage) — `lib/sync/localSync.ts`
+- [x] 강사 넘김 → 학생 화면 자동 이동 **브라우저에서 실제 확인** (두 탭 열어서)
+- [x] 하이드레이션 오류 제거: `useSync`를 `useSyncExternalStore` 기반으로 (서버 스냅샷 분리)
+
+## Phase 2 — 참여요소(퀴즈) + 실습 연결  ✅
+- [x] 참여요소 데이터 구조 + 슬라이드 번호 연결 — `lib/types.ts`, `lib/lecture/deckStore.ts`
+- [x] **교안(slide-content.md) 파서** — `## 슬라이드 N: 제목` + `[학생 참여 요소]`의
+      `Q. / ①②③ / 정답:` 을 읽어 문항·선택지·정답 생성 (`lib/lecture/parseDeck.ts`)
+- [x] 교안 없이 PDF만 올려도 제목으로 실습·퀴즈 슬라이드 감지 (`lib/lecture/pdfTitles.ts`)
+- [x] 학생: 슬라이드에 걸린 문항을 눌러 응답 (다시 누르면 변경)
+- [x] 강사·학생 모두 **번호별 응답 수 실시간 표시**, 강사만 정답 공개 토글
+- [x] 복수 정답(`정답: ① 엑셀, ③ PPT`) · 정답 없는 설문(`정답: 자유`) 처리
+- [x] 실습 슬라이드 → 해당 실습 게시판 바로가기 버튼 (강사·학생 양쪽)
+- [x] 감지된 실습으로 **실습 게시판 일괄 생성 + 슬라이드 연결** (게시판 번호 = 실습 번호)
+- [ ] 응답을 실습 게시판 제출 현황과 연결 (누가 아직 안 올렸는지)
+
+## Phase 2.5 — 발표 모드 + 판서  ✅
+- [x] 앱 공통 고정 헤더 (강의 진행 / 학생 화면 / 결과물 게시판, 세션 코드 기억) — `components/AppHeader.tsx`
+- [x] **전체화면 발표 모드** — 슬라이드 꽉 채우기, 키보드 넘김, ESC 나가기, 참여 패널 동반 표시
+- [x] **판서** — 펜 · 형광펜 · 직선 · 화살표 · 사각형 · 원 / 색 6종 · 굵기 3단계 / 되돌리기 · 지우기
+- [x] 판서를 학생 화면에 실시간 반영 (그리는 중엔 흘려보내고, 손 떼면 저장)
+- [ ] 부분 지우개 (지금은 되돌리기 · 슬라이드 단위 지우기만)
+- [ ] 판서를 결과물로 내보내기 (이미지 저장)
+
+## Phase 3 — 고도화 & Supabase 전환
+- [ ] 참여요소 확장: 투표, 주관식 질문, 체크인
+- [ ] 실시간 결과 차트
+- [ ] 닉네임 입장 / 익명 참여
+- [ ] `SyncProvider`의 Supabase 구현 (Realtime)
+- [ ] `BoardStore`의 Supabase 구현 (게시판을 여러 기기에서 공유)
+- [ ] Supabase 테이블/스토리지로 데이터 이관 (sessions/slides/activities/responses/classes/boards/posts)
+- [ ] 다중 접속(여러 학생 기기) 실서비스 검증
+
+## Phase 4 — 운영/확장 (나중)
+- [ ] 강의별 자료 관리
+- [ ] 학생별 참여 기록
+- [ ] 결과물 좋아요/댓글
+- [ ] 판서/동시접속 부하 시 Node Socket 서버 하이브리드 검토
+
+---
+
+## 다음 할 일
+1. 실제 수업에서 한 번 돌려보고 부족한 것 추리기 (댓글? 제출 현황? 마감?)
+2. **여러 기기 공유가 필요해지면 Supabase 구현 붙이기** — 지금 막히는 건 이것 하나다.
+   `BoardStore` / `DeckStore` / `SyncProvider` 세 인터페이스만 갈아끼우면 화면은 그대로.
+3. 판서, 실시간 결과 차트 (Phase 3)
