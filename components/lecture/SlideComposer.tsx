@@ -18,6 +18,8 @@ export default function SlideComposer({
   slide,
   hasSlides,
   onAddBoard,
+  onGenerate,
+  generating,
 }: {
   sessionId: string;
   slideNo: number;
@@ -26,6 +28,9 @@ export default function SlideComposer({
   hasSlides: boolean;
   /** 이 슬라이드를 실습으로 만들고 게시판까지 연결한다 */
   onAddBoard: () => Promise<void>;
+  /** 이 슬라이드의 발표자 노트로 문항 만들기. 대본을 읽을 수 없으면 없다 */
+  onGenerate?: () => Promise<void>;
+  generating?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [question, setQuestion] = useState("");
@@ -105,6 +110,17 @@ export default function SlideComposer({
           <button type="button" onClick={() => setOpen(true)} className={ghost}>
             ＋ 퀴즈 문항
           </button>
+          {onGenerate && (
+            <button
+              type="button"
+              onClick={() => void onGenerate()}
+              disabled={busy || generating}
+              title="이 슬라이드의 발표자 노트(강의 대본)를 읽어 문항을 만듭니다"
+              className="rounded-full border border-mocha px-4 py-2 text-sm font-medium text-mocha-deep transition-colors hover:bg-mocha hover:text-white disabled:opacity-40"
+            >
+              {generating ? "대본 읽는 중…" : "✦ AI로 퀴즈 만들기"}
+            </button>
+          )}
           {isLab ? (
             <>
               <span className="rounded-full bg-mocha-tint px-3 py-2 text-sm text-mocha-deep">

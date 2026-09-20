@@ -12,12 +12,14 @@ import PresentView from "./lecture/PresentView";
 import { useSync } from "@/lib/sync/useSync";
 import { useCurrentSlide, useDeckState } from "@/lib/lecture/useDeck";
 import LiveStatus from "./lecture/LiveStatus";
+import OnboardingModal from "./lecture/OnboardingModal";
 
 export default function StudentView({ sessionId }: { sessionId: string }) {
   const { state } = useSync(sessionId);
   const { responses, posts } = useDeckState(sessionId);
   const slide = useCurrentSlide(sessionId, state.currentSlide);
   const [presenting, setPresenting] = useState(false);
+  const [onboardingOpen, setOnboardingOpen] = useState(false);
   const stopPresenting = useCallback(() => setPresenting(false), []);
 
   return (
@@ -38,14 +40,23 @@ export default function StudentView({ sessionId }: { sessionId: string }) {
               {slide?.title ?? "강의를 기다리는 중"}
             </h1>
           </div>
-          {state.pdfKey && (
+          <div className="ml-auto flex shrink-0 items-center gap-2">
             <button
-              onClick={() => setPresenting(true)}
-              className="ml-auto shrink-0 rounded-full bg-ink px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-mocha-deep"
+              type="button"
+              onClick={() => setOnboardingOpen(true)}
+              className="rounded-full px-3 py-2 text-sm text-mute transition-colors hover:bg-gardenia hover:text-ink"
             >
-              전체화면
+              사용법
             </button>
-          )}
+            {state.pdfKey && (
+              <button
+                onClick={() => setPresenting(true)}
+                className="rounded-full bg-ink px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-mocha-deep"
+              >
+                전체화면
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
@@ -110,6 +121,8 @@ export default function StudentView({ sessionId }: { sessionId: string }) {
           onClose={stopPresenting}
         />
       )}
+
+      <OnboardingModal role="student" open={onboardingOpen} onOpenChange={setOnboardingOpen} />
     </div>
   );
 }

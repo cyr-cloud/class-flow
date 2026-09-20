@@ -27,10 +27,9 @@ export default function AppHeader() {
     if (match?.[2]) rememberSession(match[2]);
   }, [match]);
 
-  // 결과물은 수업 안에 담겨 있다. /board가 그 수업의 실습들을 보여준다.
-  // 세션 구독은 유지한다 — 게시판 뱃지·링크가 이 수업을 따라가야 한다
+  // 결과물은 수업 안에 담겨 있다 — 실습 슬라이드에서 바로 열린다.
+  // 세션은 계속 구독해 둔다: 역할을 바꿔도 같은 수업으로 이어가야 한다.
   useDeckState(sessionId);
-  const onBoard = pathname.startsWith("/board");
 
   const openTeacher = () => router.push(`/teacher/${sessionId || newCode()}`);
   const openStudent = () => {
@@ -38,10 +37,6 @@ export default function AppHeader() {
     else router.push("/");
   };
 
-  const tab = (active: boolean) =>
-    `relative px-3 py-2 text-sm transition-colors ${
-      active ? "text-white" : "text-white/55 hover:text-white"
-    }`;
   const roleButton = (active: boolean) =>
     `rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mocha ${
       active ? "bg-white text-ink" : "text-white/60 hover:text-white"
@@ -71,10 +66,6 @@ export default function AppHeader() {
               학생
             </button>
           </div>
-          <Link href="/board" className={tab(onBoard)}>
-            <span className="hidden sm:inline">결과물 </span>게시판
-            {onBoard && <Underline />}
-          </Link>
         </nav>
 
         {sessionId && (
@@ -90,6 +81,3 @@ export default function AppHeader() {
   );
 }
 
-function Underline() {
-  return <span className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-mocha" />;
-}

@@ -12,7 +12,7 @@ import SlideComposer from "./lecture/SlideComposer";
 import PresentView from "./lecture/PresentView";
 import { savePdf } from "@/lib/sync/pdfStore";
 import { useSync } from "@/lib/sync/useSync";
-import { deckFromTitles } from "@/lib/lecture/parseDeck";
+import { deckFromTitles, slideKindOf } from "@/lib/lecture/parseDeck";
 import { extractTitles } from "@/lib/lecture/pdfTitles";
 import { deckStore, useCurrentSlide, useDeckState, useLabSlides } from "@/lib/lecture/useDeck";
 import { Deck, QuizItem } from "@/lib/types";
@@ -43,6 +43,7 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
    * 서버에 PDF를 올리도록 고치기 전까지는 배포본에서 막아둔다 — 되는 척하는 것보다 낫다.
    */
   const canUpload = !process.env.NEXT_PUBLIC_VERCEL_ENV;
+  const [jumpTo, setJumpTo] = useState("");
   const [presenting, setPresenting] = useState(false);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
 
@@ -92,6 +93,7 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
         const titles = await extractTitles(key);
         if (titles.some((t) => t.trim())) saveDeck(deckFromTitles(titles), "pdf");
       }
+      return key;
     },
     [sessionId, patch, deck, saveDeck],
   );
@@ -117,10 +119,11 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
           setNotice(body?.error ?? "PPT를 PDF로 바꾸지 못했어요. 직접 PDF로 저장해서 올려주세요.");
           return;
         }
-        await storeAndUse(await res.arrayBuffer(), file.name.replace(/\.[^.]+$/, ".pdf"));
+        const key = await storeAndUse(await res.arrayBuffer(), file.name.replace(/\.[^.]+$/, ".pdf"));
         // 원본을 들고 있어야 나중에 발표자 노트에서 문항을 뽑을 수 있다
         setPptx(file);
-        setNotice("슬라이드를 불러왔어요. 제목에 «실습 N»·«퀴즈»가 있으면 자동으로 표시됩니다.");
+        setNotice("슬라이드를 불러왔어요.");
+        return key;
       } finally {
         setBusy("");
       }
@@ -129,82 +132,116 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
   );
 
   /**
-   * 발표자 노트(강의 대본)를 읽어 퀴즈 문항을 뽑는다.
+   * 슬라이드 한 장의 발표자 노트(강의 대본)를 읽어 문항을 만든다.
    * 제목만으로는 «여기 퀴즈가 있다»까지만 알 수 있고, 문항·선택지·정답은 대본에 있다.
    */
-  const extractWithAi = useCallback(async (only?: number[]) => {
-    if (!pptx && !isSample) return;
-
-    // 제목으로 찾아둔 퀴즈·실습 슬라이드만 읽는다. 덱 전체를 보내면 느리고 비싸다.
-    const targets = only ?? (deck?.slides ?? []).filter((s) => s.kind !== "normal").map((s) => s.slideNo);
-    if (targets.length === 0) {
-      setNotice("제목에서 «퀴즈»·«실습 N»을 찾지 못했어요. 슬라이드 아래 «＋ 퀴즈 문항»으로 직접 넣어주세요.");
-      return;
-    }
-
-    setBusy("ai");
-    setNotice(`${targets.length}장의 강의 대본을 읽는 중이에요…`);
-    try {
+  const askFor = useCallback(
+    async (slideNo: number, source: File | "sample", titles: string[]) => {
       const form = new FormData();
-      if (pptx) form.append("file", pptx);
-      else form.append("sample", "true");
-      form.append("slideNos", JSON.stringify(targets));
-      if (state.pdfKey) form.append("titles", JSON.stringify(await extractTitles(state.pdfKey)));
+      if (source === "sample") form.append("sample", "true");
+      else form.append("file", source);
+      form.append("slideNos", JSON.stringify([slideNo]));
+      form.append("titles", JSON.stringify(titles));
 
       const res = await fetch("/api/extract-quiz", { method: "POST", body: form });
-      const body = (await res.json()) as {
-        slides?: { slideNo: number; kind: "quiz" | "lab"; labNo: number | null; items: QuizItem[] }[];
-        readSlides?: number;
-        error?: string;
-      };
-      if (!res.ok || !body.slides) {
-        setNotice(body.error ?? "문항을 뽑지 못했어요.");
-        return;
-      }
+      const body = (await res.json()) as { items?: QuizItem[]; error?: string };
+      if (!res.ok || !body.items) throw new Error(body.error ?? "문항을 뽑지 못했어요.");
+      return body.items;
+    },
+    [],
+  );
 
-      const found = new Map(body.slides.map((s) => [s.slideNo, s]));
-      const base = deck?.slides ?? [];
+  /** 만든 문항을 그 슬라이드에만 얹는다 */
+  const attach = useCallback(
+    (made: Map<number, QuizItem[]>) => {
       saveDeck(
-        base.map((slide) => {
-          const hit = found.get(slide.slideNo);
-          if (!hit) return slide;
-          // 강사가 손으로 넣은 문항(m…)만 남기고, 앞서 만들어진 것은 새 결과로 갈아끼운다.
-          // 버튼을 두 번 눌렀을 때 같은 문항이 두 벌 쌓이지 않게 하려는 것.
-          const kept = slide.items.filter((item) => item.id.startsWith("m"));
+        (deck?.slides ?? []).map((s) => {
+          const items = made.get(s.slideNo);
+          if (!items?.length) return s;
           return {
-            ...slide,
-            kind: hit.kind,
-            labNo: hit.kind === "lab" ? (hit.labNo ?? slide.labNo) : null,
+            ...s,
+            kind: s.kind === "normal" ? "quiz" : s.kind,
             items: [
-              ...kept,
-              ...hit.items.map((item, i) => ({
+              ...s.items,
+              ...items.map((item, i) => ({
                 ...item,
-                id: `ai${slide.slideNo}_${i + 1}`,
-                slideNo: slide.slideNo,
-                no: kept.length + i + 1,
+                id: `ai${s.slideNo}_${Date.now().toString(36)}_${i}`,
+                slideNo: s.slideNo,
+                no: s.items.length + i + 1,
               })),
             ],
           };
         }),
-        "md",
+        deck?.source ?? "pdf",
       );
+    },
+    [deck, saveDeck],
+  );
 
-      const labs = body.slides.filter((s) => s.kind === "lab").length;
-      const items = body.slides.reduce((n, s) => n + s.items.length, 0);
-      setNotice(
-        items || labs
-          ? `대본 ${body.readSlides ?? 0}장을 읽고 퀴즈 ${items}문항 · 실습 ${labs}개를 만들었어요. 슬라이드마다 확인하고 고쳐주세요.`
-          : "대본에서 퀴즈로 만들 만한 내용을 찾지 못했어요.",
-      );
-      // 만든 문항을 바로 볼 수 있게 첫 퀴즈 슬라이드로 옮겨둔다
-      const first = body.slides.find((s) => s.items.length > 0);
-      if (first) patch({ currentSlide: first.slideNo, revealAnswer: false });
+  /**
+   * 제목에 «퀴즈»가 있는 슬라이드는 올리자마자 문항까지 만들어 둔다.
+   * 강사가 한 장씩 눌러줄 필요 없이 확인만 하면 되게 하려는 것.
+   * 나머지 슬라이드는 그 자리에서 «✦ 대본으로 만들기»로 만든다.
+   */
+  const prefillQuizzes = useCallback(
+    async (file: File, pdfKey: string) => {
+      const titles = await extractTitles(pdfKey);
+      const quizSlides = titles
+        .map((t, i) => ({ no: i + 1, kind: slideKindOf(t.trim()).kind }))
+        .filter((s) => s.kind === "quiz")
+        .map((s) => s.no);
+      if (quizSlides.length === 0) return;
+
+      setBusy("ai");
+      setNotice(`제목에서 퀴즈 슬라이드 ${quizSlides.length}장을 찾았어요. 대본을 읽는 중이에요…`);
+      const made = new Map<number, QuizItem[]>();
+      try {
+        // 서버를 한꺼번에 때리지 않게 네 장씩 끊어서 부른다
+        for (let i = 0; i < quizSlides.length; i += 4) {
+          const chunk = quizSlides.slice(i, i + 4);
+          const results = await Promise.all(
+            chunk.map((no) => askFor(no, file, titles).catch(() => [] as QuizItem[])),
+          );
+          chunk.forEach((no, n) => results[n].length && made.set(no, results[n]));
+        }
+        const total = [...made.values()].reduce((n, items) => n + items.length, 0);
+        if (total > 0) {
+          attach(made);
+          setNotice(`퀴즈 슬라이드 ${made.size}장에 ${total}문항을 만들어 뒀어요. 확인하고 고쳐주세요.`);
+        } else {
+          setNotice("퀴즈 슬라이드를 찾았지만 대본에서 문항을 만들지 못했어요. 슬라이드마다 직접 넣어주세요.");
+        }
+      } finally {
+        setBusy("");
+      }
+    },
+    [askFor, attach],
+  );
+
+  /** 지금 보고 있는 슬라이드에서 «대본으로 만들기»를 눌렀을 때 */
+  const extractWithAi = useCallback(async () => {
+    const source = pptx ?? (isSample ? ("sample" as const) : null);
+    if (!source) return;
+    const slideNo = state.currentSlide;
+
+    setBusy("ai");
+    setNotice(`${slideNo}쪽 강의 대본을 읽는 중이에요…`);
+    try {
+      const titles = state.pdfKey ? await extractTitles(state.pdfKey) : [];
+      const items = await askFor(slideNo, source, titles);
+      if (items.length === 0) {
+        setNotice(`${slideNo}쪽 대본에는 물어볼 만한 내용이 없어요. «＋ 퀴즈 문항»으로 직접 넣으셔도 됩니다.`);
+        return;
+      }
+      attach(new Map([[slideNo, items]]));
+      // 화면은 그대로 둔다 — 문항이 이 슬라이드 바로 아래에 생긴다
+      setNotice(`${slideNo}쪽 대본에서 ${items.length}문항을 만들었어요. 아래에서 확인하고 고쳐주세요.`);
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "문항을 뽑지 못했어요.");
     } finally {
       setBusy("");
     }
-  }, [deck, isSample, patch, pptx, saveDeck, state.pdfKey]);
+  }, [askFor, attach, isSample, pptx, state.currentSlide, state.pdfKey]);
 
   // public/samples 에 넣어둔 강의자료. 바꾸려면 이 경로만 고치면 된다.
   const loadSample = useCallback(async () => {
@@ -286,16 +323,6 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
             >
               사용법
             </button>
-            {(pptx || isSample) && (
-              <button
-                onClick={() => void extractWithAi()}
-                disabled={busy !== ""}
-                title="PPT 발표자 노트의 강의 대본을 읽어 퀴즈 문항·선택지·정답을 만듭니다"
-                className="rounded-full border border-mocha px-4 py-2 text-sm font-medium text-mocha-deep transition-colors hover:bg-mocha hover:text-white disabled:opacity-40"
-              >
-                {busy === "ai" ? "대본 읽는 중…" : "✦ 대본으로 퀴즈 만들기"}
-              </button>
-            )}
             <button
               onClick={loadSample}
               disabled={busy !== ""}
@@ -320,7 +347,11 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
                   className="hidden"
                   onChange={(e) => {
                     const f = e.target.files?.[0];
-                    if (f) void onSlideFile(f);
+                    // 슬라이드를 올린 뒤, 제목이 퀴즈인 장들은 이어서 문항까지 만든다
+                    if (f)
+                      void onSlideFile(f).then((key) => {
+                        if (key && !/\.pdf$/i.test(f.name)) void prefillQuizzes(f, key);
+                      });
                     e.target.value = "";
                   }}
                 />
@@ -411,6 +442,10 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
           slide={slide}
           hasSlides={Boolean(state.pdfKey)}
           onAddBoard={addBoardHere}
+          onGenerate={
+            pptx || isSample ? extractWithAi : undefined
+          }
+          generating={busy === "ai"}
         />
 
         <SlideActivities
@@ -439,42 +474,57 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
               )}
             </div>
 
-            <label className="mt-4 flex flex-wrap items-center gap-3 text-sm text-ink-soft">
-              퀴즈·참여 문항 바로가기
-              <select
-                aria-label="퀴즈·참여 문항 바로가기"
-                value={deck.slides.some(s => s.slideNo === state.currentSlide && s.items.length) ? state.currentSlide : ""}
-                onChange={e => { if (e.target.value) patch({ currentSlide: Number(e.target.value), revealAnswer: false }); }}
-                className="min-w-0 max-w-full rounded-lg border border-line bg-cream px-3 py-2"
+            {/* 슬라이드 바로가기 — 번호를 알면 치고, 모르면 목록에서 고른다 */}
+            <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2">
+              <span className="text-sm text-ink-soft">슬라이드 바로가기</span>
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const no = Number(jumpTo);
+                  if (Number.isInteger(no) && no >= 1 && no <= deck.slides.length) {
+                    patch({ currentSlide: no, revealAnswer: false });
+                    setJumpTo("");
+                  }
+                }}
+                className="flex items-center gap-1.5"
               >
-                <option value="">문항을 선택해 주세요</option>
-                {deck.slides.filter(s => s.items.length > 0).map(s => <option key={s.slideNo} value={s.slideNo}>{s.slideNo}쪽 · {s.title} ({s.items.length}문항)</option>)}
+                <input
+                  value={jumpTo}
+                  onChange={(e) => setJumpTo(e.target.value.replace(/\D/g, ""))}
+                  inputMode="numeric"
+                  placeholder={`1–${deck.slides.length}`}
+                  aria-label="슬라이드 번호로 이동"
+                  className="w-24 rounded-lg border border-line bg-cream px-3 py-2 text-sm tabular-nums text-ink outline-none placeholder:text-mute focus:border-mocha"
+                />
+                <button
+                  type="submit"
+                  className="rounded-lg border border-line-strong px-3 py-2 text-sm text-ink-soft transition-colors hover:border-mocha hover:text-mocha"
+                >
+                  이동
+                </button>
+              </form>
+
+              <select
+                aria-label="슬라이드 목록에서 이동"
+                value={state.currentSlide}
+                onChange={(e) => patch({ currentSlide: Number(e.target.value), revealAnswer: false })}
+                className="min-w-0 max-w-full flex-1 rounded-lg border border-line bg-cream px-3 py-2 text-sm"
+              >
+                {deck.slides.map((s) => {
+                  const marks = [
+                    s.kind === "lab" ? `실습 ${s.labNo}` : null,
+                    s.items.length > 0 ? `퀴즈 ${s.items.length}문항` : null,
+                  ].filter(Boolean);
+                  return (
+                    <option key={s.slideNo} value={s.slideNo}>
+                      {s.slideNo}. {s.title}
+                      {marks.length > 0 && `  —  ${marks.join(" · ")}`}
+                    </option>
+                  );
+                })}
               </select>
-            </label>
-            {labSlides.length > 0 && (
-              <ul className="mt-4 grid gap-1 sm:grid-cols-2">
-                {labSlides.map((s) => (
-                  <li key={s.slideNo}>
-                    <button
-                      onClick={() => patch({ currentSlide: s.slideNo, revealAnswer: false })}
-                      className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-gardenia"
-                    >
-                      <span className="w-14 shrink-0 text-mute">실습 {s.labNo}</span>
-                      <span className="min-w-0 flex-1 truncate text-ink">{s.title}</span>
-                      {s.guide && <span className="shrink-0 text-xs text-mute">가이드</span>}
-                      {(() => {
-                        const n = posts.filter((p) => p.slideNo === s.slideNo).length;
-                        return (
-                          <span className={`shrink-0 text-xs ${n > 1 ? "text-tendril" : "text-mute"}`}>
-                            결과물 {n}
-                          </span>
-                        );
-                      })()}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
+            </div>
           </section>
         )}
 
@@ -520,6 +570,7 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
       )}
 
       <OnboardingModal
+        role="teacher"
         open={onboardingOpen}
         onOpenChange={setOnboardingOpen}
         onStartSample={loadSample}

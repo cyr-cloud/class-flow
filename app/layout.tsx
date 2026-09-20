@@ -32,7 +32,11 @@ export default function RootLayout({
     >
       <body className="flex min-h-full flex-col font-sans">
         <AppHeader />
-        {children}
+        {/* 본문이 짧은 화면에서도 저작권 줄이 바닥에 붙도록 flex-1 */}
+        <div className="flex-1">{children}</div>
+        <footer className="mt-12 border-t border-line px-6 py-6 text-center text-xs text-mute">
+          © {new Date().getFullYear()} YuniqCoding
+        </footer>
       </body>
     </html>
   );
