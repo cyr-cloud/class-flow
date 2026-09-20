@@ -106,6 +106,28 @@ export interface DeckSlide {
   /** 연결된 실습 게시판 */
   boardId: string | null;
   items: QuizItem[];
+  /** 실습 안내문(마크다운). 학생이 "실습가이드 보러가기"로 읽는다 */
+  guide?: string | null;
+}
+
+/**
+ * 학생이 실습 슬라이드에 올린 인증 결과물.
+ *
+ * 수업(세션) 상태 안에 같이 담긴다 — 게시판을 따로 두면 저장소가 하나 더 필요한데,
+ * 수업은 이미 공유 저장소에 있어서 학생 기기끼리 바로 보인다.
+ */
+export interface LabPost {
+  id: string;
+  slideNo: number;
+  authorName: string; // 비어 있으면 화면에서 "익명"
+  description: string;
+  /** 올린 이미지 주소. 없으면 글만 있는 결과물 */
+  imageUrl: string | null;
+  /** 올린 사람 식별자. 내 글에만 지우기 버튼이 뜬다 */
+  ownerId: string;
+  /** 좋아요를 누른 사람들. 누른 사람을 담아둬야 다시 눌러 뗄 수 있다 */
+  likes?: string[];
+  createdAt: number;
 }
 
 /** 한 세션의 슬라이드 구성 */

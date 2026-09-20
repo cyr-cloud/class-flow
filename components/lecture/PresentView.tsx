@@ -8,7 +8,7 @@
 // 브라우저 전체화면(Fullscreen API)이 막힌 환경에서도 오버레이만으로 동작한다.
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { DeckSlide, QuizResponse } from "@/lib/types";
+import { DeckSlide, LabPost, QuizResponse } from "@/lib/types";
 import SlideStage from "./SlideStage";
 import SlideActivities from "./SlideActivities";
 
@@ -18,7 +18,7 @@ export default function PresentView({
   page,
   total,
   slide,
-  classId,
+  posts,
   responses,
   role,
   reveal,
@@ -32,7 +32,7 @@ export default function PresentView({
   page: number;
   total: number;
   slide: DeckSlide | null;
-  classId: string | null;
+  posts: LabPost[];
   responses: QuizResponse[];
   role: "teacher" | "student";
   reveal: boolean;
@@ -98,8 +98,10 @@ export default function PresentView({
 
   return (
     <div ref={rootRef} className="fixed inset-0 z-50 flex flex-col bg-ink lg:flex-row">
-      {/* 슬라이드 무대 */}
-      <div className="flex min-h-0 flex-1 flex-col">
+      {/* 슬라이드 무대.
+          min-w-0이 없으면 패널을 접어 커진 캔버스 폭이 이 칸의 최소 폭이 되어,
+          패널을 다시 열어도 칸이 줄지 않고 패널이 화면 오른쪽 밖으로 밀려난다. */}
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <div className="min-h-0 flex-1 p-3">
           <SlideStage
             sessionId={sessionId}
@@ -180,7 +182,7 @@ export default function PresentView({
           <SlideActivities
             sessionId={sessionId}
             slide={slide}
-            classId={classId}
+            posts={posts}
             responses={responses}
             role={role}
             reveal={reveal}

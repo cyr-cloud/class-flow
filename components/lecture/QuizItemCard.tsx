@@ -32,6 +32,7 @@ export default function QuizItemCard({
   const multiple = item.multiple ?? item.answers.length > 1;
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
+  const [confirming, setConfirming] = useState(false);
   async function respond(index: number) {
     setPending(true);
     setError("");
@@ -126,13 +127,35 @@ export default function QuizItemCard({
               : "학생이 누르면 실시간으로 채워집니다."
             : "정답이 없는 설문 문항이에요."}
         </p>
-        {role === "teacher" && total > 0 && (
-          <button
-            onClick={() => deckStore.resetItem(sessionId, item.id)}
-            className="text-xs text-mute hover:text-ink hover:underline"
-          >
-            응답 지우기
-          </button>
+        {role === "teacher" && (
+          <span className="flex shrink-0 items-center gap-3">
+            {total > 0 && (
+              <button
+                onClick={() => deckStore.resetItem(sessionId, item.id)}
+                className="text-xs text-mute hover:text-ink hover:underline"
+              >
+                응답 지우기
+              </button>
+            )}
+            {/* 발표 중에 브라우저 기본 확인창이 뜨면 흐름이 끊긴다 — 두 번 눌러 지운다 */}
+            <button
+              onClick={() => {
+                if (!confirming) {
+                  setConfirming(true);
+                  return;
+                }
+                void liveClient(sessionId)
+                  .send({ action: "removeItem", slideNo: item.slideNo, itemId: item.id })
+                  .catch(() => setError("문항을 지우지 못했어요."));
+              }}
+              onBlur={() => setConfirming(false)}
+              className={`text-xs hover:underline ${
+                confirming ? "font-medium text-rosetan" : "text-mute hover:text-rosetan"
+              }`}
+            >
+              {confirming ? "정말 지울까요? 한 번 더" : "문항 지우기"}
+            </button>
+          </span>
         )}
       </div>
     </div>

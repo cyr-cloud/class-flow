@@ -43,3 +43,6 @@ next-env.d.ts
 # playwright mcp 스크린샷/스냅샷
 .playwright-mcp
 /.classflow/
+
+# .env 틀은 배포 안내용으로 올린다 (값은 비어 있다)
+!.env.example

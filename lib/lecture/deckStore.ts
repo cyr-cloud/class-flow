@@ -6,11 +6,13 @@
 // 응답자 식별은 sessionStorage에 둔다 — localStorage로 하면 같은 브라우저의 학생 탭이
 // 모두 한 사람으로 세어져서 "몇 명이 눌렀는지"가 나오지 않는다. 탭 하나 = 학생 한 명.
 
-import { Deck, DeckSlide, QuizResponse } from "../types";
+import { Deck, DeckSlide, LabPost, QuizResponse } from "../types";
 
 export interface DeckState {
   deck: Deck | null;
   responses: QuizResponse[];
+  /** 실습 슬라이드에 올라온 결과물 */
+  posts: LabPost[];
 }
 
 export interface DeckStore {
@@ -37,7 +39,7 @@ const KEY = (sessionId: string) => `classflow:deck:${sessionId}`;
 const CHANNEL = (sessionId: string) => `classflow:deck:${sessionId}`;
 const RESPONDER_KEY = "classflow:responderId";
 
-const EMPTY: DeckState = { deck: null, responses: [] };
+const EMPTY: DeckState = { deck: null, responses: [], posts: [] };
 
 const states = new Map<string, DeckState>();
 const listeners = new Map<string, Set<() => void>>();
@@ -47,7 +49,7 @@ function parse(raw: string | null): DeckState {
   if (!raw) return EMPTY;
   try {
     const parsed = JSON.parse(raw) as Partial<DeckState>;
-    return { deck: normalizeDeck(parsed.deck ?? null), responses: parsed.responses ?? [] };
+    return { deck: normalizeDeck(parsed.deck ?? null), responses: parsed.responses ?? [], posts: parsed.posts ?? [] };
   } catch {
     return EMPTY;
   }
@@ -64,7 +66,8 @@ function normalizeDeck(deck: Deck | null): Deck | null {
     ...deck,
     slides: (deck.slides ?? []).map((slide) => ({
       ...slide,
-      items: (slide.items ?? []).map((item) => {
+      // 예전 파서는 퀴즈가 아닌 슬라이드에도 문항을 붙였다 — 저장된 덱에서도 걷어낸다
+      items: (slide.kind === "quiz" ? slide.items ?? [] : []).map((item) => {
         if (Array.isArray(item.answers)) return item;
         const legacy = (item as { answerIndex?: number | null }).answerIndex;
         return { ...item, answers: typeof legacy === "number" ? [legacy] : [] };

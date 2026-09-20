@@ -27,11 +27,9 @@ export default function AppHeader() {
     if (match?.[2]) rememberSession(match[2]);
   }, [match]);
 
-  // 세션에 연결된 수업이 있으면 게시판 탭은 그 수업으로 보낸다.
-  // 학생이 코드로 들어왔을 때 다른 수업이 아니라 이 수업 게시판만 보이게 하는 것.
-  const { deck } = useDeckState(sessionId);
-  const boardHref = deck?.classId ? `/board/${deck.classId}` : "/board";
-
+  // 결과물은 수업 안에 담겨 있다. /board가 그 수업의 실습들을 보여준다.
+  // 세션 구독은 유지한다 — 게시판 뱃지·링크가 이 수업을 따라가야 한다
+  useDeckState(sessionId);
   const onBoard = pathname.startsWith("/board");
 
   const openTeacher = () => router.push(`/teacher/${sessionId || newCode()}`);
@@ -42,36 +40,47 @@ export default function AppHeader() {
 
   const tab = (active: boolean) =>
     `relative px-3 py-2 text-sm transition-colors ${
-      active ? "text-ink" : "text-mute hover:text-ink"
+      active ? "text-white" : "text-white/55 hover:text-white"
+    }`;
+  const roleButton = (active: boolean) =>
+    `rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mocha ${
+      active ? "bg-white text-ink" : "text-white/60 hover:text-white"
     }`;
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-cream/85 backdrop-blur">
-      <div className="mx-auto flex h-14 max-w-6xl items-center gap-1 px-6">
-        <Link href="/" className="mr-4 flex shrink-0 items-center gap-2">
-          <span className="h-2 w-2 rounded-full bg-mocha" />
-          <span className="font-bold tracking-tight text-ink">ClassFlow</span>
+    // 이름표 줄. 수업 내내 위에 붙어 있으므로 여기가 이 앱의 얼굴이다
+    <header className="sticky top-0 z-40 border-b border-line-strong bg-ink text-white">
+      <div className="mx-auto flex h-14 max-w-6xl items-center gap-1 px-3 sm:px-6">
+        <Link
+          href="/"
+          aria-label="ClassFlow 첫 화면"
+          className="mr-2 flex shrink-0 items-center gap-2 rounded-full transition-opacity hover:opacity-80 sm:mr-5"
+        >
+          <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-mocha text-[13px] font-bold text-white">
+            C
+          </span>
+          <span className="text-[17px] font-bold tracking-tight">ClassFlow</span>
         </Link>
 
-        <nav className="flex min-w-0 items-center">
-          <button onClick={openTeacher} className={tab(role === "teacher")}>
-            강의 진행
-            {role === "teacher" && <Underline />}
-          </button>
-          <button onClick={openStudent} className={tab(role === "student")}>
-            학생 화면
-            {role === "student" && <Underline />}
-          </button>
-          <Link href={boardHref} className={tab(onBoard)}>
-            결과물 게시판
+        <nav aria-label="수업 메뉴" className="flex min-w-0 items-center gap-1 sm:gap-3">
+          <div role="group" aria-label="강사·학생 화면 전환" className="flex shrink-0 items-center rounded-full bg-white/10 p-1">
+            <button type="button" onClick={openTeacher} aria-pressed={role === "teacher"} className={roleButton(role === "teacher")}>
+              강사
+            </button>
+            <button type="button" onClick={openStudent} aria-pressed={role === "student"} className={roleButton(role === "student")}>
+              학생
+            </button>
+          </div>
+          <Link href="/board" className={tab(onBoard)}>
+            <span className="hidden sm:inline">결과물 </span>게시판
             {onBoard && <Underline />}
           </Link>
         </nav>
 
         {sessionId && (
-          <div className="ml-auto flex shrink-0 items-center gap-2">
-            <span className="hidden text-xs text-mute sm:inline">세션</span>
-            <span className="rounded-full bg-gardenia px-3 py-1 font-mono text-xs text-ink-soft">
+          <div className="ml-auto hidden shrink-0 items-center gap-2 sm:flex">
+            <span className="text-xs text-white/50">세션</span>
+            <span className="rounded-full bg-white/10 px-3 py-1 font-mono text-xs text-white/85">
               {sessionId}
             </span>
           </div>

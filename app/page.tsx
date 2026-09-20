@@ -21,11 +21,14 @@ export default function Home() {
     <main className="mx-auto w-full max-w-5xl px-6 py-16 sm:py-24">
       <p className="eyebrow">ClassFlow</p>
       <h1 className="mt-4 max-w-2xl text-4xl font-bold leading-[1.15] text-ink sm:text-5xl">
-        슬라이드는 같이 넘기고,
+        아직도 수업 때
         <br />
-        <span className="text-mocha">결과물은 한곳에</span> 모읍니다.
+        <span className="text-mocha">보여주기만</span> 하시나요?
       </h1>
-      <p className="mt-5 max-w-xl text-ink-soft">
+      <p className="mt-5 max-w-xl text-lg font-medium text-ink-soft">
+        학생과 한 화면으로 소통하면서 수업해보세요.
+      </p>
+      <p className="mt-3 max-w-xl text-ink-soft">
         강사가 넘기면 학생 화면도 따라오고, 퀴즈 슬라이드에서는 그 자리에서 눌러 답합니다. 실습마다
         게시판이 하나씩 붙어 결과물이 쌓입니다.
       </p>
@@ -35,7 +38,8 @@ export default function Home() {
           <p className="eyebrow">강사</p>
           <h2 className="mt-2 text-lg font-bold text-ink">강의 열기</h2>
           <p className="mt-2 flex-1 text-sm text-ink-soft">
-            PDF와 교안을 올리면 실습·퀴즈 슬라이드를 알아서 찾아냅니다.
+            PPT를 올리면 제목에서 실습·퀴즈 슬라이드를 찾아냅니다. 샘플로 1분 만에 체험해 보셔도
+            됩니다.
           </p>
           <button
             onClick={newSession}
@@ -72,7 +76,7 @@ export default function Home() {
           <p className="eyebrow">모두</p>
           <h2 className="mt-2 text-lg font-bold text-ink">결과물 게시판</h2>
           <p className="mt-2 flex-1 text-sm text-ink-soft">
-            실습마다 게시판 하나. 가입 없이, 이름은 비우면 익명으로 올라갑니다.
+            실습마다 게시판 하나. 가입 없이 올리고, 이름은 비우면 익명으로 올라갑니다.
           </p>
           <Link
             href="/board"

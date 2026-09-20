@@ -15,38 +15,41 @@ import LiveStatus from "./lecture/LiveStatus";
 
 export default function StudentView({ sessionId }: { sessionId: string }) {
   const { state } = useSync(sessionId);
-  const { deck, responses } = useDeckState(sessionId);
+  const { responses, posts } = useDeckState(sessionId);
   const slide = useCurrentSlide(sessionId, state.currentSlide);
   const [presenting, setPresenting] = useState(false);
   const stopPresenting = useCallback(() => setPresenting(false), []);
 
   return (
     <div className="min-h-screen bg-cream">
-      <header className="sticky top-14 z-20 border-b border-line bg-cream/85 backdrop-blur">
-        <div className="mx-auto flex max-w-4xl items-center gap-3 px-6 py-4">
+      {/* 강사 화면과 같은 짜임 — 배지 + 진행 상황 + 큰 제목 */}
+      <header className="sticky top-14 z-20 border-b border-line-strong bg-paper">
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-4 gap-y-3 px-6 py-5">
           <div className="min-w-0">
-            <p className="eyebrow">수업 참여</p>
-            <h1 className="truncate text-lg font-bold text-ink">
+            <p className="flex items-center gap-2">
+              <span className="rounded-full bg-mocha px-2.5 py-1 text-xs font-semibold text-white">
+                수업 참여
+              </span>
+              <span className="tabular-nums text-xs text-mute">
+                {state.totalSlides ? `${state.currentSlide} / ${state.totalSlides}장` : "대기 중"}
+              </span>
+            </p>
+            <h1 className="mt-2 truncate text-2xl font-bold leading-tight text-ink">
               {slide?.title ?? "강의를 기다리는 중"}
             </h1>
           </div>
-          <div className="ml-auto flex shrink-0 items-center gap-3">
-            <span className="tabular-nums text-sm text-mute">
-              {state.totalSlides ? `${state.currentSlide} / ${state.totalSlides}` : "대기 중"}
-            </span>
-            {state.pdfKey && (
-              <button
-                onClick={() => setPresenting(true)}
-                className="rounded-full border border-line-strong px-4 py-2 text-sm text-ink-soft transition-colors hover:border-mocha hover:text-mocha"
-              >
-                전체화면
-              </button>
-            )}
-          </div>
+          {state.pdfKey && (
+            <button
+              onClick={() => setPresenting(true)}
+              className="ml-auto shrink-0 rounded-full bg-ink px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-mocha-deep"
+            >
+              전체화면
+            </button>
+          )}
         </div>
       </header>
 
-      <main className="mx-auto max-w-4xl px-6 py-8">
+      <main className="mx-auto max-w-5xl px-6 py-8">
         <LiveStatus sessionId={sessionId} />
         {!state.pdfKey ? (
           // updatedAt이 0이면 이 코드로 열린 수업 자체가 없다는 뜻
@@ -82,7 +85,7 @@ export default function StudentView({ sessionId }: { sessionId: string }) {
         <SlideActivities
           sessionId={sessionId}
           slide={slide}
-          classId={deck?.classId ?? null}
+          posts={posts}
           responses={responses}
           role="student"
           reveal={state.revealAnswer}
@@ -100,7 +103,7 @@ export default function StudentView({ sessionId }: { sessionId: string }) {
           page={state.currentSlide}
           total={state.totalSlides}
           slide={slide}
-          classId={deck?.classId ?? null}
+          posts={posts}
           responses={responses}
           role="student"
           reveal={state.revealAnswer}

@@ -39,7 +39,9 @@ function section(body: string, name: string): string {
 /** 제목에서 장식 기호와 실습 표기를 걷어낸 표시용 제목 */
 function cleanTitle(raw: string): string {
   return raw
+    // 실습 번호는 화면에서 따로 배지로 보여주므로 제목에서는 뺀다
     .replace(/^\[실습\s*\d+\]\s*/, "")
+    .replace(/^실습\s*\d+\s*[:：]\s*/, "")
     .replace(/[★♻️💥📋]/g, "")
     .replace(/\s{2,}/g, " ")
     .trim();
@@ -61,12 +63,23 @@ function itemId(slideNo: number, no: number): string {
   return `q${slideNo}_${no}`;
 }
 
+/**
+ * 문항 줄(`Q. …`)을 찾는다.
+ * 교안에 따라 참여요소 블록에 있기도 하고(유코의 아지트), 슬라이드 텍스트에
+ * `**Q. …**` 로 굵게 들어가 있기도 하다(전주 ICT). 양쪽 다 읽는다.
+ */
+function findQuestion(text: string): string {
+  const m = text.match(/^\s*\**Q\.\s*(.+?)\**\s*$/m);
+  return m ? m[1].replace(/\*\*/g, "").trim() : "";
+}
+
 /** 한 슬라이드 블록에서 참여요소 문항들을 뽑는다 */
 function parseItems(slideNo: number, body: string): QuizItem[] {
   const part = section(body, "학생 참여 요소");
   if (!part) return [];
 
-  const question = part.match(/^Q\.\s*(.+)$/m)?.[1].trim() ?? "";
+  const slideText = section(body, "슬라이드 텍스트");
+  const question = findQuestion(part) || findQuestion(slideText);
 
   // 선택지: 참여요소 블록 안에 있으면 그것을, 없으면 슬라이드 텍스트의 "보기:" 줄을.
   // 정답 줄에도 ①②③이 들어 있으니("정답: 1번 ③ / 2번 ②") 그 줄은 반드시 건너뛴다.
@@ -74,7 +87,6 @@ function parseItems(slideNo: number, body: string): QuizItem[] {
     .split("\n")
     .filter((l) => !/^\s*(정답|예)\s*[:：]/.test(l))
     .find((l) => (l.match(new RegExp(`[${CIRCLES}]`, "g")) ?? []).length >= 2);
-  const slideText = section(body, "슬라이드 텍스트");
   let options = optionLine ? splitOptions(optionLine) : [];
   if (options.length === 0) {
     const bogi = slideText.match(/^보기\s*[:：]\s*(.+)$/m);
@@ -84,7 +96,7 @@ function parseItems(slideNo: number, body: string): QuizItem[] {
     // 선택지를 줄마다 하나씩 적어둔 슬라이드도 있다 ("① 엑셀 파일 만들기" 줄 4개)
     options = slideText
       .split("\n")
-      .map((l) => l.trim().replace(/^\*\*|\*\*$/g, ""))
+      .map((l) => l.trim().replace(/^[-*]\s*/, "").replace(/^\*\*|\*\*$/g, ""))
       .filter((l) => new RegExp(`^[${CIRCLES}]`).test(l))
       .map((l) => l.slice(1).trim());
   }
@@ -160,7 +172,9 @@ export function parseDeckMarkdown(source: string): DeckSlide[] {
       kind,
       labNo,
       boardId: null,
-      items: parseItems(slideNo, body),
+      // 교안은 슬라이드마다 [학생 참여 요소]가 있다(채팅 질문용). 앱에서 문항으로 띄우는 건
+      // 제목이 "퀴즈 N"인 슬라이드뿐이다.
+      items: kind === "quiz" ? parseItems(slideNo, body) : [],
     });
   });
 

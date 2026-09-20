@@ -11,7 +11,7 @@ import { remoteDeckStore } from "./remoteDeckStore";
 // 나중에 여기만 Supabase 구현으로 바꾸면 전체가 전환된다.
 export const deckStore: DeckStore = remoteDeckStore;
 
-const EMPTY: DeckState = { deck: null, responses: [] };
+const EMPTY: DeckState = { deck: null, responses: [], posts: [] };
 const emptySnapshot = () => EMPTY;
 
 export function useDeckState(sessionId: string): DeckState {

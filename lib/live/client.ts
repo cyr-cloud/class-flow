@@ -3,7 +3,7 @@ import { initialSessionState } from "../sync/types";
 import type { LiveCommand, LiveState } from "./types";
 
 export interface ClientState extends LiveState { status: string; error: string }
-export const emptyLive: ClientState = { session: initialSessionState, deck: null, responses: [], revision: -1, status: "연결 중…", error: "" };
+export const emptyLive: ClientState = { session: initialSessionState, deck: null, responses: [], posts: [], revision: -1, status: "연결 중…", error: "" };
 const clients = new Map<string, ReturnType<typeof createClient>>();
 export function responderId() {
   if (typeof window === "undefined") return "";
