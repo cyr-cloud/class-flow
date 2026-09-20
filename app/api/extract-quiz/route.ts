@@ -12,7 +12,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
 import { extractNotes, type SlideNote } from "@/lib/lecture/pptxNotes";
-import { ExtractedQuiz, QUIZ_SYSTEM, QuizHistory, validateAiQuizzes } from "@/lib/lecture/aiQuizRules";
+import { ExtractedQuiz, systemForMode, QuizHistory, validateAiQuizzes } from "@/lib/lecture/aiQuizRules";
 
 // 샘플 강의의 발표자 노트. 원본 PPT는 45MB라 저장소에 넣지 않고 노트만 뽑아 두었다
 // (data/samples/jeonju-day-02-notes.json, 25KB). 심사·시연에서도 같은 AI 경로를 그대로 탄다.
@@ -36,6 +36,9 @@ export async function POST(request: Request) {
 
   try {
     const form = await request.formData();
+    const modeResult = z.enum(["quiz", "experience", "level", "ox"]).safeParse(form.get("mode") ?? "quiz");
+    if (!modeResult.success) return Response.json({ error: "질문 종류를 확인해 주세요." }, { status: 400 });
+    const mode = modeResult.data;
     const file = form.get("file");
     const rawHistory = form.get("quizHistory");
     if (typeof rawHistory === "string" && rawHistory.length > 100000) {
@@ -115,7 +118,7 @@ export async function POST(request: Request) {
       const response = await client.messages.parse({
         model: "claude-opus-5",
         max_tokens: 4000,
-        system: QUIZ_SYSTEM,
+        system: systemForMode(mode),
         thinking: { type: "adaptive" },
         output_config: { effort: "medium", format: zodOutputFormat(ExtractedQuiz) },
         messages: [{ role: "user", content: prompt + feedback }],
@@ -124,7 +127,7 @@ export async function POST(request: Request) {
       outputTokens += response.usage.output_tokens;
       const parsed = response.parsed_output;
       if (!parsed) return Response.json({ error: "문항을 읽어내지 못했어요. 다시 시도해 주세요." }, { status: 502 });
-      const checked = validateAiQuizzes(parsed.items, history, note.slideNo);
+      const checked = validateAiQuizzes(parsed.items, history, note.slideNo, mode);
       if (checked.issues.length === 0) {
         return Response.json({ slideNo: note.slideNo, items: checked.items,
           usage: { input: inputTokens, output: outputTokens } });

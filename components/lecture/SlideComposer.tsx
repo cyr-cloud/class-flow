@@ -8,6 +8,7 @@
 import { useCallback, useState } from "react";
 import { liveClient } from "@/lib/live/client";
 import { DeckSlide } from "@/lib/types";
+import type { GenerationMode } from "@/lib/lecture/aiQuizRules";
 
 const CIRCLES = ["①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧", "⑨"];
 const MAX_OPTIONS = 6;
@@ -30,7 +31,7 @@ export default function SlideComposer({
   /** 이 슬라이드를 실습으로 만들고 게시판까지 연결한다 */
   onAddBoard: () => Promise<void>;
   /** 이 슬라이드의 발표자 노트로 문항 만들기. 대본을 읽을 수 없으면 없다 */
-  onGenerate?: () => Promise<void>;
+  onGenerate?: (mode: GenerationMode) => Promise<void>;
   generating?: boolean;
   generationBlockedMessage?: string;
 }) {
@@ -41,6 +42,7 @@ export default function SlideComposer({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [generationNotice, setGenerationNotice] = useState("");
+  const [generationMode, setGenerationMode] = useState<GenerationMode>("quiz");
 
   const isLab = slide?.kind === "lab";
 
@@ -114,19 +116,30 @@ export default function SlideComposer({
             ＋ 퀴즈 문항
           </button>
           {onGenerate && (
+            <div className="flex max-w-full flex-wrap items-center gap-2">
+            <select aria-label="AI 질문 종류" value={generationMode}
+              onChange={(event) => setGenerationMode(event.target.value as GenerationMode)}
+              disabled={busy || generating}
+              className="rounded-full border border-line-strong bg-paper px-3 py-2 text-sm text-ink-soft disabled:opacity-40">
+              <option value="quiz">개념 확인 퀴즈</option>
+              <option value="experience">경험 묻기 · 정답 없음</option>
+              <option value="level">사용 수준 묻기 · 정답 없음</option>
+              <option value="ox">상황 OX 퀴즈</option>
+            </select>
             <button
               type="button"
               onClick={() => {
                 if (generationBlockedMessage) { setGenerationNotice(generationBlockedMessage); return; }
                 setGenerationNotice("");
-                void onGenerate();
+                void onGenerate(generationMode);
               }}
               disabled={busy || generating}
               title={generationBlockedMessage ?? "이 슬라이드의 발표자 노트(강의 대본)를 읽어 문항을 만듭니다"}
               className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors disabled:opacity-40 ${generationBlockedMessage ? "border-line-strong bg-gardenia/50 text-mute hover:bg-gardenia" : "border-mocha text-mocha-deep hover:bg-mocha hover:text-white"}`}
             >
-              {generating ? "대본 읽는 중…" : "✦ AI로 퀴즈 만들기"}
+              {generating ? "대본 읽는 중…" : generationMode === "experience" || generationMode === "level" ? "✦ AI로 참여 질문 만들기" : "✦ AI로 퀴즈 만들기"}
             </button>
+            </div>
           )}
           {generationNotice && generationBlockedMessage && <p role="status" className="w-full rounded-xl border border-line bg-paper px-4 py-3 text-sm text-ink-soft">{generationNotice}</p>}
           {isLab ? (

@@ -47,3 +47,17 @@ test('rejects answer length blanks, fenced blocks, and redundant option numbers'
   }
   assert.ok(check(quiz({ options: ['① 가', '② 나', '③ 다', '④ 라'] })).issues.length);
 });
+test('experience and level polls allow 2–5 choices but never a correct answer', () => {
+  for (const mode of ['experience', 'level']) {
+    const item = quiz({ quizType: mode, question: '직접 써보신 적 있나요?', options: ['아직 없어요', '한 번 있어요', '자주 써요'], answers: [] });
+    assert.deepEqual(validateAiQuizzes([item], [], 5, mode).issues, []);
+    assert.ok(validateAiQuizzes([{ ...item, answers: [0] }], [], 5, mode).issues.length);
+    assert.ok(validateAiQuizzes([item], [], 5, 'quiz').issues.length);
+    assert.ok(validateAiQuizzes([item, item], [], 5, mode).issues.length);
+  }
+});
+test('OX mode requires an actual OX question with one correct answer', () => {
+  assert.ok(validateAiQuizzes([quiz()], [], 5, 'ox').issues.length);
+  assert.deepEqual(validateAiQuizzes([quiz({ quizType: 'ox', options: ['O', 'X'], answers: [1] })], [], 5, 'ox').issues, []);
+  assert.ok(validateAiQuizzes([quiz({ quizType: 'ox', options: ['O', 'X'], answers: [] })], [], 5, 'ox').issues.length);
+});

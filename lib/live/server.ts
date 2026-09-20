@@ -162,7 +162,7 @@ function apply(id: string, state: Stored, command: LiveCommand, teacher: boolean
     }
     case "respond": {
       const item = state.deck?.slides.find(s => s.slideNo === state.session.currentSlide)?.items.find(q => q.id === command.itemId);
-      if (!item || state.session.revealAnswer) throw new Error("지금 답할 수 있는 문항이 아닙니다.");
+      if (!item || (state.session.revealAnswer && item.answers.length > 0)) throw new Error("지금 답할 수 있는 문항이 아닙니다.");
       const choices = command.choiceIndices ?? [command.choiceIndex];
       if (!Array.isArray(choices) || choices.some(i => !Number.isInteger(i) || i < 0 || i >= item.options.length) ||
         new Set(choices).size !== choices.length || (item.answers.length <= 1 && choices.length > 1) ||

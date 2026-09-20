@@ -145,7 +145,7 @@ export default function PresentView({
             <span className="min-w-0 flex-1 truncate text-sm text-white/50">{slide.title}</span>
           )}
 
-          {isTeacher && (slide?.items.length ?? 0) > 0 && (
+          {isTeacher && slide?.items.some(item => item.hasAnswer ?? item.answers.length > 0) && (
             <button
               onClick={onToggleReveal}
               className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${

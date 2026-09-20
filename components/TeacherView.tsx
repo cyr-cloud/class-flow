@@ -20,6 +20,7 @@ import { Deck, QuizItem } from "@/lib/types";
 import { liveClient } from "@/lib/live/client";
 import LiveStatus from "./lecture/LiveStatus";
 import OnboardingModal from "./lecture/OnboardingModal";
+import type { GenerationMode } from "@/lib/lecture/aiQuizRules";
 
 const noSubscribe = () => () => {};
 const emptyString = () => "";
@@ -141,9 +142,10 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
    * 제목만으로는 «여기 퀴즈가 있다»까지만 알 수 있고, 문항·선택지·정답은 대본에 있다.
    */
   const askFor = useCallback(
-    async (slideNo: number, titles: string[]) => {
+    async (slideNo: number, titles: string[], mode: GenerationMode) => {
       const form = new FormData();
       form.append("sample", "true");
+      form.append("mode", mode);
       form.append("slideNos", JSON.stringify([slideNo]));
       form.append("titles", JSON.stringify(titles));
       // Only quiz text/answers are context; never send student responses or submissions.
@@ -192,7 +194,7 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
   );
 
   /** 지금 보고 있는 슬라이드에서 «대본으로 만들기»를 눌렀을 때 */
-  const extractWithAi = useCallback(async () => {
+  const extractWithAi = useCallback(async (mode: GenerationMode = "quiz") => {
     if (!isSample) {
       setNotice("해당 기능은 발표자 노트가 포함된 PPT에서만 사용 가능합니다.");
       return;
@@ -203,7 +205,7 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
     setNotice(`${slideNo}쪽 강의 대본을 읽는 중이에요…`);
     try {
       const titles = state.pdfKey ? await extractTitles(state.pdfKey) : [];
-      const items = await askFor(slideNo, titles);
+      const items = await askFor(slideNo, titles, mode);
       if (items.length === 0) {
         setNotice(`${slideNo}쪽 대본에는 물어볼 만한 내용이 없어요. «＋ 퀴즈 문항»으로 직접 넣으셔도 됩니다.`);
         return;
@@ -269,7 +271,7 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
 
   const stopPresenting = useCallback(() => setPresenting(false), []);
 
-  const hasItems = (slide?.items.length ?? 0) > 0;
+  const hasAnswers = slide?.items.some(item => item.hasAnswer ?? item.answers.length > 0) ?? false;
 
   return (
     <div className="min-h-screen bg-cream">
@@ -381,7 +383,7 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
             <span className="min-w-0 flex-1 truncate text-sm text-ink-soft">{slide.title}</span>
           )}
 
-          {hasItems && (
+          {hasAnswers && (
             <button
               onClick={() => patch({ revealAnswer: !state.revealAnswer })}
               className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
