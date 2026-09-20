@@ -221,7 +221,14 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
   /** 지금 보고 있는 슬라이드에서 «대본으로 만들기»를 눌렀을 때 */
   const extractWithAi = useCallback(async () => {
     const source = pptx ?? (isSample ? ("sample" as const) : null);
-    if (!source) return;
+    if (!source) {
+      // PDF로 내보내는 순간 발표자 노트는 떨어져 나간다 — 파일 형식의 한계라 되살릴 수 없다
+      setNotice(
+        "이 자료에는 강의 대본이 없어요. 대본은 PPT의 «발표자 노트»에 들어 있고 PDF로 저장하면 사라집니다. " +
+          "노트가 적힌 PPT 파일을 올려주시면 그 내용으로 문항을 만들어 드려요.",
+      );
+      return;
+    }
     const slideNo = state.currentSlide;
 
     setBusy("ai");
@@ -442,9 +449,9 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
           slide={slide}
           hasSlides={Boolean(state.pdfKey)}
           onAddBoard={addBoardHere}
-          onGenerate={
-            pptx || isSample ? extractWithAi : undefined
-          }
+          // 대본이 없는 자료여도 버튼은 보여준다 — 눌렀을 때 왜 안 되는지 알려주는 편이
+          // 버튼이 없어서 «AI 기능이 어디 갔지» 하고 헤매는 것보다 낫다
+          onGenerate={extractWithAi}
           generating={busy === "ai"}
         />
 
