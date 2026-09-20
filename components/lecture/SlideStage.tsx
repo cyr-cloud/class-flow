@@ -6,6 +6,7 @@
 import { useCallback, useState } from "react";
 import SlideViewer from "../SlideViewer";
 import InkCanvas from "./InkCanvas";
+import SlideReactions from "./SlideReactions";
 import { InkTool, inkStore } from "@/lib/lecture/inkStore";
 
 const TOOLS: { tool: InkTool; label: string; title: string }[] = [
@@ -82,6 +83,8 @@ export default function SlideStage({
         color={color}
         lineWidth={width}
       />
+
+      {pdfKey && size.w > 0 && <SlideReactions key={`${sessionId}:${page}`} sessionId={sessionId} page={page} canReact={!canDraw} />}
 
       {canDraw && size.w > 0 && (
         // 슬라이드 제목은 대개 위쪽에 있으니 도구 모음은 아래에 띄운다

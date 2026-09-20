@@ -1,5 +1,6 @@
 import type { Deck, LabPost, QuizResponse } from "../types";
 import type { SessionState } from "../sync/types";
+import type { SlideReaction } from "./reactions";
 
 export interface LiveState {
   session: SessionState;
@@ -8,10 +9,12 @@ export interface LiveState {
   /** 실습 슬라이드에 올라온 결과물 */
   posts: LabPost[];
   revision: number;
+  reactions?: SlideReaction[];
 }
 
 export type LiveCommand =
   | { action: "sample" }
+  | { action: "react"; slideNo: number; emoji: string; senderId: string }
   | { action: "patch"; partial: Partial<SessionState> }
   | { action: "deck"; deck: Deck | null }
   | { action: "board"; slideNo: number; boardId: string | null }

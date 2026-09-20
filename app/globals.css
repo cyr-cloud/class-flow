@@ -1,5 +1,20 @@
 @import "tailwindcss";
 
+@keyframes slide-reaction-float {
+  0% { opacity: 0; transform: translateY(0) scale(.65) rotate(-8deg); }
+  12% { opacity: 1; }
+  65% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-260px) scale(1.2) rotate(12deg); }
+}
+.slide-reaction { animation: slide-reaction-float 4s ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .slide-reaction { animation-name: slide-reaction-fade; }
+}
+@keyframes slide-reaction-fade {
+  0%, 75% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
 /*
   ClassFlow 디자인 토큰 — Pantone 2025 Mocha Mousse 팔레트 기반.
   강의 교안의 액센트(#A47864)와 같은 색을 앱에서도 써서 슬라이드와 화면이 한 톤으로 묶인다.

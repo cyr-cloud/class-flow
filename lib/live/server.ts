@@ -12,9 +12,10 @@ import { kv } from "./storage";
 import { SEED_OWNER, guideFor, seedPostsFor } from "./sample";
 import type { DeckSlide } from "../types";
 import type { LiveState, LiveCommand } from "./types";
+import { REACTIONS } from "./reactions";
 
 /** 학생도 보낼 수 있는 명령. 나머지는 수업을 연 강사만 */
-const STUDENT_ACTIONS: ReadonlySet<LiveCommand["action"]> = new Set(["respond", "addPost", "removePost", "likePost"]);
+const STUDENT_ACTIONS: ReadonlySet<LiveCommand["action"]> = new Set(["respond", "addPost", "removePost", "likePost", "react"]);
 
 interface Stored extends LiveState { teacherToken: string }
 
@@ -59,6 +60,7 @@ export function publicState(state: Stored, teacher: boolean): LiveState {
   return {
     session: state.session, revision: state.revision, responses: state.responses,
     posts: state.posts ?? [],
+    reactions: (state.reactions ?? []).filter(r => Date.now() - r.createdAt < 5000),
     deck: state.deck && { ...state.deck, slides: state.deck.slides.map(slide => ({
       guide: sample && slide.kind === "lab" && slide.labNo !== null ? guideFor(slide.labNo) : slide.guide ?? null,
       // 파서를 고치기 전에 저장된 수업에는 퀴즈가 아닌 슬라이드에도 문항이 남아 있다.
@@ -105,6 +107,17 @@ function ensureSlide(state: Stored, id: string, slideNo: number): DeckSlide {
 /** 명령 하나를 상태에 적용한다. 저장은 호출한 쪽이 한다. */
 function apply(id: string, state: Stored, command: LiveCommand, teacher: boolean) {
   switch (command.action) {
+    case "react": {
+      if (!state.session.pdfKey || command.slideNo !== state.session.currentSlide)
+        throw new Error("현재 슬라이드에서만 반응할 수 있어요.");
+      if (!REACTIONS.some(r => r.emoji === command.emoji) || !/^[a-zA-Z0-9_-]{1,100}$/.test(command.senderId))
+        throw new Error("반응을 확인해 주세요.");
+      const now = Date.now();
+      const recent = (state.reactions ?? []).filter(r => now - r.createdAt < 5000);
+      state.reactions = [...recent.slice(-79), { id: crypto.randomUUID(), slideNo: command.slideNo,
+        emoji: command.emoji, senderId: command.senderId, createdAt: now }];
+      break;
+    }
     case "sample": {
       const parsed = parseDeckMarkdown(readFileSync(path.join(process.cwd(), SAMPLE.deck), "utf8"));
       // 교안은 본문 첫 장이 1번인데, PDF에는 출석 확인·표지 두 장이 앞에 더 있다.
@@ -122,6 +135,7 @@ function apply(id: string, state: Stored, command: LiveCommand, teacher: boolean
       const slides = [...intro, ...shifted];
       state.deck = { sessionId: id, classId: null, slides, source: "md", updatedAt: Date.now() };
       state.responses = [];
+      state.reactions = [];
       state.posts = seedPostsFor(slides.filter((s) => s.kind === "lab"));
       state.session = { ...initialSessionState, pdfKey: SAMPLE.pdf, pdfName: SAMPLE.name,
         totalSlides: SAMPLE.intro.length + parsed.length, currentSlide: 1 };
