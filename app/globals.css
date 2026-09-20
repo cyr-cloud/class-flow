@@ -88,3 +88,25 @@ h2 {
   outline: 2px solid var(--color-mocha);
   outline-offset: 2px;
 }
+
+/* 업로드 가이드와 편집 미리보기의 공통 마크다운 스타일 */
+.guide-markdown > * + * { margin-top: 1rem; }
+.guide-markdown h1, .guide-markdown h2, .guide-markdown h3, .guide-markdown h4, .guide-markdown h5, .guide-markdown h6 { font-weight: 700; color: var(--color-ink); margin-top: 1.5rem; }
+.guide-markdown h1 { font-size: 1.6rem; line-height: 1.5; }
+.guide-markdown h2 { font-size: 1.3rem; border-bottom: 1px solid var(--color-line); padding-bottom: .5rem; }
+.guide-markdown h3 { font-size: 1.1rem; }
+.guide-markdown blockquote { border-left: 4px solid var(--color-mocha); padding: .75rem 1rem; background: var(--color-mocha-tint); border-radius: 0 .5rem .5rem 0; }
+.guide-markdown blockquote > * + * { margin-top: .5rem; }
+.guide-markdown hr { margin: 2rem 0; border: 0; border-top: 1px solid var(--color-line-strong); }
+.guide-markdown ul { list-style: disc; padding-left: 1.5rem; }
+.guide-markdown ol { list-style: decimal; padding-left: 1.5rem; }
+.guide-markdown li { margin-top: .35rem; }
+.guide-markdown li > p { margin: .4rem 0; }
+.guide-markdown .task-list-item { list-style: none; }
+.guide-markdown input[type=checkbox] { margin-right: .5rem; }
+.guide-markdown pre { background: #252525; color: #fff; padding: 1rem; border-radius: .75rem; overflow-x: auto; font-size: .875rem; }
+.guide-markdown :not(pre) > code { background: var(--color-gardenia); color: var(--color-mocha-deep); border-radius: .3rem; padding: .15rem .35rem; font-size: .9em; overflow-wrap: anywhere; }
+.guide-markdown table { width: 100%; border-collapse: collapse; text-align: left; font-size: .9rem; }
+.guide-markdown th, .guide-markdown td { border-bottom: 1px solid var(--color-line); padding: .6rem .75rem; min-width: 5rem; }
+.guide-markdown strong { font-weight: 700; color: var(--color-ink); }
+.guide-markdown a { color: var(--color-mocha-deep); text-decoration: underline; }

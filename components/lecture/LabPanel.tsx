@@ -9,6 +9,7 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import { DeckSlide, LabPost } from "@/lib/types";
 import { liveClient, responderId } from "@/lib/live/client";
 import GuideMarkdown from "./GuideMarkdown";
+import GuideEditor from "./GuideEditor";
 import LabGallery from "./LabGallery";
 import { printSubmissions } from "@/lib/lecture/printSubmissions";
 
@@ -33,6 +34,7 @@ export default function LabPanel({
   const [error, setError] = useState("");
   const [uploading, setUploading] = useState(false);
   const [notice, setNotice] = useState("");
+  const [editing, setEditing] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const me = responderId();
 
@@ -103,6 +105,7 @@ export default function LabPanel({
             <button
               type="button"
               onClick={onClose}
+              disabled={editing}
               className="shrink-0 rounded-full border border-line-strong px-4 py-2 text-sm text-ink-soft transition-colors hover:border-mocha hover:text-mocha"
             >
               ← 수업으로
@@ -112,11 +115,11 @@ export default function LabPanel({
           {/* 가이드 ↔ 결과물 — 밑줄 달린 진짜 탭으로 보이게 */}
           <div className="mt-5 flex gap-1">
             {(slide.guide || role === "teacher") && (
-              <button type="button" onClick={() => setTab("guide")} className={tabClass("guide")}>
+              <button type="button" disabled={editing} onClick={() => setTab("guide")} className={tabClass("guide")}>
                 실습가이드
               </button>
             )}
-            <button type="button" onClick={() => setTab("gallery")} className={tabClass("gallery")}>
+            <button type="button" disabled={editing} onClick={() => setTab("gallery")} className={tabClass("gallery")}>
               결과물
               {mine.length > 0 && (
                 <span className="ml-1.5 rounded-full bg-gardenia px-1.5 py-0.5 text-xs tabular-nums text-ink-soft">
@@ -125,7 +128,7 @@ export default function LabPanel({
               )}
             </button>
           </div>
-          {role === "teacher" && (
+          {role === "teacher" && !editing && (
             <div className="flex flex-wrap items-center gap-3 py-3">
               <input ref={fileInput} type="file" accept=".md,.markdown,text/markdown" className="hidden" onChange={e => {
                 const file = e.target.files?.[0];
@@ -135,11 +138,12 @@ export default function LabPanel({
               <button type="button" disabled={uploading} onClick={() => fileInput.current?.click()} className="rounded-full border border-line-strong px-4 py-2 text-sm disabled:opacity-50">
                 {uploading ? "저장 중…" : slide.guide ? "마크다운 가이드 교체" : "마크다운 가이드 올리기"}
               </button>
+              <button type="button" disabled={uploading} onClick={() => { setNotice(""); setError(""); setTab("guide"); setEditing(true); }} className="rounded-full border border-line-strong px-4 py-2 text-sm disabled:opacity-50">가이드 편집 · 이미지 넣기</button>
               {tab === "gallery" && <button type="button" disabled={!mine.some(p => p.createdAt !== 0)} onClick={() => {
                 setError("");
                 void printSubmissions(`실습 ${slide.labNo} · ${slide.title}`, mine).catch(e => setError(e instanceof Error ? e.message : "PDF 저장 창을 열지 못했어요."));
               }} className="rounded-full border border-line-strong px-4 py-2 text-sm disabled:opacity-40">제출물 PDF로 저장</button>}
-              <span className="text-xs text-mute">.md / .markdown · 최대 200KB · 텍스트 가이드 (외부 이미지 첨부 제외)</span>
+              <span className="text-xs text-mute">.md / .markdown · 최대 200KB · 편집에서 이미지 첨부 가능</span>
             </div>
           )}
           {error && <p role="alert" className="pb-3 text-sm text-rosetan">{error}</p>}
@@ -148,7 +152,7 @@ export default function LabPanel({
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto">
-        {tab === "guide" ? (
+        {editing && role === "teacher" ? <GuideEditor key={slide.slideNo} sessionId={sessionId} slideNo={slide.slideNo} source={slide.guide ?? ""} onCancel={() => setEditing(false)} onDone={() => { setEditing(false); setNotice("가이드를 저장했어요. 학생 화면에도 바로 반영됩니다."); }} /> : tab === "guide" ? (
           // 안내문은 읽는 글이라 한 단 폭으로 좁게
           <div className="mx-auto max-w-3xl px-6 py-7">
             {slide.guide ? <GuideMarkdown source={slide.guide} /> : <p className="py-10 text-center text-ink-soft">위 ‘마크다운 가이드 올리기’에서 실습 안내 파일을 선택해 주세요.</p>}
