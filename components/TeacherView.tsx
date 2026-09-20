@@ -146,13 +146,22 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
       form.append("sample", "true");
       form.append("slideNos", JSON.stringify([slideNo]));
       form.append("titles", JSON.stringify(titles));
+      // Only quiz text/answers are context; never send student responses or submissions.
+      const history = [...(deck?.slides ?? [])].sort((a, b) => a.slideNo - b.slideNo)
+        .flatMap(s => s.items.map(item => ({
+          slideNo: s.slideNo, question: item.question, options: item.options,
+          answers: item.answers, ...(item.quizType ? { quizType: item.quizType } : {}),
+        })));
+      const before = history.filter(item => item.slideNo <= slideNo).slice(-80);
+      const after = history.filter(item => item.slideNo > slideNo).slice(0, 20);
+      form.append("quizHistory", JSON.stringify([...before, ...after]));
 
       const res = await fetch("/api/extract-quiz", { method: "POST", body: form });
       const body = (await res.json()) as { items?: QuizItem[]; error?: string };
       if (!res.ok || !body.items) throw new Error(body.error ?? "문항을 뽑지 못했어요.");
       return body.items;
     },
-    [],
+    [deck],
   );
 
   /** 만든 문항을 그 슬라이드에만 얹는다 */

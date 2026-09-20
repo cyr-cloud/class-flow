@@ -82,6 +82,8 @@ export type SlideKind = "normal" | "lab" | "quiz";
 
 /** 슬라이드 하나에 걸린 참여요소 한 문항 */
 export interface QuizItem {
+  /** AI 출제 시 유형 반복을 피하기 위한 분류. 기존 문항은 생략 가능. */
+  quizType?: "fact" | "blank" | "matching" | "sequence" | "calculation" | "reading" | "negative" | "ox";
   id: string;
   slideNo: number;
   no: number; // 한 슬라이드 안에서의 문항 번호 (1-based)

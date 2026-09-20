@@ -50,7 +50,7 @@ export default function QuizItemCard({
   return (
     <div className="rounded-2xl border border-line bg-paper p-5">
       <div className="flex items-start justify-between gap-3">
-        <p className="font-medium text-ink">{item.question}</p>
+        <p className="whitespace-pre-line font-medium text-ink">{item.question}</p>
         <span className="shrink-0 rounded-full bg-gardenia px-2.5 py-1 text-xs tabular-nums text-ink-soft">
           {total}명 응답
         </span>
