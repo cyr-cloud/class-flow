@@ -10,7 +10,7 @@ import SlideStage from "./lecture/SlideStage";
 import SlideActivities from "./lecture/SlideActivities";
 import SlideComposer from "./lecture/SlideComposer";
 import PresentView from "./lecture/PresentView";
-import { savePdf } from "@/lib/sync/pdfStore";
+import { isSharedKey, savePdf } from "@/lib/sync/pdfStore";
 import { useSync } from "@/lib/sync/useSync";
 import { deckFromTitles, slideKindOf } from "@/lib/lecture/parseDeck";
 import { extractTitles } from "@/lib/lecture/pdfTitles";
@@ -37,12 +37,11 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
   const isSample = state.pdfKey?.startsWith("/samples/") ?? false;
 
   /**
-   * 내 자료 올리기는 아직 로컬에서만 된다.
-   * - PPT→PDF 변환은 이 컴퓨터에 깔린 LibreOffice가 한다 (배포 환경엔 설치할 수 없다)
-   * - 올린 PDF는 강사 브라우저(IndexedDB)에만 저장돼서 학생 기기에는 전달되지 않는다
-   * 서버에 PDF를 올리도록 고치기 전까지는 배포본에서 막아둔다 — 되는 척하는 것보다 낫다.
+   * 올린 슬라이드가 학생 기기까지 갔는지.
+   * 공유 저장소에 올라갔으면 주소(https://…)가 키가 되고, 실패해서 이 브라우저에만
+   * 남았으면 «세션:uuid» 꼴이 된다. 후자면 학생 화면이 비므로 강사에게 알려줘야 한다.
    */
-  const canUpload = !process.env.NEXT_PUBLIC_VERCEL_ENV;
+  const slidesShared = !state.pdfKey || isSharedKey(state.pdfKey);
   const [jumpTo, setJumpTo] = useState("");
   const [presenting, setPresenting] = useState(false);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
@@ -91,10 +90,25 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
     [sessionId, deck],
   );
 
+  /**
+   * 올린 슬라이드를 공유 저장소에 두고 그 주소를 슬라이드 키로 쓴다.
+   * 저장소가 없는 환경(로컬)에서는 예전처럼 이 브라우저에만 넣는다 — 그때는
+   * 학생 화면에 안 보이므로, 아래 canShareSlides로 강사에게 알려준다.
+   */
   const storeAndUse = useCallback(
     async (buf: ArrayBuffer, name: string) => {
-      const key = `${sessionId}:${crypto.randomUUID()}`;
-      await savePdf(key, buf);
+      let key = `${sessionId}:${crypto.randomUUID()}`;
+      try {
+        const form = new FormData();
+        form.append("file", new File([buf], name, { type: "application/pdf" }));
+        form.append("name", name);
+        const res = await fetch("/api/slides", { method: "POST", body: form });
+        const body = (await res.json()) as { url?: string; error?: string };
+        if (res.ok && body.url) key = body.url;
+        else await savePdf(key, buf);
+      } catch {
+        await savePdf(key, buf);
+      }
       patch({
         pdfKey: key,
         pdfName: name,
@@ -353,8 +367,7 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
             >
               샘플
             </button>
-            {canUpload ? (
-              <label
+            <label
                 title="PPT(.pptx/.ppt) 또는 PDF. PPT는 올리면 자동으로 PDF로 바꿔서 씁니다"
                 className="cursor-pointer rounded-full bg-ink px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-mocha-deep"
               >
@@ -378,20 +391,19 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
                   }}
                 />
               </label>
-            ) : (
-              <span
-                title="올린 슬라이드가 아직 다른 기기로 전달되지 않아 잠시 막아뒀어요. 샘플로 전체 흐름을 그대로 체험하실 수 있습니다."
-                className="cursor-not-allowed rounded-full border border-dashed border-line-strong px-4 py-2 text-sm text-mute"
-              >
-                내 자료 올리기 · 준비 중
-              </span>
-            )}
           </div>
         </div>
       </header>
 
       <main className="mx-auto max-w-5xl px-6 py-8">
         <LiveStatus sessionId={sessionId} />
+        {!slidesShared && (
+          <p className="mb-4 rounded-xl border border-rosetan/40 bg-rosetan/10 px-4 py-3 text-sm text-ink-soft">
+            이 슬라이드는 <strong className="text-ink">이 브라우저에만</strong> 저장됐어요. 학생
+            화면에는 보이지 않습니다. 슬라이드를 다시 올려보시고, 계속 이러면 저장 공간 설정을
+            확인해 주세요.
+          </p>
+        )}
         {notice && (
           <p className="mb-4 rounded-xl border border-line bg-paper px-4 py-3 text-sm text-ink-soft">
             {notice}
