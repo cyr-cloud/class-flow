@@ -519,14 +519,15 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
                 className="min-w-0 max-w-full flex-1 rounded-lg border border-line bg-cream px-3 py-2 text-sm"
               >
                 {deck.slides.map((s) => {
+                  // 표시는 제목 앞에 둔다 — 제목 길이가 제각각이라 뒤에 붙이면 눈으로 못 훑는다
                   const marks = [
                     s.kind === "lab" ? `실습 ${s.labNo}` : null,
                     s.items.length > 0 ? `퀴즈 ${s.items.length}문항` : null,
                   ].filter(Boolean);
                   return (
                     <option key={s.slideNo} value={s.slideNo}>
-                      {s.slideNo}. {s.title}
-                      {marks.length > 0 && `  —  ${marks.join(" · ")}`}
+                      {s.slideNo}. {marks.length > 0 && `[${marks.join(" · ")}] `}
+                      {s.title}
                     </option>
                   );
                 })}
