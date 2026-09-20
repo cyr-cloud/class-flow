@@ -61,8 +61,8 @@ export default function Home() {
           </span>
           <h2 className="mt-4 text-2xl font-bold text-ink">수업 열기</h2>
           <p className="mt-2 flex-1 text-sm leading-6 text-ink-soft">
-            PDF를 올려 학생과 같은 슬라이드를 보며 수업하세요. 자료가 없으시면 샘플로
-            1분 만에 둘러보셔도 됩니다.
+            PDF 강의자료를 올려 수업을 시작하세요.
+            자료가 없어도 준비된 샘플로 강의·퀴즈·실습을 체험할 수 있어요.
           </p>
           <button
             onClick={() => router.push(`/teacher/${newCode()}`)}
@@ -91,7 +91,7 @@ export default function Home() {
           </span>
           <h2 className="mt-4 text-2xl font-bold text-ink">수업 참여</h2>
           <p className="mt-2 flex-1 text-sm leading-6 text-ink-soft">
-            강사님이 알려주신 코드만 넣으면 들어갑니다. 가입도, 설치도 없습니다.
+            강사님에게 받은 참여 코드를 입력하고 ‘입장’을 누르세요. 회원가입이나 앱 설치 없이 수업에 참여할 수 있어요.
           </p>
           <div className="mt-7 flex gap-2">
             <input

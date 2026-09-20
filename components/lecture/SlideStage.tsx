@@ -3,7 +3,7 @@
 // 슬라이드 + 판서 레이어를 겹쳐 놓은 무대.
 // 강사 화면·학생 화면·전체화면 발표에서 모두 이걸 쓴다. 판서 도구는 강사에게만 보인다.
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import SlideViewer from "../SlideViewer";
 import InkCanvas from "./InkCanvas";
 import SlideReactions from "./SlideReactions";
@@ -34,6 +34,7 @@ export default function SlideStage({
   fit = "width",
   onLoaded,
   canDraw = false,
+  keyboardActive = true,
   className,
 }: {
   sessionId: string;
@@ -43,6 +44,8 @@ export default function SlideStage({
   onLoaded?: (total: number) => void;
   /** 강사만 true. false면 남이 그린 것만 보인다 */
   canDraw?: boolean;
+  /** 발표 화면 뒤에 남아 있는 무대는 단축키를 처리하지 않는다. */
+  keyboardActive?: boolean;
   className?: string;
 }) {
   const [size, setSize] = useState({ w: 0, h: 0 });
@@ -56,6 +59,22 @@ export default function SlideStage({
   }, []);
 
   const drawing = canDraw && penOn;
+
+  useEffect(() => {
+    if (!drawing || !keyboardActive) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || event.isComposing || event.altKey || event.shiftKey) return;
+      if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== "z") return;
+      const target = event.target;
+      if (target instanceof HTMLElement && (
+        target.isContentEditable || target.closest('input, textarea, select, [role="dialog"], [role="textbox"]')
+      )) return;
+      event.preventDefault();
+      inkStore.undo(sessionId, page);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [drawing, keyboardActive, sessionId, page]);
 
   const chip = (active: boolean) =>
     `flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm transition-colors ${
@@ -88,7 +107,7 @@ export default function SlideStage({
 
       {canDraw && size.w > 0 && (
         // 슬라이드 제목은 대개 위쪽에 있으니 도구 모음은 아래에 띄운다
-        <div className="absolute bottom-3 left-1/2 flex max-w-[calc(100%-1.5rem)] -translate-x-1/2 items-center gap-1 overflow-x-auto rounded-full [scrollbar-width:none] [&::-webkit-scrollbar]:hidden border border-line bg-paper/95 px-2 py-1.5 shadow-sm backdrop-blur">
+        <div role="group" aria-label="판서 도구" className="absolute bottom-3 left-1/2 flex w-max max-w-[calc(100%_-_1.5rem)] -translate-x-1/2 flex-wrap items-center justify-center gap-1 rounded-2xl border border-line bg-paper/95 px-2 py-1.5 shadow-sm backdrop-blur">
           <button
             onClick={() => setPenOn((v) => !v)}
             title="판서 켜기/끄기"
@@ -142,7 +161,7 @@ export default function SlideStage({
               <span className="mx-1 h-5 w-px shrink-0 bg-line" />
               <button
                 onClick={() => inkStore.undo(sessionId, page)}
-                title="되돌리기"
+                title="되돌리기 (Ctrl+Z / ⌘Z)"
                 className={chip(false)}
               >
                 ↶

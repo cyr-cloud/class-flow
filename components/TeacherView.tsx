@@ -292,10 +292,10 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
             <button
               onClick={loadSample}
               disabled={busy !== ""}
-              title="실제 강의 PDF와 교안을 함께 불러옵니다 — 실습 게시판과 퀴즈가 바로 붙어 있는 상태로 열립니다"
+              title="준비된 강의자료 61장과 퀴즈·실습을 열어 체험합니다"
               className="rounded-full border border-line-strong px-4 py-2 text-sm text-ink-soft transition-colors hover:border-mocha hover:text-mocha disabled:opacity-40"
             >
-              샘플
+              샘플 수업 체험하기
             </button>
             <label
                 title="학생과 공유할 PDF 파일을 업로드하세요."
@@ -341,6 +341,7 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
             pdfKey={state.pdfKey}
             page={state.currentSlide}
             canDraw
+            keyboardActive={!presenting}
             onLoaded={(total) => {
               if (total !== state.totalSlides) patch({ totalSlides: total });
             }}

@@ -33,6 +33,7 @@ export default function QuizItemCard({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const [confirming, setConfirming] = useState(false);
+  const [showStudentHint, setShowStudentHint] = useState(false);
   async function respond(index: number) {
     setPending(true);
     setError("");
@@ -80,9 +81,15 @@ export default function QuizItemCard({
             <li key={i}>
               <button
                 type="button"
-                disabled={!isStudent || pending || reveal}
+                disabled={isStudent && (pending || reveal)}
                 aria-pressed={picked}
-                onClick={() => void respond(i)}
+                onClick={() => {
+                  if (!isStudent) {
+                    setShowStudentHint(true);
+                    return;
+                  }
+                  void respond(i);
+                }}
                 className={`relative w-full overflow-hidden rounded-xl border px-4 py-3 text-left transition-colors ${tone} ${
                   isStudent ? "hover:border-mocha" : "cursor-default"
                 }`}
@@ -118,6 +125,11 @@ export default function QuizItemCard({
         })}
       </ul>
 
+      {!isStudent && showStudentHint && (
+        <p role="status" className="mt-3 rounded-xl bg-mocha-tint px-4 py-3 text-sm text-mocha-deep">
+          퀴즈 답변은 학생 화면에서만 선택할 수 있어요. 학생 화면으로 전환해 참여해 주세요.
+        </p>
+      )}
       {isStudent && <p role="status" className="mt-3 text-xs text-mocha">{error || (pending ? "응답 전송 중…" : reveal ? "정답이 공개되어 응답이 마감됐어요." : mine !== null ? "응답이 저장됐어요. 공개 전까지 바꿀 수 있어요." : "선택지를 눌러 참여해 주세요.")}</p>}
       <div className="mt-3 flex items-center justify-between">
         <p className="text-xs text-mute">

@@ -90,7 +90,7 @@ function RoleGuide({ role, open, onOpenChange, onStartSample, loading }: Props) 
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-xs font-bold tracking-widest text-mocha">CLASSFLOW · {role === "teacher" ? "강사용" : "학생용"} 사용법</p>
-              <h2 id={`${id}-title`} className="mt-1 text-xl font-bold text-ink sm:text-2xl">{role === "teacher" ? "수업 준비부터 참여 확인까지" : "입장부터 실습 결과 공유까지"}</h2>
+              <h2 id={`${id}-title`} className="mt-1 text-xl font-bold text-ink sm:text-2xl">{role === "teacher" ? "수업을 열고 학생과 함께하는 방법" : "수업에 들어가 퀴즈와 실습에 참여하는 방법"}</h2>
             </div>
             <button type="button" aria-label="사용법 닫기" onClick={close} className="h-10 w-10 shrink-0 rounded-full border border-line text-2xl text-ink-soft hover:bg-gardenia">×</button>
           </div>
@@ -114,10 +114,10 @@ function RoleGuide({ role, open, onOpenChange, onStartSample, loading }: Props) 
                   {step.callouts.map((mark, n) => <span key={n} aria-hidden="true" style={{ left: `${mark.from[0]}%`, top: `${mark.from[1]}%` }} className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full border-2 border-red-600 bg-white px-2.5 py-1 text-xs font-bold text-red-700 shadow-sm">{n + 1} {mark.label}</span>)}
                 </div>
               </div>
-              <figcaption className="mt-2 text-xs leading-5 text-mute">실제 서비스 화면 · 빨간 화살표가 가리키는 곳을 확인하세요.<span className="block sm:hidden">이미지를 옆으로 밀면 나머지 화면을 볼 수 있어요.</span></figcaption>
+              <figcaption className="mt-2 text-xs leading-5 text-mute">빨간 화살표의 번호와 설명을 함께 보세요. 예시 화면은 현재 화면과 조금 다를 수 있어요.<span className="block sm:hidden">이미지를 옆으로 밀면 나머지 화면을 볼 수 있어요.</span></figcaption>
             </figure>
             <div aria-live="polite" aria-atomic="true">
-              <p className="text-xs font-semibold tabular-nums text-mocha">STEP {String(index + 1).padStart(2, "0")} / {String(steps.length).padStart(2, "0")}</p>
+              <p className="text-xs font-semibold tabular-nums text-mocha">{steps.length}단계 중 {index + 1}단계</p>
               <h3 className="mt-2 text-xl font-bold leading-snug text-ink">{step.title}</h3>
               <p id={`${id}-description`} className="mt-3 text-sm leading-6 text-ink-soft">{step.description}</p>
               <ol className="mt-5 space-y-4">
@@ -136,8 +136,8 @@ function RoleGuide({ role, open, onOpenChange, onStartSample, loading }: Props) 
             <button type="button" onClick={close} className="rounded-full px-3 py-2 text-sm text-mute hover:bg-cream">{last ? "닫기" : "건너뛰기"}</button>
             <button type="button" disabled={index === 0} onClick={() => setIndex((n) => n - 1)} className="rounded-full border border-line px-4 py-2.5 text-sm text-ink-soft disabled:opacity-30">이전</button>
             {!last ? <button type="button" onClick={() => setIndex((n) => n + 1)} className="rounded-full bg-ink px-5 py-2.5 text-sm font-semibold text-white">다음 →</button>
-              : <button type="button" onClick={close} className="rounded-full bg-ink px-5 py-2.5 text-sm font-semibold text-white">시작하기</button>}
-            {last && role === "teacher" && onStartSample && <button type="button" disabled={loading} onClick={() => { close(); void onStartSample(); }} className="rounded-full bg-mocha px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50">{loading ? "준비 중…" : "샘플 열기"}</button>}
+              : <button type="button" onClick={close} className="rounded-full bg-ink px-5 py-2.5 text-sm font-semibold text-white">사용법 닫기</button>}
+            {last && role === "teacher" && onStartSample && <button type="button" disabled={loading} onClick={() => { close(); void onStartSample(); }} className="rounded-full bg-mocha px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50">{loading ? "수업 여는 중…" : "샘플 수업 체험하기"}</button>}
           </div>
         </footer>
       </section>
