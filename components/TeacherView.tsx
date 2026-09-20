@@ -5,7 +5,7 @@
 // PDF와 함께 교안 마크다운을 올리면 실습·퀴즈 슬라이드를 알아보고, 그 자리에서
 // 참여요소를 열고 응답 현황을 본다. 실습 슬라이드는 실습 게시판과 연결된다.
 
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import SlideStage from "./lecture/SlideStage";
 import SlideActivities from "./lecture/SlideActivities";
 import SlideComposer from "./lecture/SlideComposer";
@@ -46,6 +46,9 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
   const [jumpTo, setJumpTo] = useState("");
   const [presenting, setPresenting] = useState(false);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
+  const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "error">("idle");
+  const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (copyTimer.current) clearTimeout(copyTimer.current); }, []);
 
   // location은 React 밖의 값이라 외부 스토어로 읽는다 (effect 안 setState 회피)
   const studentUrl = useSyncExternalStore(
@@ -53,6 +56,18 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
     useCallback(() => `${window.location.origin}/student/${sessionId}`, [sessionId]),
     emptyString,
   );
+
+  const copyStudentLink = async () => {
+    if (copyTimer.current) clearTimeout(copyTimer.current);
+    try {
+      if (!navigator.clipboard) throw new Error("Clipboard unavailable");
+      await navigator.clipboard.writeText(studentUrl);
+      setCopyStatus("copied");
+    } catch {
+      setCopyStatus("error");
+    }
+    copyTimer.current = setTimeout(() => setCopyStatus("idle"), 2500);
+  };
 
   const saveDeck = useCallback(
     (slides: Deck["slides"], source: Deck["source"]) => {
@@ -545,10 +560,11 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
                 {studentUrl}
               </code>
               <button
-                onClick={() => navigator.clipboard?.writeText(studentUrl)}
+                onClick={() => void copyStudentLink()}
+                aria-live="polite"
                 className="shrink-0 rounded-full border border-line-strong bg-paper px-4 py-2 text-sm text-ink-soft hover:border-mocha hover:text-mocha"
               >
-                복사
+                {copyStatus === "copied" ? "복사됐어요!" : copyStatus === "error" ? "복사 실패 · 재시도" : "복사"}
               </button>
             </div>
             <p className="mt-2 text-xs text-mute">
