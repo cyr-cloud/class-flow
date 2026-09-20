@@ -506,8 +506,7 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
               </button>
             </div>
             <p className="mt-2 text-xs text-mute">
-              샘플의 슬라이드와 퀴즈 응답은 같은 서버에 접속한 기기끼리 공유됩니다.
-              다른 기기에는 localhost 대신 이 컴퓨터의 네트워크 주소로 접속한 링크를 전달해 주세요.
+              학생에게 위 링크를 보내 주세요. 가입 없이 참여하고, 같은 슬라이드를 보며 퀴즈와 실습을 할 수 있어요.
             </p>
           </section>
         )}
