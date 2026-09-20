@@ -56,7 +56,7 @@ export default function Home() {
             />
           </div>
           <div className="flex flex-1 flex-col p-7">
-          <span className="w-fit rounded-full bg-ink px-3 py-1 text-xs font-semibold text-white">
+          <span className="w-fit rounded-full bg-ink px-5 py-2 text-lg font-bold text-white sm:text-xl">
             강사
           </span>
           <h2 className="mt-4 text-2xl font-bold text-ink">수업 열기</h2>
@@ -86,7 +86,7 @@ export default function Home() {
             />
           </div>
           <div className="flex flex-1 flex-col p-7">
-          <span className="w-fit rounded-full bg-mocha px-3 py-1 text-xs font-semibold text-white">
+          <span className="w-fit rounded-full bg-mocha px-5 py-2 text-lg font-bold text-white sm:text-xl">
             학생
           </span>
           <h2 className="mt-4 text-2xl font-bold text-ink">수업 참여</h2>

@@ -16,8 +16,23 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ClassFlow",
-  description: "강의 슬라이드를 함께 넘기고, 실습 결과물을 모으는 수업 도구",
+  metadataBase: new URL("https://class-flow-fawn.vercel.app"),
+  title: "ClassFlow — 보여주는 수업에서, 함께하는 수업으로",
+  description: "AI 퀴즈, 실시간 참여, 실습 공유까지. 강사와 학생이 같은 슬라이드에서 함께하는 수업을 시작하세요.",
+  openGraph: {
+    type: "website",
+    locale: "ko_KR",
+    siteName: "ClassFlow",
+    title: "ClassFlow — 보여주는 수업에서, 함께하는 수업으로",
+    description: "AI 퀴즈 · 실시간 참여 · 실습 공유. 가입 없이 샘플 수업을 체험해 보세요.",
+    images: [{ url: "/classflow-share.png", width: 1672, height: 941, alt: "ClassFlow — AI 퀴즈, 실시간 참여, 실습 공유" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ClassFlow — 보여주는 수업에서, 함께하는 수업으로",
+    description: "AI 퀴즈 · 실시간 참여 · 실습 공유",
+    images: ["/classflow-share.png"],
+  },
 };
 
 export default function RootLayout({
