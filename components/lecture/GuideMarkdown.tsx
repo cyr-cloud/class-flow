@@ -114,6 +114,11 @@ export default function GuideMarkdown({ source }: { source: string }) {
       continue;
     }
 
+    if (line.startsWith("# ")) {
+      out.push(<h1 key={out.length} className="pb-3 text-2xl font-bold text-ink">{inline(line.slice(2))}</h1>);
+      i += 1;
+      continue;
+    }
     if (line.startsWith("### ")) {
       out.push(<h3 key={out.length} className="pt-2 text-base font-bold text-ink">{inline(line.slice(4))}</h3>);
       i += 1;
@@ -189,9 +194,11 @@ export default function GuideMarkdown({ source }: { source: string }) {
 
     // 나머지는 문단 — 빈 줄이 나올 때까지 모은다
     const para: string[] = [];
-    while (i < lines.length && lines[i].trim() && !/^(\s*[-*]\s|```|\d+\.\s|#{2,3}\s|\||!\[)/.test(lines[i])) {
+    while (i < lines.length && lines[i].trim() && !/^(\s*[-*]\s|```|\d+\.\s|#{1,3}\s|\||!\[)/.test(lines[i])) {
       para.push(lines[i++]);
     }
+    // 지원하지 않는 이미지·표 문법도 한 줄 소비해야 무한 루프가 생기지 않는다.
+    if (!para.length) para.push(lines[i++]);
     out.push(
       <p key={out.length} className="leading-7 text-ink-soft">{inline(para.join(" "))}</p>,
     );

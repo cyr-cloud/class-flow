@@ -23,6 +23,7 @@ export type LiveCommand =
   | { action: "removeItem"; slideNo: number; itemId: string }
   /** labNo가 null이면 실습 표시를 뗀다 */
   | { action: "markLab"; slideNo: number; labNo: number | null }
+  | { action: "guide"; slideNo: number; markdown: string }
   // 실습 결과물 (학생도 올릴 수 있다)
   | { action: "addPost"; slideNo: number; authorName: string; description: string; imageUrl: string | null; ownerId: string }
   | { action: "removePost"; postId: string; ownerId: string }

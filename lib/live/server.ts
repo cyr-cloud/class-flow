@@ -202,6 +202,17 @@ function apply(id: string, state: Stored, command: LiveCommand, teacher: boolean
       slide.labNo = command.labNo;
       break;
     }
+    case "guide": {
+      const slide = state.deck?.slides.find(s => s.slideNo === command.slideNo);
+      if (!slide || slide.kind !== "lab") throw new Error("실습 슬라이드를 먼저 선택해 주세요.");
+      if (typeof command.markdown !== "string" || !command.markdown.trim())
+        throw new Error("가이드 내용이 비어 있어요.");
+      if (Buffer.byteLength(command.markdown, "utf8") > 200 * 1024)
+        throw new Error("가이드는 200KB 이하로 올려주세요.");
+      slide.guide = command.markdown.replace(/^\uFEFF/, "").trim();
+      if (state.deck) state.deck.updatedAt = Date.now();
+      break;
+    }
 
     // ── 실습 결과물 ─────────────────────────────────────────────────
     case "addPost": {

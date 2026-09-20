@@ -43,13 +43,13 @@ export default function SlideActivities({
         <div className="flex flex-wrap items-center gap-x-3 gap-y-3 rounded-2xl border border-mocha/30 bg-mocha-tint px-5 py-4">
           <span className="eyebrow text-mocha-deep">실습 {slide.labNo}</span>
           <span className="min-w-0 flex-1 truncate font-medium text-ink">{slide.title}</span>
-          {slide.guide && (
+          {(slide.guide || role === "teacher") && (
             <button
               type="button"
               onClick={() => setOpenTab("guide")}
               className="shrink-0 rounded-full border border-mocha px-4 py-2 text-sm font-medium text-mocha-deep transition-colors hover:bg-mocha hover:text-white"
             >
-              실습가이드 보러가기
+              {slide.guide ? "실습가이드 보러가기" : "가이드 올리기"}
             </button>
           )}
           <button
