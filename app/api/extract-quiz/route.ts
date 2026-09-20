@@ -79,8 +79,16 @@ export async function POST(request: Request) {
     const form = await request.formData();
     const file = form.get("file");
     const useSample = form.get("sample") === "true";
+    const rawNotes = form.get("notes");
+    let clientNotes: SlideNote[] | null = null;
+    if (typeof rawNotes === "string") {
+      if (rawNotes.length > 200000) return Response.json({ error: "대본이 너무 길어요." }, { status: 413 });
+      const parsed = z.array(z.object({ slideNo: z.number().int().min(1), text: z.string().max(100000) })).max(10).safeParse(JSON.parse(rawNotes));
+      if (!parsed.success) return Response.json({ error: "대본 형식을 확인해 주세요." }, { status: 400 });
+      clientNotes = parsed.data.filter(note => note.text.trim());
+    }
 
-    if (!useSample) {
+    if (!useSample && !clientNotes) {
       if (!(file instanceof File)) return Response.json({ error: "PPT 파일이 없어요." }, { status: 400 });
       if (file.size > MAX_BYTES) return Response.json({ error: "80MB 이하 파일만 읽을 수 있어요." }, { status: 413 });
     }
@@ -98,7 +106,7 @@ export async function POST(request: Request) {
 
     const all: SlideNote[] = useSample
       ? (JSON.parse(readFileSync(path.join(process.cwd(), SAMPLE_NOTES), "utf8")) as SlideNote[])
-      : extractNotes(await (file as File).arrayBuffer());
+      : clientNotes ?? extractNotes(await (file as File).arrayBuffer());
 
     // 제목으로 이미 퀴즈·실습을 찾아뒀으면 그 슬라이드 대본만 읽는다.
     // 덱 전체를 보내면 입력이 몇 배로 늘고, 무료 플랜의 60초 제한에 걸린다.

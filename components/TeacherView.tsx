@@ -10,7 +10,9 @@ import SlideStage from "./lecture/SlideStage";
 import SlideActivities from "./lecture/SlideActivities";
 import SlideComposer from "./lecture/SlideComposer";
 import PresentView from "./lecture/PresentView";
-import { isSharedKey, savePdf } from "@/lib/sync/pdfStore";
+import { isSharedKey } from "@/lib/sync/pdfStore";
+import { upload } from "@vercel/blob/client";
+import { extractNotes } from "@/lib/lecture/pptxNotes";
 import { useSync } from "@/lib/sync/useSync";
 import { deckFromTitles, slideKindOf } from "@/lib/lecture/parseDeck";
 import { extractTitles } from "@/lib/lecture/pdfTitles";
@@ -97,34 +99,33 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
    */
   const storeAndUse = useCallback(
     async (buf: ArrayBuffer, name: string) => {
-      let key = `${sessionId}:${crypto.randomUUID()}`;
-      try {
-        const form = new FormData();
-        form.append("file", new File([buf], name, { type: "application/pdf" }));
-        form.append("name", name);
-        const res = await fetch("/api/slides", { method: "POST", body: form });
-        const body = (await res.json()) as { url?: string; error?: string };
-        if (res.ok && body.url) key = body.url;
-        else await savePdf(key, buf);
-      } catch {
-        await savePdf(key, buf);
-      }
-      patch({
+      if (!buf.byteLength || buf.byteLength > 60 * 1024 * 1024) throw new Error("60MB 이하 PDF를 선택해 주세요.");
+      if (!new TextDecoder().decode(buf.slice(0, 5)).startsWith("%PDF-")) throw new Error("올바른 PDF 파일을 선택해 주세요.");
+      await liveClient(sessionId).send({ action: "patch", partial: {} });
+      const token = localStorage.getItem(`classflow:teacher:${sessionId}`) ?? "";
+      const blob = await upload(`decks/${sessionId}/${crypto.randomUUID()}.pdf`, new Blob([buf], { type: "application/pdf" }), {
+        access: "public", handleUploadUrl: "/api/slides", clientPayload: JSON.stringify({ sessionId }),
+        headers: { "x-teacher-token": token }, multipart: true,
+        onUploadProgress: ({ percentage }) => setNotice(`PDF 공유 저장소에 올리는 중… ${Math.round(percentage)}%`),
+      });
+      const key = blob.url;
+      const titles = await extractTitles(key);
+      // 다른 자료의 퀴즈와 가이드가 새 PDF에 잘못 연결되지 않게 새 덱으로 교체한다.
+      await liveClient(sessionId).send({ action: "deck", deck: { sessionId, classId: null,
+        slides: deckFromTitles(titles.map((title, i) => title || `슬라이드 ${i + 1}`)), source: "pdf", updatedAt: Date.now() } });
+      await liveClient(sessionId).send({ action: "patch", partial: {
         pdfKey: key,
         pdfName: name,
         currentSlide: 1,
-        totalSlides: 0,
+        totalSlides: titles.length,
         activeActivityId: null,
         revealAnswer: false,
-      });
-      // 교안 md가 아직 없으면 PDF 제목만으로 실습·퀴즈를 먼저 알아본다
-      if (!deck || deck.source === "pdf") {
-        const titles = await extractTitles(key);
-        if (titles.some((t) => t.trim())) saveDeck(deckFromTitles(titles), "pdf");
-      }
+      } });
+      setPptx(null);
+      setNotice("PDF를 공유했어요. 학생도 같은 슬라이드를 볼 수 있습니다. AI 퀴즈용 대본은 PPTX로 추가해 주세요.");
       return key;
     },
-    [sessionId, patch, deck, saveDeck],
+    [sessionId],
   );
 
   /** PDF는 그대로, PPT는 서버(LibreOffice)에서 PDF로 바꿔서 쓴다 */
@@ -135,8 +136,7 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
       try {
         const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
         if (isPdf) {
-          await storeAndUse(await file.arrayBuffer(), file.name);
-          return;
+          return await storeAndUse(await file.arrayBuffer(), file.name);
         }
 
         setNotice(`${file.name} 을(를) PDF로 바꾸는 중이에요… 파일이 크면 조금 걸립니다.`);
@@ -153,6 +153,8 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
         setPptx(file);
         setNotice("슬라이드를 불러왔어요.");
         return key;
+      } catch (e) {
+        setNotice(e instanceof Error ? e.message : "업로드하지 못했어요. 다시 시도해 주세요.");
       } finally {
         setBusy("");
       }
@@ -168,7 +170,11 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
     async (slideNo: number, source: File | "sample", titles: string[]) => {
       const form = new FormData();
       if (source === "sample") form.append("sample", "true");
-      else form.append("file", source);
+      else {
+        // PPTX 안의 이미지는 전송하지 않고 해당 페이지의 대본만 보낸다.
+        const notes = extractNotes(await source.arrayBuffer()).filter(note => note.slideNo === slideNo);
+        form.append("notes", JSON.stringify(notes));
+      }
       form.append("slideNos", JSON.stringify([slideNo]));
       form.append("titles", JSON.stringify(titles));
 
@@ -368,7 +374,7 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
               샘플
             </button>
             <label
-                title="PPT(.pptx/.ppt) 또는 PDF. PPT는 올리면 자동으로 PDF로 바꿔서 씁니다"
+                title="학생과 공유할 PDF를 올려주세요. PPT 변환은 로컬에서 지원합니다."
                 className="cursor-pointer rounded-full bg-ink px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-mocha-deep"
               >
                 {busy === "pdf"
@@ -378,6 +384,7 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
                     : "슬라이드 올리기"}
                 <input
                   type="file"
+                  disabled={busy !== ""}
                   accept=".pdf,.pptx,.ppt,.odp,application/pdf"
                   className="hidden"
                   onChange={(e) => {
@@ -391,6 +398,21 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
                   }}
                 />
               </label>
+            {state.pdfKey && <label className="cursor-pointer rounded-full border border-line-strong px-4 py-2 text-sm text-ink-soft">
+              {pptx ? "대본 PPTX 교체" : "대본 PPTX 추가 (선택)"}
+              <input type="file" accept=".pptx" disabled={busy !== ""} className="hidden" onChange={e => {
+                const file = e.target.files?.[0]; e.target.value = "";
+                if (!file) return;
+                if (file.size > 80 * 1024 * 1024) { setNotice("80MB 이하 PPTX를 선택해 주세요."); return; }
+                setBusy("notes");
+                void file.arrayBuffer().then(bytes => {
+                  const notes = extractNotes(bytes);
+                  if (!notes.some(n => n.text.trim())) throw new Error("발표자 노트에 대본이 있는 PPTX를 선택해 주세요.");
+                  setPptx(file);
+                  setNotice(`${file.name} 대본을 연결했어요. PDF와 같은 페이지 순서인지 확인한 뒤 ‘AI로 퀴즈 만들기’를 눌러주세요. 새로고침하면 대본을 다시 선택해 주세요.`);
+                }).catch(error => setNotice(error instanceof Error ? error.message : "대본을 읽지 못했어요.")).finally(() => setBusy(""));
+              }} />
+            </label>}
           </div>
         </div>
       </header>
