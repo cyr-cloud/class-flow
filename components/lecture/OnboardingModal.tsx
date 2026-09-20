@@ -3,7 +3,7 @@
 // 처음 들어온 사람에게 한 번 보여주는 사용법.
 // 강사와 학생이 할 일이 전혀 달라서 안내도 따로 둔다 — 학생에게 «슬라이드를 올리세요»는 쓸모가 없다.
 
-import { useCallback, useSyncExternalStore } from "react";
+import { useCallback, useState, useSyncExternalStore } from "react";
 
 type Role = "teacher" | "student";
 
@@ -93,11 +93,14 @@ export default function OnboardingModal({
   );
   const visible = open || !seen;
   const guide = GUIDE[role];
+  // 기본은 «다음에도 보여주기». 닫을 때 체크되어 있으면 그때부터 안 뜬다.
+  const [dontShowAgain, setDontShowAgain] = useState(false);
 
   const remember = useCallback(() => {
+    if (!dontShowAgain) return;
     window.localStorage.setItem(STORAGE_KEY(role), "seen");
     window.dispatchEvent(new Event(EVENT));
-  }, [role]);
+  }, [dontShowAgain, role]);
 
   const close = useCallback(() => {
     remember();
@@ -168,7 +171,17 @@ export default function OnboardingModal({
             <p className="text-sm leading-6 text-ink-soft">{guide.tip}</p>
           </div>
 
-          <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <label className="flex cursor-pointer select-none items-center gap-2 px-1 text-sm text-mute transition-colors hover:text-ink">
+              <input
+                type="checkbox"
+                checked={dontShowAgain}
+                onChange={(e) => setDontShowAgain(e.target.checked)}
+                className="h-4 w-4 accent-mocha"
+              />
+              다시 보지 않기
+            </label>
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center">
             <button
               type="button"
               onClick={close}
@@ -194,6 +207,7 @@ export default function OnboardingModal({
                 알겠어요, 시작할게요
               </button>
             )}
+            </div>
           </div>
         </div>
       </section>

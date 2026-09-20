@@ -68,6 +68,35 @@
 - [ ] Supabase 테이블/스토리지로 데이터 이관 (sessions/slides/activities/responses/classes/boards/posts)
 - [ ] 다중 접속(여러 학생 기기) 실서비스 검증
 
+## 다음에 할 일 — 배포본에서 «내 자료로 해보기»를 열기까지
+
+지금 배포본은 **샘플 전용**이다. 심사위원이 자기 자료를 올리는 길이 막혀 있는데,
+막은 이유가 셋이고 순서대로 풀면 된다.
+
+1. [ ] **올린 PDF를 서버에 두기** ← 제일 먼저. 이것만 되면 «내 자료»가 열린다
+       지금은 `lib/sync/pdfStore.ts`가 IndexedDB에 넣어서 **올린 사람 브라우저에만** 있다.
+       그래서 학생 화면은 빈 화면이 된다. 샘플만 `/samples/...` 주소라 예외.
+       Vercel Blob에 올리고 그 URL을 `pdfKey`로 쓰면 나머지 코드는 손댈 게 없다
+       (`loadPdf`가 이미 URL을 fetch하는 길을 갖고 있다).
+       Upstash Redis는 요청 한 건 1MB 제한이라 6MB PDF가 안 들어간다 — Blob이 맞다.
+
+2. [ ] **PPT 올리기** — `/api/convert`가 로컬 LibreOffice(`soffice`)를 부른다.
+       Vercel 함수는 파일시스템이 읽기 전용이라 설치할 수 없고, LibreOffice만
+       400MB라 함수 용량 제한(250MB)도 넘는다. 길은 둘 중 하나:
+       - 강사에게 «PowerPoint에서 PDF로 저장해 올려주세요» 로 안내 (비용 0)
+       - LibreOffice를 담은 Docker 서버를 따로 띄우고 Vercel에서 호출 (인프라 추가)
+       1번이 끝나면 PDF 경로가 열리므로, 우선은 안내로 충분하다.
+
+3. [ ] **발표자 보기 — 전체화면에서 강사에게만 대본 보이기**
+       재료는 이미 다 있다: `lib/lecture/pptxNotes.ts`가 슬라이드별 대본을 뽑고,
+       샘플 대본 61장은 `data/samples/jeonju-day-02-notes.json`에 들어 있다.
+       `PresentView`에 대본 패널을 붙이면 되는데, **대본은 서버에서 `isTeacher`일 때만
+       내려보내야 한다** — 지금처럼 덱에 실어 보내면 학생 브라우저까지 따라간다
+       (정답을 `publicState`에서 가리는 것과 같은 이유).
+       창 두 개로 띄우는 PPT식 발표자 보기는 Win+P 확장 모드가 필요해 번거롭다.
+       한 화면 안에서 슬라이드 옆에 패널로 두는 쪽이 화면 공유에도 맞는다.
+       ※ 2번이 안 풀리면 대본은 샘플에서만 쓸 수 있다 (대본은 .pptx 안에 있다).
+
 ## Phase 4 — 운영/확장 (나중)
 - [ ] 강의별 자료 관리
 - [ ] 학생별 참여 기록
