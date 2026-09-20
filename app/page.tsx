@@ -61,14 +61,14 @@ export default function Home() {
           </span>
           <h2 className="mt-4 text-2xl font-bold text-ink">수업 열기</h2>
           <p className="mt-2 flex-1 text-sm leading-6 text-ink-soft">
-            쓰시던 PPT를 그대로 올리면 실습·퀴즈 슬라이드를 찾아냅니다. 자료가 없으시면 샘플로
+            PDF를 올려 학생과 같은 슬라이드를 보며 수업하세요. 자료가 없으시면 샘플로
             1분 만에 둘러보셔도 됩니다.
           </p>
           <button
             onClick={() => router.push(`/teacher/${newCode()}`)}
             className="mt-7 rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-mocha-deep"
           >
-            슬라이드 올리러 가기 →
+            PDF 올리러 가기 →
           </button>
           </div>
         </section>
