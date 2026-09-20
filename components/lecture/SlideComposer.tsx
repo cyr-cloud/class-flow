@@ -20,6 +20,7 @@ export default function SlideComposer({
   onAddBoard,
   onGenerate,
   generating,
+  generationBlockedMessage,
 }: {
   sessionId: string;
   slideNo: number;
@@ -31,6 +32,7 @@ export default function SlideComposer({
   /** 이 슬라이드의 발표자 노트로 문항 만들기. 대본을 읽을 수 없으면 없다 */
   onGenerate?: () => Promise<void>;
   generating?: boolean;
+  generationBlockedMessage?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [question, setQuestion] = useState("");
@@ -38,6 +40,7 @@ export default function SlideComposer({
   const [answers, setAnswers] = useState<number[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [generationNotice, setGenerationNotice] = useState("");
 
   const isLab = slide?.kind === "lab";
 
@@ -113,14 +116,19 @@ export default function SlideComposer({
           {onGenerate && (
             <button
               type="button"
-              onClick={() => void onGenerate()}
+              onClick={() => {
+                if (generationBlockedMessage) { setGenerationNotice(generationBlockedMessage); return; }
+                setGenerationNotice("");
+                void onGenerate();
+              }}
               disabled={busy || generating}
-              title="이 슬라이드의 발표자 노트(강의 대본)를 읽어 문항을 만듭니다"
-              className="rounded-full border border-mocha px-4 py-2 text-sm font-medium text-mocha-deep transition-colors hover:bg-mocha hover:text-white disabled:opacity-40"
+              title={generationBlockedMessage ?? "이 슬라이드의 발표자 노트(강의 대본)를 읽어 문항을 만듭니다"}
+              className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors disabled:opacity-40 ${generationBlockedMessage ? "border-line-strong bg-gardenia/50 text-mute hover:bg-gardenia" : "border-mocha text-mocha-deep hover:bg-mocha hover:text-white"}`}
             >
               {generating ? "대본 읽는 중…" : "✦ AI로 퀴즈 만들기"}
             </button>
           )}
+          {generationNotice && generationBlockedMessage && <p role="status" className="w-full rounded-xl border border-line bg-paper px-4 py-3 text-sm text-ink-soft">{generationNotice}</p>}
           {isLab ? (
             <>
               <span className="rounded-full bg-mocha-tint px-3 py-2 text-sm text-mocha-deep">

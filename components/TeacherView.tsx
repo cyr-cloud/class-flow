@@ -12,9 +12,8 @@ import SlideComposer from "./lecture/SlideComposer";
 import PresentView from "./lecture/PresentView";
 import { isSharedKey } from "@/lib/sync/pdfStore";
 import { upload } from "@vercel/blob/client";
-import { extractNotes } from "@/lib/lecture/pptxNotes";
 import { useSync } from "@/lib/sync/useSync";
-import { deckFromTitles, slideKindOf } from "@/lib/lecture/parseDeck";
+import { deckFromTitles } from "@/lib/lecture/parseDeck";
 import { extractTitles } from "@/lib/lecture/pdfTitles";
 import { deckStore, useCurrentSlide, useDeckState, useLabSlides } from "@/lib/lecture/useDeck";
 import { Deck, QuizItem } from "@/lib/types";
@@ -33,8 +32,6 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
 
   const [busy, setBusy] = useState("");
   const [notice, setNotice] = useState("");
-  // 올린 PPT 원본. 발표자 노트를 읽으려면 PDF가 아니라 이 파일이 필요하다
-  const [pptx, setPptx] = useState<File | null>(null);
   // 샘플 강의는 노트를 서버에 넣어두어서, PPT를 올리지 않아도 AI로 뽑아볼 수 있다
   const isSample = state.pdfKey?.startsWith("/samples/") ?? false;
 
@@ -121,60 +118,32 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
         activeActivityId: null,
         revealAnswer: false,
       } });
-      setPptx(null);
-      setNotice("PDF를 공유했어요. 학생도 같은 슬라이드를 볼 수 있습니다. AI 퀴즈용 대본은 PPTX로 추가해 주세요.");
+      setNotice("PDF를 공유했어요. 학생도 같은 슬라이드를 볼 수 있습니다.");
       return key;
     },
     [sessionId],
   );
 
-  /** PDF는 그대로, PPT는 서버(LibreOffice)에서 PDF로 바꿔서 쓴다 */
-  const onSlideFile = useCallback(
-    async (file: File) => {
-      setBusy("pdf");
-      setNotice("");
-      try {
-        const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
-        if (isPdf) {
-          return await storeAndUse(await file.arrayBuffer(), file.name);
-        }
-
-        setNotice(`${file.name} 을(를) PDF로 바꾸는 중이에요… 파일이 크면 조금 걸립니다.`);
-        const form = new FormData();
-        form.append("file", file);
-        const res = await fetch("/api/convert", { method: "POST", body: form });
-        if (!res.ok) {
-          const body = (await res.json().catch(() => null)) as { error?: string } | null;
-          setNotice(body?.error ?? "PPT를 PDF로 바꾸지 못했어요. 직접 PDF로 저장해서 올려주세요.");
-          return;
-        }
-        const key = await storeAndUse(await res.arrayBuffer(), file.name.replace(/\.[^.]+$/, ".pdf"));
-        // 원본을 들고 있어야 나중에 발표자 노트에서 문항을 뽑을 수 있다
-        setPptx(file);
-        setNotice("슬라이드를 불러왔어요.");
-        return key;
-      } catch (e) {
-        setNotice(e instanceof Error ? e.message : "업로드하지 못했어요. 다시 시도해 주세요.");
-      } finally {
-        setBusy("");
-      }
-    },
-    [storeAndUse],
-  );
+  /** PDF만 공유 저장소에 올린다. */
+  const onSlideFile = useCallback(async (file: File) => {
+    setBusy("pdf");
+    setNotice("");
+    try {
+      if (!/\.pdf$/i.test(file.name) && file.type !== "application/pdf") throw new Error("PDF 파일만 업로드할 수 있습니다.");
+      await storeAndUse(await file.arrayBuffer(), file.name);
+    } catch (e) {
+      setNotice(e instanceof Error ? e.message : "PDF를 업로드하지 못했어요.");
+    } finally { setBusy(""); }
+  }, [storeAndUse]);
 
   /**
    * 슬라이드 한 장의 발표자 노트(강의 대본)를 읽어 문항을 만든다.
    * 제목만으로는 «여기 퀴즈가 있다»까지만 알 수 있고, 문항·선택지·정답은 대본에 있다.
    */
   const askFor = useCallback(
-    async (slideNo: number, source: File | "sample", titles: string[]) => {
+    async (slideNo: number, titles: string[]) => {
       const form = new FormData();
-      if (source === "sample") form.append("sample", "true");
-      else {
-        // PPTX 안의 이미지는 전송하지 않고 해당 페이지의 대본만 보낸다.
-        const notes = extractNotes(await source.arrayBuffer()).filter(note => note.slideNo === slideNo);
-        form.append("notes", JSON.stringify(notes));
-      }
+      form.append("sample", "true");
       form.append("slideNos", JSON.stringify([slideNo]));
       form.append("titles", JSON.stringify(titles));
 
@@ -213,55 +182,10 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
     [deck, saveDeck],
   );
 
-  /**
-   * 제목에 «퀴즈»가 있는 슬라이드는 올리자마자 문항까지 만들어 둔다.
-   * 강사가 한 장씩 눌러줄 필요 없이 확인만 하면 되게 하려는 것.
-   * 나머지 슬라이드는 그 자리에서 «✦ 대본으로 만들기»로 만든다.
-   */
-  const prefillQuizzes = useCallback(
-    async (file: File, pdfKey: string) => {
-      const titles = await extractTitles(pdfKey);
-      const quizSlides = titles
-        .map((t, i) => ({ no: i + 1, kind: slideKindOf(t.trim()).kind }))
-        .filter((s) => s.kind === "quiz")
-        .map((s) => s.no);
-      if (quizSlides.length === 0) return;
-
-      setBusy("ai");
-      setNotice(`제목에서 퀴즈 슬라이드 ${quizSlides.length}장을 찾았어요. 대본을 읽는 중이에요…`);
-      const made = new Map<number, QuizItem[]>();
-      try {
-        // 서버를 한꺼번에 때리지 않게 네 장씩 끊어서 부른다
-        for (let i = 0; i < quizSlides.length; i += 4) {
-          const chunk = quizSlides.slice(i, i + 4);
-          const results = await Promise.all(
-            chunk.map((no) => askFor(no, file, titles).catch(() => [] as QuizItem[])),
-          );
-          chunk.forEach((no, n) => results[n].length && made.set(no, results[n]));
-        }
-        const total = [...made.values()].reduce((n, items) => n + items.length, 0);
-        if (total > 0) {
-          attach(made);
-          setNotice(`퀴즈 슬라이드 ${made.size}장에 ${total}문항을 만들어 뒀어요. 확인하고 고쳐주세요.`);
-        } else {
-          setNotice("퀴즈 슬라이드를 찾았지만 대본에서 문항을 만들지 못했어요. 슬라이드마다 직접 넣어주세요.");
-        }
-      } finally {
-        setBusy("");
-      }
-    },
-    [askFor, attach],
-  );
-
   /** 지금 보고 있는 슬라이드에서 «대본으로 만들기»를 눌렀을 때 */
   const extractWithAi = useCallback(async () => {
-    const source = pptx ?? (isSample ? ("sample" as const) : null);
-    if (!source) {
-      // PDF로 내보내는 순간 발표자 노트는 떨어져 나간다 — 파일 형식의 한계라 되살릴 수 없다
-      setNotice(
-        "이 자료에는 강의 대본이 없어요. 대본은 PPT의 «발표자 노트»에 들어 있고 PDF로 저장하면 사라집니다. " +
-          "노트가 적힌 PPT 파일을 올려주시면 그 내용으로 문항을 만들어 드려요.",
-      );
+    if (!isSample) {
+      setNotice("해당 기능은 발표자 노트가 포함된 PPT에서만 사용 가능합니다.");
       return;
     }
     const slideNo = state.currentSlide;
@@ -270,7 +194,7 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
     setNotice(`${slideNo}쪽 강의 대본을 읽는 중이에요…`);
     try {
       const titles = state.pdfKey ? await extractTitles(state.pdfKey) : [];
-      const items = await askFor(slideNo, source, titles);
+      const items = await askFor(slideNo, titles);
       if (items.length === 0) {
         setNotice(`${slideNo}쪽 대본에는 물어볼 만한 내용이 없어요. «＋ 퀴즈 문항»으로 직접 넣으셔도 됩니다.`);
         return;
@@ -283,7 +207,7 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
     } finally {
       setBusy("");
     }
-  }, [askFor, attach, isSample, pptx, state.currentSlide, state.pdfKey]);
+  }, [askFor, attach, isSample, state.currentSlide, state.pdfKey]);
 
   // public/samples 에 넣어둔 강의자료. 바꾸려면 이 경로만 고치면 된다.
   const loadSample = useCallback(async () => {
@@ -374,45 +298,23 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
               샘플
             </button>
             <label
-                title="학생과 공유할 PDF를 올려주세요. PPT 변환은 로컬에서 지원합니다."
+                title="학생과 공유할 PDF 파일을 업로드하세요."
                 className="cursor-pointer rounded-full bg-ink px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-mocha-deep"
               >
-                {busy === "pdf"
-                  ? "불러오는 중…"
-                  : state.pdfKey
-                    ? "슬라이드 교체"
-                    : "슬라이드 올리기"}
+                {busy === "pdf" ? "PDF 업로드 중…" : "PDF 업로드"}
                 <input
                   type="file"
                   disabled={busy !== ""}
-                  accept=".pdf,.pptx,.ppt,.odp,application/pdf"
+                  accept=".pdf,application/pdf"
                   className="hidden"
                   onChange={(e) => {
                     const f = e.target.files?.[0];
-                    // 슬라이드를 올린 뒤, 제목이 퀴즈인 장들은 이어서 문항까지 만든다
-                    if (f)
-                      void onSlideFile(f).then((key) => {
-                        if (key && !/\.pdf$/i.test(f.name)) void prefillQuizzes(f, key);
-                      });
+                    if (f) void onSlideFile(f);
                     e.target.value = "";
                   }}
                 />
               </label>
-            {state.pdfKey && <label className="cursor-pointer rounded-full border border-line-strong px-4 py-2 text-sm text-ink-soft">
-              {pptx ? "대본 PPTX 교체" : "대본 PPTX 추가 (선택)"}
-              <input type="file" accept=".pptx" disabled={busy !== ""} className="hidden" onChange={e => {
-                const file = e.target.files?.[0]; e.target.value = "";
-                if (!file) return;
-                if (file.size > 80 * 1024 * 1024) { setNotice("80MB 이하 PPTX를 선택해 주세요."); return; }
-                setBusy("notes");
-                void file.arrayBuffer().then(bytes => {
-                  const notes = extractNotes(bytes);
-                  if (!notes.some(n => n.text.trim())) throw new Error("발표자 노트에 대본이 있는 PPTX를 선택해 주세요.");
-                  setPptx(file);
-                  setNotice(`${file.name} 대본을 연결했어요. PDF와 같은 페이지 순서인지 확인한 뒤 ‘AI로 퀴즈 만들기’를 눌러주세요. 새로고침하면 대본을 다시 선택해 주세요.`);
-                }).catch(error => setNotice(error instanceof Error ? error.message : "대본을 읽지 못했어요.")).finally(() => setBusy(""));
-              }} />
-            </label>}
+
           </div>
         </div>
       </header>
@@ -502,6 +404,7 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
           // 버튼이 없어서 «AI 기능이 어디 갔지» 하고 헤매는 것보다 낫다
           onGenerate={extractWithAi}
           generating={busy === "ai"}
+          generationBlockedMessage={!isSample ? "해당 기능은 발표자 노트가 포함된 PPT에서만 사용 가능합니다." : undefined}
         />
 
         <SlideActivities
