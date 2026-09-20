@@ -3,6 +3,7 @@
 // 첫 화면. 강사인지 학생인지부터 고르게 한다 —
 // 둘이 하는 일이 완전히 달라서(자료를 올린다 / 코드로 들어온다) 먼저 갈라주는 게 덜 헤맨다.
 
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -42,7 +43,19 @@ export default function Home() {
 
       <div className="mt-12 grid gap-4 sm:grid-cols-2">
         {/* 강사 */}
-        <section className="flex flex-col rounded-2xl border border-line bg-paper p-7">
+        <section className="flex flex-col overflow-hidden rounded-2xl border border-line bg-paper">
+          {/* 인물이 판 아래쪽에 서 있게 둬서 카드와 이어져 보이게 한다 */}
+          <div className="flex h-44 items-end justify-center bg-gardenia">
+            <Image
+              src="/illustrations/teacher.webp"
+              alt=""
+              width={615}
+              height={640}
+              priority
+              className="h-[168px] w-auto object-contain object-bottom"
+            />
+          </div>
+          <div className="flex flex-1 flex-col p-7">
           <span className="w-fit rounded-full bg-ink px-3 py-1 text-xs font-semibold text-white">
             강사
           </span>
@@ -57,10 +70,22 @@ export default function Home() {
           >
             슬라이드 올리러 가기 →
           </button>
+          </div>
         </section>
 
         {/* 학생 */}
-        <section className="flex flex-col rounded-2xl border border-line bg-paper p-7">
+        <section className="flex flex-col overflow-hidden rounded-2xl border border-line bg-paper">
+          <div className="flex h-44 items-end justify-center bg-mocha-tint">
+            <Image
+              src="/illustrations/student.webp"
+              alt=""
+              width={627}
+              height={640}
+              priority
+              className="h-[168px] w-auto object-contain object-bottom"
+            />
+          </div>
+          <div className="flex flex-1 flex-col p-7">
           <span className="w-fit rounded-full bg-mocha px-3 py-1 text-xs font-semibold text-white">
             학생
           </span>
@@ -92,6 +117,7 @@ export default function Home() {
               {error}
             </p>
           )}
+          </div>
         </section>
       </div>
     </main>
