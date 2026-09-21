@@ -10,6 +10,23 @@ import { useEffect, useRef, useState } from "react";
 import type { PDFDocumentProxy } from "pdfjs-dist";
 import { loadPdf } from "@/lib/sync/pdfStore";
 
+const RETRIES = 3;
+
+class MissingPdf extends Error {
+  constructor() {
+    super("슬라이드 파일을 찾을 수 없어요. 강사님께 다시 올려달라고 해주세요.");
+  }
+}
+
+/** «Failed to fetch»처럼 브라우저가 내는 영어 오류를 무슨 일인지 알 수 있는 말로 */
+function friendlyError(e: unknown): string {
+  const msg = e instanceof Error ? e.message : String(e);
+  if (/failed to fetch|networkerror|load failed|network request failed/i.test(msg)) {
+    return "서버에 연결하지 못했어요. 인터넷 연결을 확인해 주세요.";
+  }
+  return msg;
+}
+
 // pdfjs는 브라우저에서만 로드 (SSR 회피)
 async function getPdfjs() {
   const pdfjs = await import("pdfjs-dist");
@@ -46,6 +63,8 @@ export default function SlideViewer({
   const renderTaskRef = useRef<{ cancel: () => void } | null>(null);
   // 어느 pdfKey에 대한 결과인지 같이 들고 있는다. 그래야 키가 바뀐 순간의 "loading"을
   // effect 안에서 동기적으로 setState 하지 않고 렌더에서 바로 계산할 수 있다.
+  // «다시 시도»를 누르면 올라간다 — 불러오기 effect를 한 번 더 돌린다
+  const [retryNonce, setRetryNonce] = useState(0);
   const [loaded, setLoaded] = useState<{
     key: string;
     status: "ready" | "error";
@@ -90,35 +109,41 @@ export default function SlideViewer({
       return;
     }
     (async () => {
-      try {
-        const bytes = await loadPdf(pdfKey);
-        if (!bytes) throw new Error("PDF 데이터를 찾을 수 없어요");
-        const pdfjs = await getPdfjs();
-        // getDocument가 버퍼를 detach할 수 있으니 복사본 전달
-        const doc = await pdfjs.getDocument({ data: new Uint8Array(bytes.slice(0)) }).promise;
-        if (cancelled) {
-          doc.destroy();
+      // 네트워크가 잠깐 끊겨도 슬라이드가 영영 안 뜨면 안 된다 — 수업 중 와이파이가
+      // 한 번 흔들리거나, 엣지가 재워둔 탭을 깨우면서 요청이 끊기는 일이 실제로 있다.
+      // 끊긴 요청은 몇 번 다시 해보고, 그래도 안 되면 그때 오류를 보여준다.
+      let lastError: unknown = null;
+      for (let attempt = 0; attempt < RETRIES; attempt += 1) {
+        if (cancelled) return;
+        try {
+          const bytes = await loadPdf(pdfKey);
+          if (!bytes) throw new MissingPdf();
+          const pdfjs = await getPdfjs();
+          // getDocument가 버퍼를 detach할 수 있으니 복사본 전달
+          const doc = await pdfjs.getDocument({ data: new Uint8Array(bytes.slice(0)) }).promise;
+          if (cancelled) {
+            doc.destroy();
+            return;
+          }
+          pdfRef.current = doc;
+          setLoaded({ key: pdfKey, status: "ready", errorMsg: "" });
+          onLoaded?.(doc.numPages);
           return;
-        }
-        pdfRef.current = doc;
-        setLoaded({ key: pdfKey, status: "ready", errorMsg: "" });
-        onLoaded?.(doc.numPages);
-      } catch (e) {
-        if (!cancelled) {
-          setLoaded({
-            key: pdfKey,
-            status: "error",
-            errorMsg: e instanceof Error ? e.message : String(e),
-          });
+        } catch (e) {
+          lastError = e;
+          // 파일이 없는 건 다시 해봐야 소용없다
+          if (e instanceof MissingPdf) break;
+          await new Promise((r) => setTimeout(r, 800 * 2 ** attempt));
         }
       }
+      if (!cancelled) setLoaded({ key: pdfKey, status: "error", errorMsg: friendlyError(lastError) });
     })();
     return () => {
       cancelled = true;
     };
     // onLoaded는 매 렌더 새 함수일 수 있어 의존성에서 제외
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pdfKey]);
+  }, [pdfKey, retryNonce]);
 
   // page · 문서 준비 상태 · 컨테이너 크기가 바뀌면 렌더
   useEffect(() => {
@@ -200,8 +225,18 @@ export default function SlideViewer({
         <div className={`${placeholder} bg-gardenia text-mute`}>슬라이드 불러오는 중…</div>
       )}
       {status === "error" && (
-        <div className={`${placeholder} bg-rosetan/15 text-rosetan`}>
-          불러오기 실패: {errorMsg}
+        <div className={`${placeholder} flex-col gap-3 bg-rosetan/15 px-6 text-center text-rosetan`}>
+          <span>슬라이드를 불러오지 못했어요. {errorMsg}</span>
+          <button
+            type="button"
+            onClick={() => {
+              setLoaded(null);
+              setRetryNonce((n) => n + 1);
+            }}
+            className="rounded-full border border-rosetan/50 bg-paper px-4 py-2 text-sm text-ink-soft transition-colors hover:border-rosetan hover:text-ink"
+          >
+            다시 시도
+          </button>
         </div>
       )}
       <canvas
