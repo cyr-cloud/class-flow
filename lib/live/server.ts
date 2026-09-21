@@ -43,9 +43,40 @@ function parse(raw: string | null): Stored | null {
   try { return JSON.parse(raw) as Stored; } catch { return null; }
 }
 
+/**
+ * 방금 읽어온 수업. 같은 순간에 들어온 폴링들이 저장소를 한 번만 열게 한다.
+ *
+ * 학생 서른 명이 0.7초마다 «바뀐 거 있어요?»를 묻는데, 그때마다 저장소를 열면
+ * 세 시간 수업 한 번에 오십만 번을 읽는다 (Upstash 무료 한도가 대략 그만큼이다).
+ * 거의 같은 시각의 질문들은 같은 답을 받아야 맞으므로, 짧게 들고 있다가 나눠준다.
+ *
+ * 수업이 바뀌는 쪽(execute)은 이 기억을 쓰지 않는다 — 쓰기는 항상 최신 값 위에 얹어야 한다.
+ */
+const CACHE_MS = 500;
+const cachedReads = new Map<string, { at: number; raw: string | null }>();
+
+async function readRaw(id: string): Promise<string | null> {
+  const hit = cachedReads.get(id);
+  const now = Date.now();
+  if (hit && now - hit.at < CACHE_MS) return hit.raw;
+
+  const raw = await kv().get(key(id));
+  cachedReads.set(id, { at: now, raw });
+  // 오래된 것은 흘려보낸다 — 세션이 쌓여도 메모리가 늘지 않게
+  if (cachedReads.size > 200) {
+    for (const [k, v] of cachedReads) if (now - v.at > CACHE_MS) cachedReads.delete(k);
+  }
+  return raw;
+}
+
+/** 수업이 바뀌었으니 기억해 둔 답을 버린다 */
+function forget(id: string) {
+  cachedReads.delete(id);
+}
+
 export async function readSession(id: string): Promise<Stored | null> {
   if (!validId(id)) return null;
-  return parse(await kv().get(key(id)));
+  return parse(await readRaw(id));
 }
 
 export function isTeacher(state: Stored, token: string) {
@@ -295,7 +326,13 @@ export async function execute(id: string, token: string, command: LiveCommand): 
     state.revision += 1;
     state.session.updatedAt = Date.now();
 
-    if (await kv().compareAndSet(key(id), raw, JSON.stringify(state))) return publicState(state, teacher);
+    const next = JSON.stringify(state);
+    if (await kv().compareAndSet(key(id), raw, next)) {
+      // 방금 쓴 값을 그대로 기억해 둔다 — 바로 뒤에 오는 폴링이 저장소를 또 열지 않게
+      cachedReads.set(id, { at: Date.now(), raw: next });
+      return publicState(state, teacher);
+    }
+    forget(id);
   }
 
   throw new Error("같은 순간에 요청이 몰렸어요. 다시 한 번 눌러 주세요.");
