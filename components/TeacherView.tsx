@@ -22,6 +22,7 @@ import LiveStatus from "./lecture/LiveStatus";
 import OnboardingModal from "./lecture/OnboardingModal";
 import type { GenerationMode } from "@/lib/lecture/aiQuizRules";
 import InsertSlide from "./lecture/InsertSlide";
+import SpeakerNotes from "./lecture/SpeakerNotes";
 
 const noSubscribe = () => () => {};
 const emptyString = () => "";
@@ -515,6 +516,10 @@ export default function TeacherView({ sessionId, localUploads = false, cloudConv
             </button>
           )}
         </div>
+
+        {state.pdfKey && <SpeakerNotes key={`${sessionId}:${state.pdfKey}`} sessionId={sessionId}
+          page={slide?.pdfPage ?? state.currentSlide} added={!!slide?.content}
+          source={isSample ? "sample" : isCloudPpt ? "cloud" : isLocalPpt ? "local" : "pdf"} />}
 
         <SlideComposer
           sessionId={sessionId}
