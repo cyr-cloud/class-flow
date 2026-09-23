@@ -30,7 +30,7 @@ export default function SlideActivities({
   const showLab = slide.kind === "lab";
   const postCount = posts.filter((p) => p.slideNo === slide.slideNo).length;
 
-  // 퀴즈 슬라이드로 알아봤는데 문항이 비어 있으면, 교안을 안 올린 것이다.
+  // 제목으로 감지한 퀴즈 위치와 실제 참여 문항은 별개다.
   // 그냥 아무것도 안 뜨면 고장난 줄 알게 되므로 강사에게만 이유를 적어준다.
   const missingItems = slide.items.length === 0 && slide.kind === "quiz";
   const showHint = role === "teacher" && missingItems;
@@ -75,9 +75,10 @@ export default function SlideActivities({
 
       {showHint && (
         <p className="rounded-2xl border border-dashed border-line-strong bg-paper px-5 py-4 text-sm text-ink-soft">
-          퀴즈 슬라이드로 보이는데 문항이 비어 있어요. 위{" "}
-          <span className="font-medium text-ink">교안 불러오기</span> 로 교안 마크다운을 올리면
-          이 슬라이드의 문항·선택지·정답이 채워집니다. (PDF에는 문항이 안 들어 있어요)
+          퀴즈 페이지를 찾았어요. 학생이 답할 수 있는 문항은 아직 없습니다.{" "}
+          PPT의 기존 문제는 <span className="font-medium text-ink">PPT 퀴즈 다시 불러오기</span>로 가져오세요.
+          대본으로 새 문제를 추가하려면 <span className="font-medium text-ink">AI로 퀴즈 만들기</span>를 누르세요.
+          PDF만 올렸다면 <span className="font-medium text-ink">＋ 퀴즈 문항</span>으로 직접 추가할 수 있어요.
         </p>
       )}
 

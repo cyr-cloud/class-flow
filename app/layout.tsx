@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist_Mono, Noto_Sans_KR } from "next/font/google";
 import AppHeader from "@/components/AppHeader";
+import NetworkingLauncher from "@/components/NetworkingLauncher";
 import "./globals.css";
 
 // 한글이 본문의 대부분이라 한글 자체가 좋은 산세리프를 본문 서체로 쓴다.
@@ -47,6 +48,7 @@ export default function RootLayout({
     >
       <body className="flex min-h-full flex-col font-sans">
         <AppHeader />
+        <NetworkingLauncher />
         {/* 본문이 짧은 화면에서도 저작권 줄이 바닥에 붙도록 flex-1 */}
         <div className="flex-1">{children}</div>
         <footer className="mt-12 border-t border-line px-6 py-6 text-center text-xs text-mute">

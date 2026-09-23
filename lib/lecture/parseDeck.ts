@@ -55,7 +55,7 @@ export function slideKindOf(title: string): { kind: SlideKind; labNo: number | n
   // "실습 3: 주제명" 형식(대괄호 없이)도 실습으로 본다
   const plain = title.match(/^실습\s*(\d+)\s*[:：]/);
   if (plain) return { kind: "lab", labNo: Number(plain[1]) };
-  if (/^퀴즈/.test(title.trim())) return { kind: "quiz", labNo: null };
+  if (/^\[?\s*퀴즈/.test(title.trim())) return { kind: "quiz", labNo: null };
   return { kind: "normal", labNo: null };
 }
 

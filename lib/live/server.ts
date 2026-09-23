@@ -140,7 +140,20 @@ function ensureSlide(state: Stored, id: string, slideNo: number): DeckSlide {
 
 /** 명령 하나를 상태에 적용한다. 저장은 호출한 쪽이 한다. */
 function apply(id: string, state: Stored, command: LiveCommand, teacher: boolean) {
-  switch (command.action) {
+    switch (command.action) {
+    case "importQuiz": {
+      const slide=state.deck?.slides.find(s=>s.slideNo===command.slideNo);
+      if(state.session.pdfKey!==command.pdfKey||!slide||slide.content||(slide.pdfPage??slide.slideNo)!==command.pdfPage)
+        throw new Error("자료 구성이 바뀌었어요. 다시 불러와 주세요.");
+      if(slide.items.length) break; // retries and simultaneous imports never overwrite existing questions
+      if(!Array.isArray(command.items)||!command.items.length||command.items.length>10) throw new Error("퀴즈 문항을 확인해 주세요.");
+      for(const item of command.items) {
+        if(typeof item.question!=="string"||!item.question.trim()||item.question.length>2000||!Array.isArray(item.options)||item.options.length<2||item.options.length>9||item.options.some(o=>typeof o!=="string"||!o.trim()||o.length>1000)||!Array.isArray(item.answers)||!item.answers.length||item.answers.some(a=>!Number.isInteger(a)||a<0||a>=item.options.length)) throw new Error("퀴즈 문항과 정답을 확인해 주세요.");
+      }
+      slide.items=command.items.map((item,i)=>({...item,id:`ppt${command.slideNo}_${i+1}`,slideNo:command.slideNo,no:i+1}));
+      slide.kind="quiz";
+      break;
+    }
     case "replaceMaterial": {
       if (!command.deck || !Array.isArray(command.deck.slides) || !command.deck.slides.length || command.deck.slides.length > 1000 ||
         typeof command.pdfKey !== "string" || !(/^(https:\/\/|\/api\/local-material\/)/.test(command.pdfKey))) throw new Error("교안 정보를 확인해 주세요.");

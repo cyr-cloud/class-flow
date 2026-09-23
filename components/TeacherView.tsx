@@ -15,8 +15,8 @@ import { upload } from "@vercel/blob/client";
 import { useSync } from "@/lib/sync/useSync";
 import { deckFromTitles } from "@/lib/lecture/parseDeck";
 import { extractTitles } from "@/lib/lecture/pdfTitles";
-import { deckStore, useCurrentSlide, useDeckState, useLabSlides } from "@/lib/lecture/useDeck";
-import { Deck, QuizItem } from "@/lib/types";
+import { useCurrentSlide, useDeckState, useLabSlides } from "@/lib/lecture/useDeck";
+import { QuizItem } from "@/lib/types";
 import { liveClient } from "@/lib/live/client";
 import LiveStatus from "./lecture/LiveStatus";
 import OnboardingModal from "./lecture/OnboardingModal";
@@ -76,28 +76,6 @@ export default function TeacherView({ sessionId, localUploads = false, cloudConv
     copyTimer.current = setTimeout(() => setCopyStatus("idle"), 2500);
   };
 
-  const saveDeck = useCallback(
-    (slides: Deck["slides"], source: Deck["source"]) => {
-      // 교안을 다시 올려도 이미 연결해 둔 실습 게시판은 유지한다 (실습 번호로 이어붙인다)
-      const linked = new Map(
-        (deck?.slides ?? [])
-          .filter((s) => s.boardId)
-          .map((s) => [s.labNo ?? `slide${s.slideNo}`, s.boardId] as const),
-      );
-      deckStore.setDeck(sessionId, {
-        sessionId,
-        classId: deck?.classId ?? null,
-        slides: slides.map((s) => ({
-          ...s,
-          boardId: s.boardId ?? linked.get(s.labNo ?? `slide${s.slideNo}`) ?? null,
-        })),
-        source,
-        updatedAt: Date.now(),
-      });
-    },
-    [sessionId, deck],
-  );
-
   /**
    * 올린 슬라이드를 공유 저장소에 두고 그 주소를 슬라이드 키로 쓴다.
    * 저장소가 없는 환경(로컬)에서는 예전처럼 이 브라우저에만 넣는다 — 그때는
@@ -143,8 +121,29 @@ export default function TeacherView({ sessionId, localUploads = false, cloudConv
     await liveClient(sessionId).send({ action: "replaceMaterial", pdfKey: key, name, deck: { sessionId, classId: null,
       slides: deckFromTitles(titles.map((title, i) => title || `슬라이드 ${i + 1}`)), source: "pdf", updatedAt: Date.now() } });
     localStorage.removeItem(`classflow:conversion:${sessionId}`);
-    setNotice(`${titles.length}쪽 PPT를 PDF로 변환했어요. 학생도 같은 슬라이드를 볼 수 있어요. AI는 실행하지 않았어요.`);
+    setNotice(`${titles.length}쪽 PPT를 불러왔어요. 기존 퀴즈 페이지를 확인합니다.`);
   }, [sessionId]);
+
+  const importExistingQuizzes = useCallback(async (file?: File) => {
+    setBusy("import");
+    try {
+      const {extractNotes}=await import("@/lib/lecture/pptxNotes");
+      let notes;
+      if(file) notes=extractNotes(await file.arrayBuffer());
+      else if(cloudConversion && !localUploads) {
+        const {originalSharedPpt}=await import("@/lib/conversion/client");
+        notes=extractNotes(await originalSharedPpt(sessionId));
+      } else {
+        const response=await fetch(`/api/local-material?sessionId=${encodeURIComponent(sessionId)}`,{headers:{"x-teacher-token":localStorage.getItem(`classflow:teacher:${sessionId}`)??""}});
+        const body=await response.json();
+        if(!response.ok) throw Error(body.error??"발표자 노트를 읽지 못했어요.");
+        notes=body.notes;
+      }
+      const {importPptQuizzes}=await import("@/lib/lecture/importPptQuizzes");
+      setNotice(await importPptQuizzes(sessionId,notes,setNotice));
+    } catch(error) {setNotice(error instanceof Error?error.message:"PPT 퀴즈를 불러오지 못했어요. 다시 불러오기를 눌러 주세요.");}
+    finally {setBusy("");}
+  },[sessionId,cloudConversion,localUploads]);
 
   /** 대용량 PPT는 암호화 후 Blob으로 직접 업로드한다. */
   const onSlideFile = useCallback(async (file: File) => {
@@ -156,6 +155,7 @@ export default function TeacherView({ sessionId, localUploads = false, cloudConv
         const { convertSharedPpt } = await import("@/lib/conversion/client");
         const result = await convertSharedPpt(sessionId, file, setNotice);
         await applyConvertedPdf(result.url, result.name);
+        await importExistingQuizzes(file);
       } else if (localUploads && /\.pptx$/i.test(file.name)) {
         if (file.size > 200 * 1024 * 1024) throw new Error("200MB 이하 PPTX를 선택해 주세요.");
         setNotice("PPT의 발표자 노트를 읽고 있어요. AI를 호출하지 않습니다.");
@@ -169,6 +169,7 @@ export default function TeacherView({ sessionId, localUploads = false, cloudConv
         if (!response.ok) { const body = await response.json(); throw new Error(body.error ?? "PPT 변환에 실패했어요."); }
         setNotice("변환한 PDF를 저장하고 페이지를 읽는 중이에요…");
         await storeAndUse(await response.arrayBuffer(), file.name, notes, file);
+        await importExistingQuizzes(file);
       } else {
         if (!/\.pdf$/i.test(file.name) && file.type !== "application/pdf") throw new Error(localUploads ? "PPTX 또는 PDF 파일을 선택해 주세요." : "PDF 파일만 업로드할 수 있습니다.");
         await storeAndUse(await file.arrayBuffer(), file.name);
@@ -176,7 +177,7 @@ export default function TeacherView({ sessionId, localUploads = false, cloudConv
     } catch (e) {
       setNotice(e instanceof Error ? e.message : "PDF를 업로드하지 못했어요.");
     } finally { setBusy(""); }
-  }, [storeAndUse, localUploads, cloudConversion, sessionId, applyConvertedPdf]);
+  }, [storeAndUse, localUploads, cloudConversion, sessionId, applyConvertedPdf, importExistingQuizzes]);
 
   /**
    * 슬라이드 한 장의 발표자 노트(강의 대본)를 읽어 문항을 만든다.
@@ -224,9 +225,11 @@ export default function TeacherView({ sessionId, localUploads = false, cloudConv
 
   /** 만든 문항을 그 슬라이드에만 얹는다 */
   const attach = useCallback(
-    (made: Map<number, QuizItem[]>) => {
-      saveDeck(
-        (deck?.slides ?? []).map((s) => {
+    async (made: Map<number, QuizItem[]>) => {
+      const current = liveClient(sessionId).snapshot().deck;
+      if (!current) throw new Error("수업 자료를 찾지 못했어요.");
+      await liveClient(sessionId).send({ action: "deck", deck: { ...current,
+        slides: current.slides.map((s) => {
           const items = made.get(s.slideNo);
           if (!items?.length) return s;
           return {
@@ -242,18 +245,17 @@ export default function TeacherView({ sessionId, localUploads = false, cloudConv
               })),
             ],
           };
-        }),
-        deck?.source ?? "pdf",
-      );
+        }), updatedAt: Date.now(),
+      } });
     },
-    [deck, saveDeck],
+    [sessionId],
   );
 
   /** 지금 보고 있는 슬라이드에서 «대본으로 만들기»를 눌렀을 때 */
   const extractWithAi = useCallback(async (mode: GenerationMode = "quiz") => {
     if ((!isSample && !isLocalPpt && !isCloudPpt) || slide?.content) {
       setNotice("해당 기능은 발표자 노트가 포함된 PPT에서만 사용 가능합니다.");
-      return;
+      return "해당 기능은 발표자 노트가 포함된 PPT에서만 사용 가능합니다.";
     }
     const slideNo = state.currentSlide;
 
@@ -264,13 +266,15 @@ export default function TeacherView({ sessionId, localUploads = false, cloudConv
       const items = await askFor(slide?.pdfPage ?? slideNo, titles, mode);
       if (items.length === 0) {
         setNotice(`${slideNo}쪽 대본에는 물어볼 만한 내용이 없어요. «＋ 퀴즈 문항»으로 직접 넣으셔도 됩니다.`);
-        return;
+        return `${slideNo}쪽 대본에는 물어볼 만한 내용이 없어요. «＋ 퀴즈 문항»으로 직접 넣으셔도 됩니다.`;
       }
-      attach(new Map([[slideNo, items]]));
+      await attach(new Map([[slideNo, items]]));
       // 화면은 그대로 둔다 — 문항이 이 슬라이드 바로 아래에 생긴다
       setNotice(`${slideNo}쪽 대본에서 ${items.length}문항을 만들었어요. 아래에서 확인하고 고쳐주세요.`);
+      return `${slideNo}쪽 대본에서 ${items.length}문항을 만들고 저장했어요. 아래에서 확인해 주세요.`;
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "문항을 뽑지 못했어요.");
+      return error instanceof Error ? error.message : "문항을 뽑지 못했어요.";
     } finally {
       setBusy("");
     }
@@ -397,7 +401,7 @@ export default function TeacherView({ sessionId, localUploads = false, cloudConv
             }} title="추가 이미지와 현재 참여 결과를 포함합니다" className="rounded-full border border-line-strong px-4 py-2 text-sm disabled:opacity-40">{busy === "export" ? "PDF 만드는 중…" : "수업 PDF 다운로드"}</button>}
             {exportUrl && <a href={exportUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-mocha underline">최근 만든 PDF 열기</a>}
             <label
-                title={supportsPpt ? "PPTX 또는 PDF로 수업을 시작합니다. AI는 실행하지 않습니다." : "학생과 공유할 PDF 파일을 업로드하세요."}
+                title={supportsPpt ? "PPTX는 기존 퀴즈를 AI로 읽어 참여 문항으로 불러옵니다. 새 문제를 만들지는 않습니다." : "학생과 공유할 PDF 파일을 업로드하세요."}
                 className="cursor-pointer rounded-full bg-ink px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-mocha-deep"
               >
                 {busy === "pdf" ? "자료 준비 중…" : supportsPpt ? "PPTX·PDF 올려 수업 시작" : "PDF 업로드"}
@@ -413,12 +417,14 @@ export default function TeacherView({ sessionId, localUploads = false, cloudConv
                   }}
                 />
               </label>
+              {(isLocalPpt || isCloudPpt) && <button disabled={!!busy} className="rounded-full border border-line-strong px-4 py-2 text-sm disabled:opacity-40" onClick={()=>void importExistingQuizzes()} title="이미 문항이 있는 페이지는 유지하고, 빈 퀴즈 페이지만 원본 PPT에서 읽습니다.">{busy==="import"?"PPT 퀴즈 불러오는 중…":"PPT 퀴즈 다시 불러오기"}</button>}
               {cloudConversion && pendingConversion && <button disabled={!!busy} className="rounded-full border border-line-strong px-4 py-2 text-sm disabled:opacity-40" onClick={async () => {
                 setBusy("pdf");
                 try {
                   const { waitForConversion } = await import("@/lib/conversion/client");
                   const result = await waitForConversion(sessionId, pendingConversion, setNotice);
                   await applyConvertedPdf(result.url, result.name);
+                  await importExistingQuizzes();
                 } catch (error) { setNotice(error instanceof Error ? error.message : "변환 결과를 확인하지 못했어요."); }
                 finally { setBusy(""); }
               }}>변환 결과 확인</button>}

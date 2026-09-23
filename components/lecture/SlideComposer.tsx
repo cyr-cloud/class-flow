@@ -31,7 +31,7 @@ export default function SlideComposer({
   /** 이 슬라이드를 실습으로 만들고 게시판까지 연결한다 */
   onAddBoard: () => Promise<void>;
   /** 이 슬라이드의 발표자 노트로 문항 만들기. 대본을 읽을 수 없으면 없다 */
-  onGenerate?: (mode: GenerationMode) => Promise<void>;
+  onGenerate?: (mode: GenerationMode) => Promise<string>;
   generating?: boolean;
   generationBlockedMessage?: string;
 }) {
@@ -128,10 +128,11 @@ export default function SlideComposer({
             </select>
             <button
               type="button"
-              onClick={() => {
+              onClick={async () => {
                 if (generationBlockedMessage) { setGenerationNotice(generationBlockedMessage); return; }
-                setGenerationNotice("");
-                void onGenerate(generationMode);
+                setGenerationNotice("발표자 노트를 읽고 문항을 만들고 있어요. 잠시 기다려 주세요.");
+                try { setGenerationNotice(await onGenerate(generationMode)); }
+                catch (error) { setGenerationNotice(error instanceof Error ? error.message : "문항을 만들지 못했어요."); }
               }}
               disabled={busy || generating}
               title={generationBlockedMessage ?? "이 슬라이드의 발표자 노트(강의 대본)를 읽어 문항을 만듭니다"}
@@ -141,7 +142,7 @@ export default function SlideComposer({
             </button>
             </div>
           )}
-          {generationNotice && generationBlockedMessage && <p role="status" className="w-full rounded-xl border border-line bg-paper px-4 py-3 text-sm text-ink-soft">{generationNotice}</p>}
+          {generationNotice && <p role="status" className="w-full rounded-xl border border-line bg-paper px-4 py-3 text-sm text-ink-soft">{generationNotice}</p>}
           {isLab ? (
             <>
               <span className="rounded-full bg-mocha-tint px-3 py-2 text-sm text-mocha-deep">

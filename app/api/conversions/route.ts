@@ -3,6 +3,7 @@ import { generateClientTokenFromReadWriteToken } from "@vercel/blob/client";
 import { z } from "zod";
 import { ConversionQueue, conversionEnabled, INPUT_LIMIT, publicJob } from "@/lib/conversion/queue";
 import { readSession, isTeacher } from "@/lib/live/server";
+import networking from "@/public/events/networking-20260923.json";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -39,8 +40,12 @@ export async function GET(request: Request) {
   const state = await readSession(sessionId, true);
   if (!state || !isTeacher(state, request.headers.get("x-teacher-token") ?? "")) return Response.json({ error: "강사 권한이 필요합니다." }, { status: 403 });
   const queue = new ConversionQueue();
-  const job = params.get("material") === "1" ? await queue.material(sessionId, state.session.pdfKey ?? "") : await queue.get(params.get("id") ?? "");
-  if (!job || job.sessionId !== sessionId) return Response.json({ error: "자료를 찾지 못했어요." }, { status: 404 });
+  // The event preset reuses one converted PPT. Only an authenticated owner of a
+  // lesson using that exact preset PDF can retrieve its original and notes.
+  const materialSession = params.get("material") === "1" && state.session.pdfKey === networking.pdfKey
+    ? networking.sourceSession : sessionId;
+  const job = params.get("material") === "1" ? await queue.material(materialSession, state.session.pdfKey ?? "") : await queue.get(params.get("id") ?? "");
+  if (!job || job.sessionId !== materialSession) return Response.json({ error: "자료를 찾지 못했어요." }, { status: 404 });
   // Only the authenticated teacher can decrypt/download the original PPT and its notes.
   const result = params.get("material") === "1" ? { ...publicJob(job), sourceUrl: job.sourceUrl, key: job.key, iv: job.iv } : publicJob(job);
   return Response.json(result, { headers: { "Cache-Control": "no-store" } });

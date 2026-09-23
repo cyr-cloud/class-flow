@@ -65,3 +65,27 @@ export async function extractTitles(pdfKey: string): Promise<string[]> {
     await doc.destroy();
   }
 }
+
+/** Render original quiz pages for faithful extraction of image-based PPT choices. */
+export async function quizPageImages(pdfKey: string, pages: number[]): Promise<Map<number, Blob>> {
+  const bytes = await loadPdf(pdfKey);
+  if (!bytes) throw new Error("퀴즈 화면을 불러오지 못했어요.");
+  const pdfjs = await getPdfjs();
+  const doc = await pdfjs.getDocument({data:new Uint8Array(bytes.slice(0))}).promise;
+  const images = new Map<number,Blob>();
+  try {
+    for (const pageNo of new Set(pages)) {
+      const page = await doc.getPage(pageNo);
+      const original = page.getViewport({scale:1});
+      const viewport = page.getViewport({scale:1400/original.width});
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.ceil(viewport.width); canvas.height = Math.ceil(viewport.height);
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("퀴즈 화면을 준비하지 못했어요.");
+      await page.render({canvasContext:context,viewport}).promise;
+      const blob = await new Promise<Blob>((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(Error("퀴즈 이미지 생성 실패")),"image/png"));
+      images.set(pageNo,blob); canvas.width=0; canvas.height=0;
+    }
+    return images;
+  } finally {await doc.destroy();}
+}

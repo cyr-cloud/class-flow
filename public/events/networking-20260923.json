@@ -1,0 +1,411 @@
+{
+  "version": 1,
+  "name": "강사×운영자 네트워킹.pptx",
+  "sourceSession": "networking-source-1790153440178",
+  "pdfKey": "https://hzd05m778m7hu6oi.public.blob.vercel-storage.com/decks/networking-source-1790153440178/49f5ede6-00a8-4f7f-9884-7e7ef0660284.pdf",
+  "slides": [
+    {
+      "slideNo": 1,
+      "pdfPage": 1,
+      "title": "강사×운영자 네트워킹 — 구글미트 접속·착석",
+      "kind": "normal",
+      "items": [],
+      "labNo": null,
+      "boardId": null
+    },
+    {
+      "slideNo": 2,
+      "pdfPage": 2,
+      "title": "§1 · 저는 이렇게 강사가 됐어요",
+      "kind": "normal",
+      "items": [],
+      "labNo": null,
+      "boardId": null
+    },
+    {
+      "slideNo": 3,
+      "pdfPage": 3,
+      "title": "C#만 알던 제가, 다른 언어를 가르치기까지",
+      "kind": "normal",
+      "items": [],
+      "labNo": null,
+      "boardId": null
+    },
+    {
+      "slideNo": 4,
+      "pdfPage": 4,
+      "title": "개발 강의가 줄고, AI 활용 강의가 늘었어요",
+      "kind": "normal",
+      "items": [],
+      "labNo": null,
+      "boardId": null
+    },
+    {
+      "slideNo": 5,
+      "pdfPage": 5,
+      "title": "잘 아는데, 왜 설명은 어려울까요?",
+      "kind": "normal",
+      "items": [],
+      "labNo": null,
+      "boardId": null
+    },
+    {
+      "slideNo": 6,
+      "pdfPage": 6,
+      "title": "빨리 배워서 써본 강사가 앞서갑니다",
+      "kind": "normal",
+      "items": [],
+      "labNo": null,
+      "boardId": null
+    },
+    {
+      "slideNo": 7,
+      "pdfPage": 7,
+      "title": "AI가 만든 교안, 그대로 쓰시나요?",
+      "kind": "normal",
+      "items": [],
+      "labNo": null,
+      "boardId": null
+    },
+    {
+      "slideNo": 8,
+      "pdfPage": 8,
+      "title": "§2 · 강사료는 얼마나 받을까요?",
+      "kind": "normal",
+      "items": [],
+      "labNo": null,
+      "boardId": null
+    },
+    {
+      "slideNo": 9,
+      "pdfPage": 9,
+      "title": "기초 강의라서 준비도 쉬울까요?",
+      "kind": "normal",
+      "items": [],
+      "labNo": null,
+      "boardId": null
+    },
+    {
+      "slideNo": 10,
+      "pdfPage": 10,
+      "title": "이 강의는 어디를 거쳐 왔을까요?",
+      "kind": "normal",
+      "items": [],
+      "labNo": null,
+      "boardId": null
+    },
+    {
+      "slideNo": 11,
+      "pdfPage": 11,
+      "title": "나를 먼저 찾아오게 하려면",
+      "kind": "normal",
+      "items": [],
+      "labNo": null,
+      "boardId": null
+    },
+    {
+      "slideNo": 12,
+      "pdfPage": 12,
+      "title": "연락을 기다리기만 하진 않았어요",
+      "kind": "normal",
+      "items": [],
+      "labNo": null,
+      "boardId": null
+    },
+    {
+      "slideNo": 13,
+      "pdfPage": 13,
+      "title": "이번엔 못 해도, 다음 연락은 남겨둡니다",
+      "kind": "normal",
+      "items": [],
+      "labNo": null,
+      "boardId": null
+    },
+    {
+      "slideNo": 14,
+      "pdfPage": 14,
+      "title": "§3 · 왜 그 강사를 다시 부를까요?",
+      "kind": "normal",
+      "items": [],
+      "labNo": null,
+      "boardId": null
+    },
+    {
+      "slideNo": 15,
+      "pdfPage": 15,
+      "title": "강의가 끝나고 어떤 강사로 기억될까요?",
+      "kind": "normal",
+      "items": [],
+      "labNo": null,
+      "boardId": null
+    },
+    {
+      "slideNo": 16,
+      "pdfPage": 16,
+      "title": "온라인에서는 반응이 안 보여요",
+      "kind": "normal",
+      "items": [],
+      "labNo": null,
+      "boardId": null
+    },
+    {
+      "slideNo": 17,
+      "pdfPage": 17,
+      "title": "담당자도 다시 일하고 싶은 강사",
+      "kind": "normal",
+      "items": [],
+      "labNo": null,
+      "boardId": null
+    },
+    {
+      "slideNo": 18,
+      "pdfPage": 18,
+      "title": "첫 교안부터 혼자 다 만들 필요는 없어요",
+      "kind": "normal",
+      "items": [],
+      "labNo": null,
+      "boardId": null
+    },
+    {
+      "slideNo": 19,
+      "pdfPage": 19,
+      "title": "§4 · 강의가 끝나도 준비는 남습니다",
+      "kind": "normal",
+      "items": [],
+      "labNo": null,
+      "boardId": null
+    },
+    {
+      "slideNo": 20,
+      "pdfPage": 20,
+      "title": "정해진 수업은 쉽게 미룰 수 없어요",
+      "kind": "normal",
+      "items": [],
+      "labNo": null,
+      "boardId": null
+    },
+    {
+      "slideNo": 21,
+      "pdfPage": 21,
+      "title": "두 강사님을 만나고, 제 꿈이 달라졌어요",
+      "kind": "normal",
+      "items": [],
+      "labNo": null,
+      "boardId": null
+    },
+    {
+      "slideNo": 22,
+      "pdfPage": 22,
+      "title": "누군가에게 ‘나도 할 수 있다’를 남기는 일",
+      "kind": "normal",
+      "items": [],
+      "labNo": null,
+      "boardId": null
+    },
+    {
+      "slideNo": 23,
+      "pdfPage": 23,
+      "title": "§5 · 첫 강의는 어떻게 시작하셨어요?",
+      "kind": "normal",
+      "items": [],
+      "labNo": null,
+      "boardId": null
+    },
+    {
+      "slideNo": 24,
+      "title": "경험 공유 1부 · 1/5",
+      "kind": "normal",
+      "items": [],
+      "labNo": null,
+      "boardId": null,
+      "content": {
+        "id": "networking-20260923-part1-q1",
+        "type": "wordcloud",
+        "prompt": "첫 유료 강의는 어떻게 연결되셨나요?"
+      }
+    },
+    {
+      "slideNo": 25,
+      "title": "경험 공유 1부 · 2/5",
+      "kind": "normal",
+      "items": [],
+      "labNo": null,
+      "boardId": null,
+      "content": {
+        "id": "networking-20260923-part1-q2",
+        "type": "survey",
+        "prompt": "강의 의뢰를 받기 위해 실제로 해본 행동 중 도움이 됐던 것은 무엇인가요?",
+        "display": "cards",
+        "options": [],
+        "multiple": false
+      }
+    },
+    {
+      "slideNo": 26,
+      "title": "경험 공유 1부 · 3/5",
+      "kind": "normal",
+      "items": [],
+      "labNo": null,
+      "boardId": null,
+      "content": {
+        "id": "networking-20260923-part1-q3",
+        "type": "survey",
+        "prompt": "강의를 맡기 전에 업체와 미리 확인해서 도움이 됐던 조건은 무엇인가요?",
+        "display": "cards",
+        "options": [],
+        "multiple": false
+      }
+    },
+    {
+      "slideNo": 27,
+      "title": "경험 공유 1부 · 4/5",
+      "kind": "normal",
+      "items": [],
+      "labNo": null,
+      "boardId": null,
+      "content": {
+        "id": "networking-20260923-part1-q4",
+        "type": "survey",
+        "prompt": "처음 맡는 주제의 교안을 만들 때, 무엇부터 시작하시나요?",
+        "display": "cards",
+        "options": [],
+        "multiple": false
+      }
+    },
+    {
+      "slideNo": 28,
+      "title": "경험 공유 1부 · 5/5",
+      "kind": "normal",
+      "items": [],
+      "labNo": null,
+      "boardId": null,
+      "content": {
+        "id": "networking-20260923-part1-q5",
+        "type": "wordcloud",
+        "prompt": "강의 준비에서 가장 시간을 많이 쓰는 일은 무엇인가요?"
+      }
+    },
+    {
+      "slideNo": 29,
+      "pdfPage": 24,
+      "title": "잠깐 쉬어갈게요",
+      "kind": "normal",
+      "items": [],
+      "labNo": null,
+      "boardId": null
+    },
+    {
+      "slideNo": 30,
+      "pdfPage": 25,
+      "title": "어떤 일을 하고 계신가요?",
+      "kind": "normal",
+      "items": [],
+      "labNo": null,
+      "boardId": null
+    },
+    {
+      "slideNo": 31,
+      "pdfPage": 26,
+      "title": "§6 · 수업할 때, 여러분은 어떻게 하세요?",
+      "kind": "normal",
+      "items": [],
+      "labNo": null,
+      "boardId": null
+    },
+    {
+      "slideNo": 32,
+      "title": "경험 공유 2부 · 1/5",
+      "kind": "normal",
+      "items": [],
+      "labNo": null,
+      "boardId": null,
+      "content": {
+        "id": "networking-20260923-part2-q1",
+        "type": "survey",
+        "prompt": "같은 실습에서 먼저 끝낸 수강생과 따라오기 어려운 수강생을 어떻게 함께 진행하시나요?",
+        "display": "cards",
+        "options": [],
+        "multiple": false
+      }
+    },
+    {
+      "slideNo": 33,
+      "title": "경험 공유 2부 · 2/5",
+      "kind": "normal",
+      "items": [],
+      "labNo": null,
+      "boardId": null,
+      "content": {
+        "id": "networking-20260923-part2-q2",
+        "type": "survey",
+        "prompt": "질문을 해도 반응이 없는 수강생의 참여를 이끌어낸 방법이 있나요?",
+        "display": "cards",
+        "options": [],
+        "multiple": false
+      }
+    },
+    {
+      "slideNo": 34,
+      "title": "경험 공유 2부 · 3/5",
+      "kind": "normal",
+      "items": [],
+      "labNo": null,
+      "boardId": null,
+      "content": {
+        "id": "networking-20260923-part2-q3",
+        "type": "survey",
+        "prompt": "수업이 끝난 뒤에도 수강생이 다시 볼 수 있도록 자료를 어떻게 정리해 주시나요?",
+        "display": "cards",
+        "options": [],
+        "multiple": false
+      }
+    },
+    {
+      "slideNo": 35,
+      "title": "경험 공유 2부 · 4/5",
+      "kind": "normal",
+      "items": [],
+      "labNo": null,
+      "boardId": null,
+      "content": {
+        "id": "networking-20260923-part2-q4",
+        "type": "survey",
+        "prompt": "최신 기술과 자료(데이터)는 어디서, 어떻게 구하시나요?",
+        "display": "cards",
+        "options": [],
+        "multiple": false
+      }
+    },
+    {
+      "slideNo": 36,
+      "title": "경험 공유 2부 · 5/5",
+      "kind": "normal",
+      "items": [],
+      "labNo": null,
+      "boardId": null,
+      "content": {
+        "id": "networking-20260923-part2-q5",
+        "type": "wordcloud",
+        "prompt": "강의 준비나 수업에서 가장 많이 쓰는 AI 도구 하나는 무엇인가요?"
+      }
+    },
+    {
+      "slideNo": 37,
+      "pdfPage": 27,
+      "title": "§7 · 오늘 어땠나요? 다음엔 무엇을 배우고 싶으세요?",
+      "kind": "normal",
+      "items": [],
+      "labNo": null,
+      "boardId": null
+    },
+    {
+      "slideNo": 38,
+      "pdfPage": 28,
+      "title": "함께 나눠주셔서 감사합니다",
+      "kind": "normal",
+      "items": [],
+      "labNo": null,
+      "boardId": null
+    }
+  ]
+}
