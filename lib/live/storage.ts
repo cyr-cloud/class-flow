@@ -41,12 +41,23 @@ const fileKv: Kv = {
 
   async compareAndSet(key, prev, next) {
     const file = fileOf(key);
-    const current = existsSync(file) ? readFileSync(file, "utf8") : null;
-    if (current !== prev) return false;
     mkdirSync(folder, { recursive: true });
-    writeFileSync(`${file}.tmp`, next);
-    renameSync(`${file}.tmp`, file);
-    return true;
+    // Windows 동기화/백신이 잠깐 파일을 잡을 수 있다. 대기 뒤에는 CAS를 다시
+    // 확인하므로 그 사이 저장된 다른 참가자의 답변을 덮어쓰지 않는다.
+    for (let attempt = 0; attempt < 8; attempt++) {
+      const current = existsSync(file) ? readFileSync(file, "utf8") : null;
+      if (current !== prev) return false;
+      try {
+        writeFileSync(`${file}.tmp`, next);
+        renameSync(`${file}.tmp`, file);
+        return true;
+      } catch (error) {
+        const code = (error as NodeJS.ErrnoException).code;
+        if (attempt === 7 || (code !== "EPERM" && code !== "EBUSY" && code !== "EACCES")) throw error;
+        await new Promise(resolve => setTimeout(resolve, 15 * (attempt + 1)));
+      }
+    }
+    return false;
   },
 };
 
@@ -65,6 +76,8 @@ return 0
 `;
 
 function upstash(): Kv | null {
+  // 로컬 검증 시 .env의 운영 Redis가 설정돼 있어도 접근하지 않는다.
+  if (process.env.CLASSFLOW_LOCAL_ONLY === "1" && !process.env.VERCEL) return null;
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
   if (!url || !token) return null;
@@ -105,3 +118,4 @@ export function kv(): Kv {
 export function isShared(): boolean {
   return Boolean(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);
 }
+

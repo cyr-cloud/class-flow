@@ -1,0 +1,28 @@
+[Unit]
+Description=ClassFlow private PPTX converter
+After=network.target
+
+[Service]
+Type=simple
+User=classflow
+Group=classflow
+ExecStart=/usr/bin/python3 /opt/classflow-convert/worker.py
+StateDirectory=classflow-convert
+WorkingDirectory=/var/lib/classflow-convert
+Environment=HOME=/var/lib/classflow-convert
+Restart=on-failure
+RestartSec=5
+MemoryMax=3G
+TasksMax=128
+CPUQuota=150%
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+IPAddressDeny=any
+IPAddressAllow=localhost
+RestrictSUIDSGID=true
+
+[Install]
+WantedBy=multi-user.target

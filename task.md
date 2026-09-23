@@ -1,5 +1,10 @@
 # ClassFlow — 작업 로드맵
 
+> **2026-09-23 최신 안내:** 최신 요구사항은 [기능 명세서](docs/functional-spec.md), 실제 진행 상태는 [개발 체크리스트](docs/development-checklist.md)를 기준으로 확인한다.
+> 아래는 과거 계획·구현 기록이며 샘플 전용, 로컬 저장 전용, Supabase 전환 등의 설명은 현재 상태와 다를 수 있다.
+> 현재 작업은 **강사 전용 앞/뒤 + 버튼으로 이미지·실시간 워드클라우드 페이지 삽입을 로컬 구현·검증**하는 것이다. 배포와 push는 하지 않는다.
+> 다음 핵심 목표는 PPT 업로드 → PDF 변환·공유 저장·다운로드와 일반/AI 업로드 분리다.
+
 > 현재 결정: **Supabase 없이 시작.** 저장/동기화는 인터페이스(`SyncProvider`, `BoardStore`)로
 > 추상화하고, 초기엔 로컬(localStorage / IndexedDB / BroadcastChannel)로 구현. 나중에 Supabase로 교체.
 >

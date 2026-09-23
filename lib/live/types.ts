@@ -10,9 +10,15 @@ export interface LiveState {
   posts: LabPost[];
   revision: number;
   reactions?: SlideReaction[];
+  surveyResponses?: import("../lecture/survey").SurveyResponse[];
+  wordResponses?: { slideId: string; responderId: string; word: string }[];
 }
 
 export type LiveCommand =
+  | ({ action: "surveyRespond" } & import("../lecture/survey").SurveyResponse)
+  | { action: "replaceMaterial"; deck: Deck; pdfKey: string; name: string }
+  | { action: "insertSlide"; anchor: number; side: "before" | "after"; content: NonNullable<import("../types").DeckSlide["content"]>; title: string; expectedDeckUpdatedAt: number }
+  | { action: "wordRespond"; slideId: string; responderId: string; word: string }
   | { action: "sample" }
   | { action: "react"; slideNo: number; emoji: string; senderId: string }
   | { action: "patch"; partial: Partial<SessionState> }
@@ -32,3 +38,4 @@ export type LiveCommand =
   | { action: "removePost"; postId: string; ownerId: string }
   /** 다시 보내면 좋아요가 취소된다 */
   | { action: "likePost"; postId: string; ownerId: string };
+

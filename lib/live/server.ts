@@ -12,10 +12,11 @@ import { kv } from "./storage";
 import { SEED_OWNER, guideFor, seedPostsFor } from "./sample";
 import type { DeckSlide } from "../types";
 import type { LiveState, LiveCommand } from "./types";
+import { cleanSurvey, cleanSurveyResponse } from "../lecture/survey";
 import { REACTIONS } from "./reactions";
 
 /** 학생도 보낼 수 있는 명령. 나머지는 수업을 연 강사만 */
-const STUDENT_ACTIONS: ReadonlySet<LiveCommand["action"]> = new Set(["respond", "addPost", "removePost", "likePost", "react"]);
+const STUDENT_ACTIONS: ReadonlySet<LiveCommand["action"]> = new Set(["respond", "addPost", "removePost", "likePost", "react", "wordRespond", "surveyRespond"]);
 
 interface Stored extends LiveState { teacherToken: string }
 
@@ -74,9 +75,9 @@ function forget(id: string) {
   cachedReads.delete(id);
 }
 
-export async function readSession(id: string): Promise<Stored | null> {
+export async function readSession(id: string, fresh = false): Promise<Stored | null> {
   if (!validId(id)) return null;
-  return parse(await readRaw(id));
+  return parse(await (fresh ? kv().get(key(id)) : readRaw(id)));
 }
 
 export function isTeacher(state: Stored, token: string) {
@@ -91,6 +92,8 @@ export function publicState(state: Stored, teacher: boolean): LiveState {
   return {
     session: state.session, revision: state.revision, responses: state.responses,
     posts: state.posts ?? [],
+    surveyResponses: state.surveyResponses ?? [],
+    wordResponses: state.wordResponses ?? [],
     reactions: (state.reactions ?? []).filter(r => Date.now() - r.createdAt < 5000),
     deck: state.deck && { ...state.deck, slides: state.deck.slides.map(slide => ({
       guide: sample && slide.kind === "lab" && slide.labNo !== null ? guideFor(slide.labNo) : slide.guide ?? null,
@@ -138,6 +141,66 @@ function ensureSlide(state: Stored, id: string, slideNo: number): DeckSlide {
 /** 명령 하나를 상태에 적용한다. 저장은 호출한 쪽이 한다. */
 function apply(id: string, state: Stored, command: LiveCommand, teacher: boolean) {
   switch (command.action) {
+    case "replaceMaterial": {
+      if (!command.deck || !Array.isArray(command.deck.slides) || !command.deck.slides.length || command.deck.slides.length > 1000 ||
+        typeof command.pdfKey !== "string" || !(/^(https:\/\/|\/api\/local-material\/)/.test(command.pdfKey))) throw new Error("교안 정보를 확인해 주세요.");
+      state.deck = { ...command.deck, sessionId: id, updatedAt: Date.now() };
+      state.responses = []; state.posts = []; state.reactions = []; state.wordResponses = []; state.surveyResponses = [];
+      state.session = { ...initialSessionState, pdfKey: command.pdfKey, pdfName: command.name.slice(0, 200), totalSlides: command.deck.slides.length, currentSlide: 1 };
+      break;
+    }
+    case "insertSlide": {
+      if (!state.deck || !state.session.pdfKey) throw new Error("자료를 먼저 불러와 주세요.");
+      if (state.deck.updatedAt !== command.expectedDeckUpdatedAt) throw new Error("수업 구성이 바뀌었어요. 추가 버튼을 다시 눌러 주세요.");
+      const { content, anchor, side } = command;
+      if (!Number.isInteger(anchor) || anchor < 1 || anchor > state.deck.slides.length || !["before", "after"].includes(side))
+        throw new Error("추가할 위치를 확인해 주세요.");
+      if (!content || !/^[a-zA-Z0-9_-]{8,100}$/.test(content.id) || state.deck.slides.some(s => s.content?.id === content.id))
+        throw new Error("페이지 정보를 확인해 주세요.");
+      if (content.type !== "image" && content.type !== "wordcloud" && content.type !== "survey") throw new Error("지원하지 않는 페이지입니다.");
+      if (content.type === "image" && (typeof content.imageUrl !== "string" || !/^\/api\/image\/[a-z0-9]{8,64}$/.test(content.imageUrl)))
+        throw new Error("이미지를 먼저 첨부해 주세요.");
+      if (content.type === "wordcloud" && (typeof content.prompt !== "string" || !content.prompt.trim() || content.prompt.length > 160))
+        throw new Error("질문을 160자 이내로 입력해 주세요.");
+      if (typeof command.title !== "string" || !command.title.trim() || command.title.length > 160) throw new Error("제목을 확인해 주세요.");
+      if (state.deck.slides.length >= 1000) throw new Error("수업에는 1,000장까지 넣을 수 있어요.");
+      const at = anchor + (side === "after" ? 1 : 0);
+      // 원본 페이지와 문항 ID는 유지하고 표시 순서와 위치 참조만 옮긴다.
+      const slides = state.deck.slides.map(s => ({ ...s, ...(!s.content ? { pdfPage: s.pdfPage ?? s.slideNo } : {}) }));
+      const cleanContent = content.type === "image"
+        ? { id: content.id, type: "image" as const, imageUrl: content.imageUrl }
+        : content.type === "survey" ? cleanSurvey(content) : { id: content.id, type: "wordcloud" as const, prompt: content.prompt.trim() };
+      slides.splice(at - 1, 0, { slideNo: at, title: command.title.trim(), kind: "normal", labNo: null, boardId: null, items: [], content: cleanContent });
+      state.deck.slides = slides.map((s, i) => ({ ...s, slideNo: i + 1, items: s.items.map(q => ({ ...q, slideNo: i + 1 })) }));
+      state.posts = state.posts.map(p => ({ ...p, slideNo: p.slideNo >= at ? p.slideNo + 1 : p.slideNo }));
+      state.reactions = [];
+      state.deck.updatedAt = Math.max(Date.now(), state.deck.updatedAt + 1);
+      state.session.totalSlides = slides.length;
+      state.session.currentSlide = at;
+      state.session.revealAnswer = false;
+      state.session.activeActivityId = null;
+      break;
+    }
+    case "surveyRespond": {
+      const content = state.deck?.slides.find(s => s.slideNo === state.session.currentSlide)?.content;
+      if (content?.type !== "survey" || content.id !== command.slideId) throw new Error("현재 질문에만 참여할 수 있어요.");
+      const response = cleanSurveyResponse(content, command);
+      const others = (state.surveyResponses ?? []).filter(r => !(r.slideId === content.id && r.responderId === command.responderId));
+      if (others.filter(r => r.slideId === content.id).length >= 200) throw new Error("이 페이지에는 200명까지 참여할 수 있어요.");
+      state.surveyResponses = [...others, response];
+      break;
+    }
+    case "wordRespond": {
+      const content = state.deck?.slides.find(s => s.slideNo === state.session.currentSlide)?.content;
+      if (content?.type !== "wordcloud" || content.id !== command.slideId) throw new Error("현재 워드클라우드에만 참여할 수 있어요.");
+      if (!/^[a-zA-Z0-9_-]{1,100}$/.test(command.responderId) || typeof command.word !== "string") throw new Error("응답을 확인해 주세요.");
+      const word = command.word.normalize("NFKC").trim().replace(/\s+/g, " ");
+      if (!word || Array.from(word).length > 20 || /[\u0000-\u001f\u007f]/.test(word)) throw new Error("단어 또는 짧은 표현을 20자 이내로 입력해 주세요.");
+      const others = (state.wordResponses ?? []).filter(r => !(r.slideId === content.id && r.responderId === command.responderId));
+      if (others.filter(r => r.slideId === content.id).length >= 200) throw new Error("이 페이지에는 200명까지 참여할 수 있어요.");
+      state.wordResponses = [...others, { slideId: content.id, responderId: command.responderId, word }];
+      break;
+    }
     case "react": {
       if (!state.session.pdfKey || command.slideNo !== state.session.currentSlide)
         throw new Error("현재 슬라이드에서만 반응할 수 있어요.");
@@ -167,6 +230,7 @@ function apply(id: string, state: Stored, command: LiveCommand, teacher: boolean
       state.deck = { sessionId: id, classId: null, slides, source: "md", updatedAt: Date.now() };
       state.responses = [];
       state.reactions = [];
+      state.wordResponses = []; state.surveyResponses = [];
       state.posts = seedPostsFor(slides.filter((s) => s.kind === "lab"));
       state.session = { ...initialSessionState, pdfKey: SAMPLE.pdf, pdfName: SAMPLE.name,
         totalSlides: SAMPLE.intro.length + parsed.length, currentSlide: 1 };
@@ -184,6 +248,8 @@ function apply(id: string, state: Stored, command: LiveCommand, teacher: boolean
     case "deck":
       state.deck = command.deck;
       state.responses = [];
+      state.surveyResponses = (state.surveyResponses ?? []).filter(r => command.deck?.slides.some(s => s.content?.id === r.slideId));
+      state.wordResponses = (state.wordResponses ?? []).filter(r => command.deck?.slides.some(s => s.content?.id === r.slideId));
       break;
     case "class": if (state.deck) state.deck.classId = command.classId; break;
     case "board": {
@@ -337,3 +403,4 @@ export async function execute(id: string, token: string, command: LiveCommand): 
 
   throw new Error("같은 순간에 요청이 몰렸어요. 다시 한 번 눌러 주세요.");
 }
+

@@ -1,5 +1,8 @@
 # ClassFlow
 
+> 최신 기능 요구사항: [기능 명세서](docs/functional-spec.md) · 구현·검증 진행 상황: [개발 체크리스트](docs/development-checklist.md)
+> 아래 소개의 일부 구현 현황은 과거 기록입니다. 현재 범위는 위 체크리스트에서 확인하세요.
+
 ### 교안에서 참여까지, 수업의 흐름을 한곳에.
 
 **기존 슬라이드와 마크다운 교안을 연결해, 학생이 함께 보고 답하는 수업을 만드는 도구입니다.**
@@ -161,4 +164,4 @@ node scripts/test-live.mjs
 
 API 테스트는 샘플 로딩, 동시 참가자 20명의 응답 보존, 답 변경, 정답 비공개·공개, 강사 권한, 응답 초기화, 복수 선택 및 유효하지 않은 응답 거부를 확인합니다. **실제 수업의 사용 인원이나 운영 실적을 뜻하지 않습니다.**
 
-추가 개발 맥락은 [CLAUDE.md](CLAUDE.md), 기존 작업 목록은 [task.md](task.md)를 참고하세요. 현재 구현 범위와 후속 계획은 이 README를 기준으로 확인할 수 있습니다.
+추가 개발 맥락은 [CLAUDE.md](CLAUDE.md), 기존 작업 기록은 [task.md](task.md)를 참고하세요. 최신 요구사항은 [기능 명세서](docs/functional-spec.md), 진행 상태는 [개발 체크리스트](docs/development-checklist.md)를 기준으로 확인합니다.

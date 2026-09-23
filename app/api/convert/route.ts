@@ -9,11 +9,15 @@ import { mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
+import { localMaterialEnabled } from "@/lib/localMaterial";
+import { isTeacher, readSession } from "@/lib/live/server";
 
 export const runtime = "nodejs";
 
 const TIMEOUT_MS = 180_000;
 const MAX_BYTES = 200 * 1024 * 1024;
+let converting = false;
 
 /** soffice 실행 파일 찾기 — PATH에 없을 때가 많아 흔한 설치 경로도 본다 */
 function findSoffice(): string | null {
@@ -58,6 +62,12 @@ function run(bin: string, args: string[]): Promise<{ code: number; stderr: strin
 }
 
 export async function POST(request: Request) {
+  if (!localMaterialEnabled()) return Response.json({ error: "PPT 변환은 현재 로컬 시험 환경에서만 가능합니다." }, { status: 503 });
+  const sessionId = new URL(request.url).searchParams.get("sessionId") ?? "";
+  const state = await readSession(sessionId);
+  if (!state || !isTeacher(state, request.headers.get("x-teacher-token") ?? "")) return Response.json({ error: "강사 권한이 필요합니다." }, { status: 403 });
+  if (converting) return Response.json({ error: "다른 자료를 변환 중이에요. 잠시 후 다시 시도해 주세요." }, { status: 429 });
+  converting = true;
   let workDir: string | null = null;
   try {
     const form = await request.formData();
@@ -65,12 +75,12 @@ export async function POST(request: Request) {
     if (!(file instanceof File)) {
       return Response.json({ error: "파일이 없습니다." }, { status: 400 });
     }
-    if (file.size > MAX_BYTES) {
+    if (!file.size || file.size > MAX_BYTES) {
       return Response.json({ error: "파일이 너무 큽니다 (200MB 이하)." }, { status: 413 });
     }
 
     const ext = path.extname(file.name).toLowerCase();
-    if (![".pptx", ".ppt", ".odp", ".key"].includes(ext)) {
+    if (ext !== ".pptx") {
       return Response.json({ error: `변환할 수 없는 형식입니다 (${ext}).` }, { status: 400 });
     }
 
@@ -85,6 +95,7 @@ export async function POST(request: Request) {
     }
 
     const { code, stderr } = await run(soffice, [
+      `-env:UserInstallation=${pathToFileURL(path.join(workDir, "profile")).href}`,
       "--headless",
       "--norestore",
       "--convert-to",
@@ -108,6 +119,8 @@ export async function POST(request: Request) {
     }
 
     const pdf = await readFile(path.join(workDir, produced));
+    if (pdf.length > 60 * 1024 * 1024) return Response.json({ error: "변환한 PDF가 60MB를 넘어요. PPT의 이미지를 줄여 다시 올려주세요." }, { status: 413 });
+    if (pdf.subarray(0, 5).toString() !== "%PDF-") throw new Error("변환 결과가 올바른 PDF가 아니에요.");
     return new Response(new Uint8Array(pdf), {
       headers: {
         "Content-Type": "application/pdf",
@@ -120,6 +133,8 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   } finally {
-    if (workDir) await rm(workDir, { recursive: true, force: true }).catch(() => {});
+    if (workDir && path.dirname(path.resolve(workDir)) === path.resolve(tmpdir()) && path.basename(workDir).startsWith("classflow-"))
+      await rm(workDir, { recursive: true, force: true }).catch(() => {});
+    converting = false;
   }
 }

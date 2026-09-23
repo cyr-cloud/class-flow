@@ -21,11 +21,12 @@ import { liveClient } from "@/lib/live/client";
 import LiveStatus from "./lecture/LiveStatus";
 import OnboardingModal from "./lecture/OnboardingModal";
 import type { GenerationMode } from "@/lib/lecture/aiQuizRules";
+import InsertSlide from "./lecture/InsertSlide";
 
 const noSubscribe = () => () => {};
 const emptyString = () => "";
 
-export default function TeacherView({ sessionId }: { sessionId: string }) {
+export default function TeacherView({ sessionId, localUploads = false, cloudConversion = false }: { sessionId: string; localUploads?: boolean; cloudConversion?: boolean }) {
   const { state, patch } = useSync(sessionId);
   const { deck, responses, posts } = useDeckState(sessionId);
   const slide = useCurrentSlide(sessionId, state.currentSlide);
@@ -35,6 +36,10 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
   const [notice, setNotice] = useState("");
   // 샘플 강의는 노트를 서버에 넣어두어서, PPT를 올리지 않아도 AI로 뽑아볼 수 있다
   const isSample = state.pdfKey?.startsWith("/samples/") ?? false;
+  const isLocalPpt = localUploads && !!state.pdfKey?.startsWith("/api/local-material/") && /\.pptx$/i.test(state.pdfName ?? "");
+  const isCloudPpt = cloudConversion && !localUploads && /\.pptx$/i.test(state.pdfName ?? "");
+  const supportsPpt = localUploads || cloudConversion;
+  const pendingConversion = useSyncExternalStore(noSubscribe, useCallback(() => localStorage.getItem(`classflow:conversion:${sessionId}`) ?? "", [sessionId]), emptyString);
 
   /**
    * 올린 슬라이드가 학생 기기까지 갔는지.
@@ -44,6 +49,9 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
   const slidesShared = !state.pdfKey || isSharedKey(state.pdfKey);
   const [jumpTo, setJumpTo] = useState("");
   const [presenting, setPresenting] = useState(false);
+  const [insertAt, setInsertAt] = useState<{ page: number; side: "before" | "after" } | null>(null);
+  const [exportUrl, setExportUrl] = useState<string | null>(null);
+  useEffect(() => () => { if (exportUrl) URL.revokeObjectURL(exportUrl); }, [exportUrl]);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "error">("idle");
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -96,46 +104,79 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
    * 학생 화면에 안 보이므로, 아래 canShareSlides로 강사에게 알려준다.
    */
   const storeAndUse = useCallback(
-    async (buf: ArrayBuffer, name: string) => {
+      async (buf: ArrayBuffer, name: string, notes: { slideNo: number; text: string }[] = [], original?: File) => {
       if (!buf.byteLength || buf.byteLength > 60 * 1024 * 1024) throw new Error("60MB 이하 PDF를 선택해 주세요.");
       if (!new TextDecoder().decode(buf.slice(0, 5)).startsWith("%PDF-")) throw new Error("올바른 PDF 파일을 선택해 주세요.");
       await liveClient(sessionId).send({ action: "patch", partial: {} });
       const token = localStorage.getItem(`classflow:teacher:${sessionId}`) ?? "";
+      let key: string;
+      if (localUploads) {
+        const form = new FormData();
+        form.append("pdf", new Blob([buf], { type: "application/pdf" }), "lesson.pdf");
+          form.append("notes", JSON.stringify(notes));
+          if (original) form.append("original", original);
+        const response = await fetch(`/api/local-material?sessionId=${encodeURIComponent(sessionId)}`, { method: "POST", headers: { "x-teacher-token": token }, body: form });
+        const body = await response.json();
+        if (!response.ok || !body.url) throw new Error(body.error ?? "로컬에 저장하지 못했어요.");
+        key = body.url;
+      } else {
       const blob = await upload(`decks/${sessionId}/${crypto.randomUUID()}.pdf`, new Blob([buf], { type: "application/pdf" }), {
         access: "public", handleUploadUrl: "/api/slides", clientPayload: JSON.stringify({ sessionId }),
         headers: { "x-teacher-token": token }, multipart: true,
         onUploadProgress: ({ percentage }) => setNotice(`PDF 공유 저장소에 올리는 중… ${Math.round(percentage)}%`),
       });
-      const key = blob.url;
+      key = blob.url;
+      }
       const titles = await extractTitles(key);
       // 다른 자료의 퀴즈와 가이드가 새 PDF에 잘못 연결되지 않게 새 덱으로 교체한다.
-      await liveClient(sessionId).send({ action: "deck", deck: { sessionId, classId: null,
+      await liveClient(sessionId).send({ action: "replaceMaterial", pdfKey: key, name, deck: { sessionId, classId: null,
         slides: deckFromTitles(titles.map((title, i) => title || `슬라이드 ${i + 1}`)), source: "pdf", updatedAt: Date.now() } });
-      await liveClient(sessionId).send({ action: "patch", partial: {
-        pdfKey: key,
-        pdfName: name,
-        currentSlide: 1,
-        totalSlides: titles.length,
-        activeActivityId: null,
-        revealAnswer: false,
-      } });
-      setNotice("PDF를 공유했어요. 학생도 같은 슬라이드를 볼 수 있습니다.");
+      setNotice(localUploads ? `${titles.length}쪽을 이 컴퓨터에 저장했어요. 같은 로컬 서버의 학생 화면에서도 볼 수 있어요. 발표자 노트 ${notes.length}쪽 · AI는 실행하지 않았어요.` : "PDF를 공유했어요. 학생도 같은 슬라이드를 볼 수 있습니다.");
       return key;
     },
-    [sessionId],
+    [sessionId, localUploads],
   );
 
-  /** PDF만 공유 저장소에 올린다. */
+  const applyConvertedPdf = useCallback(async (key: string, name: string) => {
+    setNotice("변환한 PDF의 페이지를 읽고 수업을 준비하고 있어요…");
+    const titles = await extractTitles(key);
+    await liveClient(sessionId).send({ action: "replaceMaterial", pdfKey: key, name, deck: { sessionId, classId: null,
+      slides: deckFromTitles(titles.map((title, i) => title || `슬라이드 ${i + 1}`)), source: "pdf", updatedAt: Date.now() } });
+    localStorage.removeItem(`classflow:conversion:${sessionId}`);
+    setNotice(`${titles.length}쪽 PPT를 PDF로 변환했어요. 학생도 같은 슬라이드를 볼 수 있어요. AI는 실행하지 않았어요.`);
+  }, [sessionId]);
+
+  /** 대용량 PPT는 암호화 후 Blob으로 직접 업로드한다. */
   const onSlideFile = useCallback(async (file: File) => {
     setBusy("pdf");
     setNotice("");
     try {
-      if (!/\.pdf$/i.test(file.name) && file.type !== "application/pdf") throw new Error("PDF 파일만 업로드할 수 있습니다.");
-      await storeAndUse(await file.arrayBuffer(), file.name);
+      if (cloudConversion && !localUploads && /\.pptx$/i.test(file.name)) {
+        await liveClient(sessionId).send({ action: "patch", partial: {} });
+        const { convertSharedPpt } = await import("@/lib/conversion/client");
+        const result = await convertSharedPpt(sessionId, file, setNotice);
+        await applyConvertedPdf(result.url, result.name);
+      } else if (localUploads && /\.pptx$/i.test(file.name)) {
+        if (file.size > 200 * 1024 * 1024) throw new Error("200MB 이하 PPTX를 선택해 주세요.");
+        setNotice("PPT의 발표자 노트를 읽고 있어요. AI를 호출하지 않습니다.");
+        const { extractNotes } = await import("@/lib/lecture/pptxNotes");
+        const notes = extractNotes(await file.arrayBuffer());
+        await liveClient(sessionId).send({ action: "patch", partial: {} });
+        const token = localStorage.getItem(`classflow:teacher:${sessionId}`) ?? "";
+        const form = new FormData(); form.append("file", file);
+        setNotice("PPT를 PDF로 변환 중이에요. 자료 크기에 따라 최대 3분 정도 걸릴 수 있어요.");
+        const response = await fetch(`/api/convert?sessionId=${encodeURIComponent(sessionId)}`, { method: "POST", headers: { "x-teacher-token": token }, body: form, signal: AbortSignal.timeout(200000) });
+        if (!response.ok) { const body = await response.json(); throw new Error(body.error ?? "PPT 변환에 실패했어요."); }
+        setNotice("변환한 PDF를 저장하고 페이지를 읽는 중이에요…");
+        await storeAndUse(await response.arrayBuffer(), file.name, notes, file);
+      } else {
+        if (!/\.pdf$/i.test(file.name) && file.type !== "application/pdf") throw new Error(localUploads ? "PPTX 또는 PDF 파일을 선택해 주세요." : "PDF 파일만 업로드할 수 있습니다.");
+        await storeAndUse(await file.arrayBuffer(), file.name);
+      }
     } catch (e) {
       setNotice(e instanceof Error ? e.message : "PDF를 업로드하지 못했어요.");
     } finally { setBusy(""); }
-  }, [storeAndUse]);
+  }, [storeAndUse, localUploads, cloudConversion, sessionId, applyConvertedPdf]);
 
   /**
    * 슬라이드 한 장의 발표자 노트(강의 대본)를 읽어 문항을 만든다.
@@ -144,7 +185,22 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
   const askFor = useCallback(
     async (slideNo: number, titles: string[], mode: GenerationMode) => {
       const form = new FormData();
-      form.append("sample", "true");
+      if (isSample) form.append("sample", "true");
+      else if (isCloudPpt) {
+        const { originalSharedPpt } = await import("@/lib/conversion/client");
+        const { extractNotes } = await import("@/lib/lecture/pptxNotes");
+        const notes = extractNotes(await originalSharedPpt(sessionId)).filter(n => n.slideNo === slideNo && n.text.trim());
+        if (!notes.length) throw new Error("이 슬라이드에는 발표자 노트가 없어요. 노트가 있는 페이지를 선택해 주세요.");
+        form.append("notes", JSON.stringify(notes));
+      } else {
+        const token = localStorage.getItem(`classflow:teacher:${sessionId}`) ?? "";
+        const response = await fetch(`/api/local-material?sessionId=${encodeURIComponent(sessionId)}`, { headers: { "x-teacher-token": token } });
+        const body = await response.json();
+        if (!response.ok) throw new Error(body.error ?? "발표자 노트를 읽지 못했어요.");
+        const notes = (body.notes as { slideNo: number; text: string }[]).filter(n => n.slideNo === slideNo && n.text.trim());
+        if (!notes.length) throw new Error("이 슬라이드에는 발표자 노트가 없어요. 노트가 있는 페이지를 선택해 주세요.");
+        form.append("notes", JSON.stringify(notes));
+      }
       form.append("mode", mode);
       form.append("slideNos", JSON.stringify([slideNo]));
       form.append("titles", JSON.stringify(titles));
@@ -163,7 +219,7 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
       if (!res.ok || !body.items) throw new Error(body.error ?? "문항을 뽑지 못했어요.");
       return body.items;
     },
-    [deck],
+    [deck, isSample, isCloudPpt, sessionId],
   );
 
   /** 만든 문항을 그 슬라이드에만 얹는다 */
@@ -195,7 +251,7 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
 
   /** 지금 보고 있는 슬라이드에서 «대본으로 만들기»를 눌렀을 때 */
   const extractWithAi = useCallback(async (mode: GenerationMode = "quiz") => {
-    if (!isSample) {
+    if ((!isSample && !isLocalPpt && !isCloudPpt) || slide?.content) {
       setNotice("해당 기능은 발표자 노트가 포함된 PPT에서만 사용 가능합니다.");
       return;
     }
@@ -205,7 +261,7 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
     setNotice(`${slideNo}쪽 강의 대본을 읽는 중이에요…`);
     try {
       const titles = state.pdfKey ? await extractTitles(state.pdfKey) : [];
-      const items = await askFor(slideNo, titles, mode);
+      const items = await askFor(slide?.pdfPage ?? slideNo, titles, mode);
       if (items.length === 0) {
         setNotice(`${slideNo}쪽 대본에는 물어볼 만한 내용이 없어요. «＋ 퀴즈 문항»으로 직접 넣으셔도 됩니다.`);
         return;
@@ -218,7 +274,7 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
     } finally {
       setBusy("");
     }
-  }, [askFor, attach, isSample, state.currentSlide, state.pdfKey]);
+  }, [askFor, attach, isSample, isLocalPpt, isCloudPpt, state.currentSlide, state.pdfKey, slide]);
 
   // public/samples 에 넣어둔 강의자료. 바꾸려면 이 경로만 고치면 된다.
   const loadSample = useCallback(async () => {
@@ -260,14 +316,15 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (presenting || e.defaultPrevented || e.isComposing || e.ctrlKey || e.metaKey || e.altKey) return;
       const tag = (e.target as HTMLElement | null)?.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA") return;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
       if (e.key === "ArrowRight" || e.key === "PageDown") go(1);
       if (e.key === "ArrowLeft" || e.key === "PageUp") go(-1);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [go]);
+  }, [go, presenting]);
 
   const stopPresenting = useCallback(() => setPresenting(false), []);
 
@@ -308,15 +365,46 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
             >
               샘플 수업 체험하기
             </button>
+            {(isLocalPpt || isCloudPpt) && <button disabled={!!busy} onClick={async () => {
+              setBusy("pptx");
+              try {
+                let original: Blob;
+                if (isCloudPpt) {
+                  const { originalSharedPpt } = await import("@/lib/conversion/client");
+                  original = new Blob([await originalSharedPpt(sessionId)], { type: "application/vnd.openxmlformats-officedocument.presentationml.presentation" });
+                } else {
+                  const token = localStorage.getItem(`classflow:teacher:${sessionId}`) ?? "";
+                  const response = await fetch(`/api/local-material?sessionId=${encodeURIComponent(sessionId)}&download=pptx`, { headers: { "x-teacher-token": token } });
+                  if (!response.ok) throw new Error((await response.json()).error ?? "PPTX를 내려받지 못했어요.");
+                  original = await response.blob();
+                }
+                const url = URL.createObjectURL(original);
+                const link = document.createElement("a"); link.href = url; link.download = state.pdfName ?? "수업자료.pptx"; link.click();
+                setTimeout(() => URL.revokeObjectURL(url), 60000);
+                setNotice("업로드한 원본 PPTX 다운로드를 시작했어요. 추가 페이지는 수업 PDF에 포함됩니다.");
+              } catch (error) { setNotice(error instanceof Error ? error.message : "PPTX 다운로드 실패"); }
+              finally { setBusy(""); }
+            }} className="rounded-full border border-line-strong px-4 py-2 text-sm disabled:opacity-40">원본 PPTX 다운로드</button>}
+            {state.pdfKey && <button disabled={!!busy} onClick={async () => {
+              setBusy("export"); setNotice("추가 페이지를 포함한 PDF를 만드는 중이에요…");
+              try {
+                const { downloadLessonPdf } = await import("@/lib/lecture/exportLessonPdf");
+                const exported = await downloadLessonPdf(liveClient(sessionId).snapshot());
+                setExportUrl(exported.url);
+                setNotice(`${exported.total}쪽 PDF 다운로드를 시작했어요. 추가 이미지와 현재 참여 결과가 포함됩니다.`);
+              } catch (err) { setNotice(err instanceof Error ? err.message : "PDF를 만들지 못했어요."); }
+              finally { setBusy(""); }
+            }} title="추가 이미지와 현재 참여 결과를 포함합니다" className="rounded-full border border-line-strong px-4 py-2 text-sm disabled:opacity-40">{busy === "export" ? "PDF 만드는 중…" : "수업 PDF 다운로드"}</button>}
+            {exportUrl && <a href={exportUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-mocha underline">최근 만든 PDF 열기</a>}
             <label
-                title="학생과 공유할 PDF 파일을 업로드하세요."
+                title={supportsPpt ? "PPTX 또는 PDF로 수업을 시작합니다. AI는 실행하지 않습니다." : "학생과 공유할 PDF 파일을 업로드하세요."}
                 className="cursor-pointer rounded-full bg-ink px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-mocha-deep"
               >
-                {busy === "pdf" ? "PDF 업로드 중…" : "PDF 업로드"}
+                {busy === "pdf" ? "자료 준비 중…" : supportsPpt ? "PPTX·PDF 올려 수업 시작" : "PDF 업로드"}
                 <input
                   type="file"
                   disabled={busy !== ""}
-                  accept=".pdf,application/pdf"
+                  accept={supportsPpt ? ".pptx,.pdf,application/pdf" : ".pdf,application/pdf"}
                   className="hidden"
                   onChange={(e) => {
                     const f = e.target.files?.[0];
@@ -325,6 +413,15 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
                   }}
                 />
               </label>
+              {cloudConversion && pendingConversion && <button disabled={!!busy} className="rounded-full border border-line-strong px-4 py-2 text-sm disabled:opacity-40" onClick={async () => {
+                setBusy("pdf");
+                try {
+                  const { waitForConversion } = await import("@/lib/conversion/client");
+                  const result = await waitForConversion(sessionId, pendingConversion, setNotice);
+                  await applyConvertedPdf(result.url, result.name);
+                } catch (error) { setNotice(error instanceof Error ? error.message : "변환 결과를 확인하지 못했어요."); }
+                finally { setBusy(""); }
+              }}>변환 결과 확인</button>}
 
           </div>
         </div>
@@ -346,7 +443,10 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
         )}
 
         {/* 슬라이드 */}
-        <div className="overflow-hidden rounded-2xl border border-line bg-paper p-3">
+        <div className="relative flex items-center gap-2 sm:gap-3">
+        {localUploads && state.pdfKey && <InsertSlide key={`before-${state.currentSlide}`} sessionId={sessionId} page={state.currentSlide} side="before" disabled={!!busy}
+          open={insertAt?.page === state.currentSlide && insertAt.side === "before"} onToggle={() => setInsertAt(insertAt?.page === state.currentSlide && insertAt.side === "before" ? null : { page: state.currentSlide, side: "before" })} onClose={() => setInsertAt(null)} />}
+        <div className="min-w-0 flex-1 overflow-hidden rounded-2xl border border-line bg-paper p-3">
           <SlideStage
             sessionId={sessionId}
             pdfKey={state.pdfKey}
@@ -354,9 +454,13 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
             canDraw
             keyboardActive={!presenting}
             onLoaded={(total) => {
-              if (total !== state.totalSlides) patch({ totalSlides: total });
+              const count = deck?.slides.length || total;
+              if (count !== state.totalSlides) patch({ totalSlides: count });
             }}
           />
+        </div>
+        {localUploads && state.pdfKey && <InsertSlide key={`after-${state.currentSlide}`} sessionId={sessionId} page={state.currentSlide} side="after" disabled={!!busy}
+          open={insertAt?.page === state.currentSlide && insertAt.side === "after"} onToggle={() => setInsertAt(insertAt?.page === state.currentSlide && insertAt.side === "after" ? null : { page: state.currentSlide, side: "after" })} onClose={() => setInsertAt(null)} />}
         </div>
 
         {/* 넘김 조작 */}
@@ -416,7 +520,7 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
           // 버튼이 없어서 «AI 기능이 어디 갔지» 하고 헤매는 것보다 낫다
           onGenerate={extractWithAi}
           generating={busy === "ai"}
-          generationBlockedMessage={!isSample ? "해당 기능은 발표자 노트가 포함된 PPT에서만 사용 가능합니다." : undefined}
+          generationBlockedMessage={(!isSample && !isLocalPpt && !isCloudPpt) || slide?.content ? "해당 기능은 발표자 노트가 포함된 PPT에서만 사용 가능합니다." : undefined}
         />
 
         <SlideActivities
@@ -551,3 +655,4 @@ export default function TeacherView({ sessionId }: { sessionId: string }) {
     </div>
   );
 }
+

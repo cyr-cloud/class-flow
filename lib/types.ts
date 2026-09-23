@@ -100,6 +100,9 @@ export interface QuizItem {
 }
 
 export interface DeckSlide {
+  /** 표시 순서와 원본 PDF 페이지는 삽입 이후 달라진다. */
+  pdfPage?: number;
+  content?: import("./lecture/survey").SurveyContent | { id: string; type: "wordcloud"; prompt: string } | { id: string; type: "image"; imageUrl: string };
   slideNo: number; // 1-based
   title: string;
   kind: SlideKind;
@@ -149,3 +152,4 @@ export interface QuizResponse {
   choiceIndices?: number[];
   createdAt: number;
 }
+

@@ -13,6 +13,7 @@ import { useSync } from "@/lib/sync/useSync";
 import { useCurrentSlide, useDeckState } from "@/lib/lecture/useDeck";
 import LiveStatus from "./lecture/LiveStatus";
 import OnboardingModal from "./lecture/OnboardingModal";
+import { liveClient } from "@/lib/live/client";
 
 export default function StudentView({ sessionId }: { sessionId: string }) {
   const { state } = useSync(sessionId);
@@ -20,6 +21,8 @@ export default function StudentView({ sessionId }: { sessionId: string }) {
   const slide = useCurrentSlide(sessionId, state.currentSlide);
   const [presenting, setPresenting] = useState(false);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [downloadNotice, setDownloadNotice] = useState("");
   const stopPresenting = useCallback(() => setPresenting(false), []);
 
   return (
@@ -41,6 +44,16 @@ export default function StudentView({ sessionId }: { sessionId: string }) {
             </h1>
           </div>
           <div className="ml-auto flex shrink-0 items-center gap-2">
+            {state.pdfKey && <button disabled={exporting} onClick={async () => {
+              setExporting(true); setDownloadNotice("PDF를 만드는 중이에요…");
+              try {
+                const { downloadLessonPdf } = await import("@/lib/lecture/exportLessonPdf");
+                const result = await downloadLessonPdf(liveClient(sessionId).snapshot());
+                setTimeout(() => URL.revokeObjectURL(result.url), 60000);
+                setDownloadNotice(`${result.total}쪽 PDF 다운로드를 시작했어요. 추가 페이지와 현재 참여 결과도 포함돼요.`);
+              } catch (error) { setDownloadNotice(error instanceof Error ? error.message : "PDF를 내려받지 못했어요."); }
+              finally { setExporting(false); }
+            }} className="rounded-full border border-line-strong px-4 py-2 text-sm disabled:opacity-40">{exporting ? "PDF 만드는 중…" : "수업 PDF 다운로드"}</button>}
             <button
               type="button"
               onClick={() => setOnboardingOpen(true)}
@@ -62,6 +75,7 @@ export default function StudentView({ sessionId }: { sessionId: string }) {
 
       <main className="mx-auto max-w-5xl px-6 py-8">
         <LiveStatus sessionId={sessionId} />
+        {downloadNotice && <p role="status" className="mb-4 text-sm text-mocha">{downloadNotice}</p>}
         {!state.pdfKey ? (
           // updatedAt이 0이면 이 코드로 열린 수업 자체가 없다는 뜻
           <div className="flex aspect-video w-full flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-line-strong bg-paper text-center">
@@ -126,3 +140,4 @@ export default function StudentView({ sessionId }: { sessionId: string }) {
     </div>
   );
 }
+

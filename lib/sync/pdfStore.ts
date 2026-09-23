@@ -11,7 +11,7 @@
 import { getBlob, putBlob } from "../store/blobStore";
 
 export function isSharedKey(key: string): boolean {
-  return /^https?:\/\//.test(key) || key.startsWith("/samples/");
+  return /^https?:\/\//.test(key) || key.startsWith("/samples/") || /^\/api\/local-material\/[a-f0-9-]{36}$/.test(key);
 }
 
 export async function savePdf(key: string, data: ArrayBuffer): Promise<void> {

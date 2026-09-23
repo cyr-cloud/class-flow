@@ -8,6 +8,9 @@ import SlideViewer from "../SlideViewer";
 import InkCanvas from "./InkCanvas";
 import SlideReactions from "./SlideReactions";
 import { InkTool, inkStore } from "@/lib/lecture/inkStore";
+import { useCurrentSlide } from "@/lib/lecture/useDeck";
+import WordCloudSlide from "./WordCloudSlide";
+import SurveySlide from "./SurveySlide";
 
 const TOOLS: { tool: InkTool; label: string; title: string }[] = [
   { tool: "pen", label: "✎", title: "펜" },
@@ -53,12 +56,15 @@ export default function SlideStage({
   const [tool, setTool] = useState<InkTool>("pen");
   const [color, setColor] = useState(COLORS[0]);
   const [width, setWidth] = useState(WIDTHS[1].value);
+  const slide = useCurrentSlide(sessionId, page);
+  const sourcePage = slide?.pdfPage ?? page;
+  const content = slide?.content;
 
   const onSize = useCallback((w: number, h: number) => {
     setSize((prev) => (Math.abs(prev.w - w) < 0.5 && Math.abs(prev.h - h) < 0.5 ? prev : { w, h }));
   }, []);
 
-  const drawing = canDraw && penOn;
+  const drawing = canDraw && penOn && !content;
 
   useEffect(() => {
     if (!drawing || !keyboardActive) return;
@@ -70,11 +76,11 @@ export default function SlideStage({
         target.isContentEditable || target.closest('input, textarea, select, [role="dialog"], [role="textbox"]')
       )) return;
       event.preventDefault();
-      inkStore.undo(sessionId, page);
+      inkStore.undo(sessionId, sourcePage);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [drawing, keyboardActive, sessionId, page]);
+  }, [drawing, keyboardActive, sessionId, sourcePage]);
 
   const chip = (active: boolean) =>
     `flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm transition-colors ${
@@ -83,29 +89,35 @@ export default function SlideStage({
 
   return (
     <div className={`relative ${className ?? ""}`}>
-      <SlideViewer
+      {content ? <div className={fit === "contain" ? "h-full w-full overflow-auto" : "w-full"}>
+        {content.type === "survey" ? <SurveySlide key={content.id} sessionId={sessionId} content={content} teacher={canDraw} /> : content.type === "wordcloud" ? <WordCloudSlide key={content.id} sessionId={sessionId} slideId={content.id} prompt={content.prompt} teacher={canDraw} /> :
+          <div className={`flex items-center justify-center rounded-xl bg-gardenia ${fit === "contain" ? "h-full" : "aspect-video"}`}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={content.imageUrl} alt={slide?.title ?? "추가한 이미지"} className="max-h-full max-w-full object-contain" />
+          </div>}
+      </div> : <SlideViewer
         pdfKey={pdfKey}
-        page={page}
+        page={sourcePage}
         fit={fit}
         onLoaded={onLoaded}
         onSize={onSize}
         className={fit === "contain" ? "h-full w-full" : "w-full"}
-      />
+      />}
 
-      <InkCanvas
+      {!content && <InkCanvas
         sessionId={sessionId}
-        slideNo={page}
+        slideNo={sourcePage}
         width={size.w}
         height={size.h}
         drawing={drawing}
         tool={tool}
         color={color}
         lineWidth={width}
-      />
+      />}
 
-      {pdfKey && size.w > 0 && <SlideReactions key={`${sessionId}:${page}`} sessionId={sessionId} page={page} canReact={!canDraw} />}
+      {pdfKey && !content && size.w > 0 && <SlideReactions key={`${sessionId}:${page}`} sessionId={sessionId} page={page} canReact={!canDraw} />}
 
-      {canDraw && size.w > 0 && (
+      {canDraw && !content && size.w > 0 && (
         // 슬라이드 제목은 대개 위쪽에 있으니 도구 모음은 아래에 띄운다
         <div role="group" aria-label="판서 도구" className="absolute bottom-3 left-1/2 flex w-max max-w-[calc(100%_-_1.5rem)] -translate-x-1/2 flex-wrap items-center justify-center gap-1 rounded-2xl border border-line bg-paper/95 px-2 py-1.5 shadow-sm backdrop-blur">
           <button
@@ -160,14 +172,14 @@ export default function SlideStage({
 
               <span className="mx-1 h-5 w-px shrink-0 bg-line" />
               <button
-                onClick={() => inkStore.undo(sessionId, page)}
+                onClick={() => inkStore.undo(sessionId, sourcePage)}
                 title="되돌리기 (Ctrl+Z / ⌘Z)"
                 className={chip(false)}
               >
                 ↶
               </button>
               <button
-                onClick={() => inkStore.clearSlide(sessionId, page)}
+                onClick={() => inkStore.clearSlide(sessionId, sourcePage)}
                 title="이 슬라이드 판서 지우기"
                 className="shrink-0 rounded-full px-3 py-1 text-sm text-ink-soft transition-colors hover:bg-rosetan/15 hover:text-rosetan"
               >
@@ -180,3 +192,4 @@ export default function SlideStage({
     </div>
   );
 }
+
