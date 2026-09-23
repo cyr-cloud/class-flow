@@ -16,9 +16,19 @@ export default function NetworkingLauncher() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [previous, setPrevious] = useState("");
+  const [authorized, setAuthorized] = useState(false);
+  useEffect(() => {
+    let cancelled=false;
+    const id=localStorage.getItem(SAVED);
+    const token=id?localStorage.getItem(`classflow:teacher:${id}`):null;
+    if(!id||!token) return;
+    void fetch(`/api/networking?sessionId=${encodeURIComponent(id)}`,{headers:{"x-teacher-token":token},cache:"no-store"})
+      .then(response=>{if(!cancelled) setAuthorized(response.ok);}).catch(()=>{if(!cancelled)setAuthorized(false);});
+    return ()=>{cancelled=true;};
+  },[pathname]);
   useEffect(() => {
     const open = (event: KeyboardEvent) => {
-      if (!event.altKey || !event.shiftKey || event.code !== "KeyN" || event.repeat || pathname?.startsWith("/student/")) return;
+      if (!authorized || !event.altKey || !event.shiftKey || event.code !== "KeyN" || event.repeat || pathname?.startsWith("/student/")) return;
       const target = event.target as HTMLElement | null;
       if (target?.closest("input,textarea,select,[contenteditable=true]")) return;
       event.preventDefault();
@@ -27,12 +37,13 @@ export default function NetworkingLauncher() {
     };
     window.addEventListener("keydown", open);
     return () => window.removeEventListener("keydown", open);
-  }, [pathname]);
+  }, [pathname,authorized]);
 
   const start = async () => {
     setBusy(true); setMessage("수업을 준비하고 있어요…");
     try {
-      const response = await fetch("/events/networking-20260923.json");
+      const owner=localStorage.getItem(SAVED)??"";
+      const response = await fetch(`/api/networking?sessionId=${encodeURIComponent(owner)}`,{headers:{"x-teacher-token":localStorage.getItem(`classflow:teacher:${owner}`)??""},cache:"no-store"});
       if (!response.ok) throw Error("행사 자료를 불러오지 못했어요.");
       const preset = await response.json() as {pdfKey:string; name:string; slides:DeckSlide[]};
       if (preset.slides.length !== 38 || !preset.pdfKey.startsWith("https://")) throw Error("행사 자료를 확인해 주세요.");
@@ -49,6 +60,7 @@ export default function NetworkingLauncher() {
     finally {setBusy(false);}
   };
 
+  if(!authorized || pathname?.startsWith("/student/")) return null;
   return <>
     {pathname === "/" && <button type="button" onClick={()=>{
       setPrevious(localStorage.getItem(SAVED) ?? "");

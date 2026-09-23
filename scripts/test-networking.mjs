@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {randomUUID} from 'node:crypto';
-const preset=JSON.parse(await readFile('public/events/networking-20260923.json','utf8'));
+const preset=JSON.parse(await readFile('data/events/networking-20260923.json','utf8'));
 const base=process.env.TEST_CLASSFLOW_URL??'http://127.0.0.1:3311';
 const id=`network-test-${randomUUID().slice(0,8)}`,token=randomUUID();
 async function send(command,teacher=true,status=200) {

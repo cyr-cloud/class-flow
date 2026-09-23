@@ -3,7 +3,7 @@ import { generateClientTokenFromReadWriteToken } from "@vercel/blob/client";
 import { z } from "zod";
 import { ConversionQueue, conversionEnabled, INPUT_LIMIT, publicJob } from "@/lib/conversion/queue";
 import { readSession, isTeacher } from "@/lib/live/server";
-import networking from "@/public/events/networking-20260923.json";
+import networking from "@/data/events/networking-20260923.json";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
