@@ -49,7 +49,12 @@ export default function NetworkingLauncher() {
     finally {setBusy(false);}
   };
 
-  return <dialog ref={dialog} aria-labelledby="networking-title" className="m-auto w-[min(92vw,520px)] rounded-3xl border border-line bg-white p-7 text-ink shadow-xl backdrop:bg-black/50">
+  return <>
+    {pathname === "/" && <button type="button" onClick={()=>{
+      setPrevious(localStorage.getItem(SAVED) ?? "");
+      dialog.current?.showModal();
+    }} className="fixed bottom-5 right-5 z-40 rounded-full border border-line-strong bg-white px-5 py-3 text-sm font-medium text-mocha-deep shadow-md hover:bg-mocha-tint">9/23 네트워킹 수업</button>}
+    <dialog ref={dialog} aria-labelledby="networking-title" className="m-auto w-[min(92vw,520px)] rounded-3xl border border-line bg-white p-7 text-ink shadow-xl backdrop:bg-black/50">
     <h2 id="networking-title" className="text-xl font-bold">9/23 강사×운영자 네트워킹</h2>
     <p className="my-4 leading-relaxed">준비된 PPT 28장과 경험 공유 질문 10개를 불러옵니다. 워드클라우드 3개 · 서술형 카드 7개</p>
     <p className="mb-5 text-sm text-ink-soft">새 수업은 답변 없이 시작합니다. 이미 진행한 수업과 답변은 그대로 남습니다.</p>
@@ -59,5 +64,5 @@ export default function NetworkingLauncher() {
       <button onClick={()=>dialog.current?.close()} className="rounded-xl border border-line px-4 py-3">닫기</button>
     </div>
     <p role="status" className="mt-4 text-sm text-mocha">{message}</p>
-  </dialog>;
+  </dialog></>;
 }

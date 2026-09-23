@@ -545,7 +545,7 @@ export default function TeacherView({ sessionId, localUploads = false, cloudConv
               <p className="eyebrow">강의 구성</p>
               <p className="text-sm text-ink-soft">
                 슬라이드 {deck.slides.length}장 · 실습 {labSlides.length}개 · 참여요소{" "}
-                {deck.slides.reduce((n, s) => n + s.items.length, 0)}문항
+                {deck.slides.reduce((n, s) => n + s.items.length + (s.content?.type === "wordcloud" || s.content?.type === "survey" ? 1 : 0), 0)}문항
                 {deck.source === "pdf" && " (PDF 제목으로 감지)"}
               </p>
               {posts.length > 0 && (
