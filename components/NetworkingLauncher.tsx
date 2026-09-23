@@ -65,7 +65,7 @@ export default function NetworkingLauncher() {
     {pathname === "/" && <button type="button" onClick={()=>{
       setPrevious(localStorage.getItem(SAVED) ?? "");
       dialog.current?.showModal();
-    }} className="fixed bottom-5 right-5 z-40 rounded-full border border-line-strong bg-white px-5 py-3 text-sm font-medium text-mocha-deep shadow-md hover:bg-mocha-tint">9/23 네트워킹 수업</button>}
+    }} aria-label="내 수업 열기" title="내 수업" className="fixed bottom-5 right-5 z-40 flex h-10 w-10 items-center justify-center rounded-full border border-line bg-white text-lg text-mocha shadow-sm hover:bg-mocha-tint">✦</button>}
     <dialog ref={dialog} aria-labelledby="networking-title" className="m-auto w-[min(92vw,520px)] rounded-3xl border border-line bg-white p-7 text-ink shadow-xl backdrop:bg-black/50">
     <h2 id="networking-title" className="text-xl font-bold">9/23 강사×운영자 네트워킹</h2>
     <p className="my-4 leading-relaxed">준비된 PPT 28장과 경험 공유 질문 10개를 불러옵니다. 워드클라우드 3개 · 서술형 카드 7개</p>
