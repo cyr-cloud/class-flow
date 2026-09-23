@@ -1,4 +1,5 @@
 import { renderSurveyPdf } from "./renderSurveyPdf";
+import { wordCloudColor } from "./wordCloudColors";
 import { mergeLessonPdf } from "./mergeLessonPdf";
 import type { DeckSlide } from "../types";
 import type { LiveState } from "../live/types";
@@ -40,14 +41,13 @@ export async function renderAddedPage(slide: DeckSlide, responses: LiveState["wo
     const words = [...counts.values()].sort((a, b) => b.count - a.count || a.word.localeCompare(b.word, "ko"));
     const cols = words.length > 30 ? 5 : words.length > 6 ? 3 : 2;
     const cellW = 1470 / cols, cellH = Math.min(135, (810 - startY) / Math.max(1, Math.ceil(words.length / cols)));
-    const colors = ["#795442", "#456276", "#667a45", "#a44747", "#765a8c"];
     ctx.textAlign = "center";
     for (const [i, word] of words.entries()) {
       let font = Math.min(cellH * 0.7, 25 + 40 * word.count / words[0].count);
       const label = `${word.word} (${word.count})`;
       ctx.font = `bold ${font}px "Malgun Gothic", sans-serif`;
       while (ctx.measureText(label).width > cellW - 20 && font > 8) { font--; ctx.font = `bold ${font}px "Malgun Gothic", sans-serif`; }
-      ctx.fillStyle = colors[i % colors.length];
+        ctx.fillStyle = wordCloudColor(word.word);
       ctx.fillText(label, 65 + cellW * (i % cols + 0.5), startY + cellH * (Math.floor(i / cols) + 0.7));
     }
     if (!words.length) { ctx.font = '32px "Malgun Gothic", sans-serif'; ctx.fillText("아직 참여한 단어가 없어요.", 800, 480); }

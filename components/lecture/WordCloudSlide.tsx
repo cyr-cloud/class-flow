@@ -3,9 +3,9 @@
 import { useCallback, useState, useSyncExternalStore } from "react";
 import { emptyLive, liveClient } from "@/lib/live/client";
 import { useResponderId } from "@/lib/lecture/useDeck";
+import { wordCloudColor } from "@/lib/lecture/wordCloudColors";
 
 const empty = () => emptyLive;
-const COLORS = ["#795442", "#456276", "#667a45", "#a44747", "#765a8c"];
 
 export default function WordCloudSlide({ sessionId, slideId, prompt, teacher }: {
   sessionId: string; slideId: string; prompt: string; teacher: boolean;
@@ -32,7 +32,7 @@ export default function WordCloudSlide({ sessionId, slideId, prompt, teacher }: 
     <div className="flex items-center justify-between gap-3 text-xs font-semibold text-mocha"><span>실시간 워드클라우드</span><span aria-live="polite">{responses.length}명 참여</span></div>
     <h2 className="mt-3 break-words text-center text-xl font-bold sm:text-3xl">{prompt}</h2>
     <div className="my-5 flex min-h-32 flex-1 flex-wrap content-center items-center justify-center gap-x-5 gap-y-3 overflow-y-auto" aria-label="모인 단어">
-      {words.length ? words.map(({ word, count }, i) => <span key={word} title={`${word}: ${count}명`} className="max-w-full break-words font-bold transition-all" style={{ color: COLORS[i % COLORS.length], fontSize: `${Math.round(18 + 30 * count / max)}px` }}>{word}<small className="ml-1 align-super text-xs opacity-60">{count}</small></span>) : <p className="text-center text-mute">학생들의 단어가 이곳에 모여요.<br />많이 나온 단어일수록 크게 보여요.</p>}
+      {words.length ? words.map(({ word, count }) => <span key={word} title={`${word}: ${count}명`} className="max-w-full break-words font-bold transition-all" style={{ color: wordCloudColor(word), fontSize: `${Math.round(18 + 30 * count / max)}px` }}>{word}<small className="ml-1 align-super text-xs opacity-60">{count}</small></span>) : <p className="text-center text-mute">학생들의 단어가 이곳에 모여요.<br />많이 나온 단어일수록 크게 보여요.</p>}
     </div>
     {teacher ? <p className="text-center text-sm text-ink-soft">학생 화면에서 참여할 수 있어요. 한 사람당 한 표현씩, 다시 제출하면 바뀝니다.</p> : <form onSubmit={async e => {
       e.preventDefault(); if (busy || !responderId) return;
