@@ -16,19 +16,38 @@ export default function NetworkingLauncher() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [previous, setPrevious] = useState("");
-  const [authorized, setAuthorized] = useState(false);
+  const [hasSavedLesson, setHasSavedLesson] = useState(false);
   useEffect(() => {
-    let cancelled=false;
-    const id=localStorage.getItem(SAVED);
-    const token=id?localStorage.getItem(`classflow:teacher:${id}`):null;
-    if(!id||!token) return;
-    void fetch(`/api/networking?sessionId=${encodeURIComponent(id)}`,{headers:{"x-teacher-token":token},cache:"no-store"})
-      .then(response=>{if(!cancelled) setAuthorized(response.ok);}).catch(()=>{if(!cancelled)setAuthorized(false);});
-    return ()=>{cancelled=true;};
+    // The launcher is a browser-local shortcut, not an authorization boundary.
+    // Keep it available during network failures; the API still verifies ownership.
+    const refresh = () => {
+      const id = localStorage.getItem(SAVED);
+      setHasSavedLesson(!!id && !!localStorage.getItem(`classflow:teacher:${id}`));
+    };
+    const timer = window.setTimeout(refresh, 0);
+    window.addEventListener("focus", refresh);
+    window.addEventListener("storage", refresh);
+    return () => { window.clearTimeout(timer); window.removeEventListener("focus", refresh); window.removeEventListener("storage", refresh); };
   },[pathname]);
   useEffect(() => {
+    // Recover a missing shortcut only after the server verifies an existing key.
+    const id = pathname?.match(/^\/teacher\/(network-[a-zA-Z0-9_-]+)$/)?.[1];
+    const token = id ? localStorage.getItem(`classflow:teacher:${id}`) : null;
+    if (!id || !token) return;
+    let cancelled = false;
+    void fetch(`/api/networking?sessionId=${encodeURIComponent(id)}`, {
+      headers: { "x-teacher-token": token }, cache: "no-store",
+    }).then(response => {
+      if (!cancelled && response.ok) {
+        localStorage.setItem(SAVED, id);
+        setHasSavedLesson(true);
+      }
+    }).catch(() => { /* The saved shortcut remains available while offline. */ });
+    return () => { cancelled = true; };
+  }, [pathname]);
+  useEffect(() => {
     const open = (event: KeyboardEvent) => {
-      if (!authorized || !event.altKey || !event.shiftKey || event.code !== "KeyN" || event.repeat || pathname?.startsWith("/student/")) return;
+      if (!hasSavedLesson || !event.altKey || !event.shiftKey || event.code !== "KeyN" || event.repeat || pathname?.startsWith("/student/")) return;
       const target = event.target as HTMLElement | null;
       if (target?.closest("input,textarea,select,[contenteditable=true]")) return;
       event.preventDefault();
@@ -37,14 +56,16 @@ export default function NetworkingLauncher() {
     };
     window.addEventListener("keydown", open);
     return () => window.removeEventListener("keydown", open);
-  }, [pathname,authorized]);
+  }, [pathname,hasSavedLesson]);
 
   const start = async () => {
     setBusy(true); setMessage("수업을 준비하고 있어요…");
     try {
       const owner=localStorage.getItem(SAVED)??"";
       const response = await fetch(`/api/networking?sessionId=${encodeURIComponent(owner)}`,{headers:{"x-teacher-token":localStorage.getItem(`classflow:teacher:${owner}`)??""},cache:"no-store"});
-      if (!response.ok) throw Error("행사 자료를 불러오지 못했어요.");
+      if (!response.ok) throw Error(response.status === 403
+        ? "이 브라우저의 강사 권한을 확인하지 못했어요. 수업을 만들었던 브라우저에서 열어 주세요."
+        : "서버에 연결하지 못했어요. 잠시 후 다시 눌러 주세요. 기존 수업은 ‘이어 열기’로 확인할 수 있어요.");
       const preset = await response.json() as {pdfKey:string; name:string; slides:DeckSlide[]};
       if (preset.slides.length !== 38 || !preset.pdfKey.startsWith("https://")) throw Error("행사 자료를 확인해 주세요.");
       const id = `network-${crypto.randomUUID().slice(0,8)}`;
@@ -60,7 +81,7 @@ export default function NetworkingLauncher() {
     finally {setBusy(false);}
   };
 
-  if(!authorized || pathname?.startsWith("/student/")) return null;
+  if(!hasSavedLesson || pathname?.startsWith("/student/")) return null;
   return <>
     {pathname === "/" && <button type="button" onClick={()=>{
       setPrevious(localStorage.getItem(SAVED) ?? "");
