@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { isTeacher, readSession } from "@/lib/live/server";
 import { localMaterialEnabled, readLocalMaterial, saveLocalMaterial } from "@/lib/localMaterial";
+import { PDF_UPLOAD_MAX_BYTES, PDF_UPLOAD_SIZE_ERROR } from "@/lib/lecture/uploadLimits";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,7 +16,7 @@ export async function POST(request: Request) {
     if (!state || !isTeacher(state, request.headers.get("x-teacher-token") ?? "")) return Response.json({ error: "강사 권한이 필요합니다." }, { status: 403 });
     const form = await request.formData();
     const pdf = form.get("pdf");
-    if (!(pdf instanceof File) || !pdf.size || pdf.size > 60 * 1024 * 1024) throw new Error("60MB 이하 PDF를 선택해 주세요.");
+    if (!(pdf instanceof File) || !pdf.size || pdf.size > PDF_UPLOAD_MAX_BYTES) throw new Error(PDF_UPLOAD_SIZE_ERROR);
     const bytes = new Uint8Array(await pdf.arrayBuffer());
     if (new TextDecoder().decode(bytes.slice(0, 5)) !== "%PDF-") throw new Error("올바른 PDF가 아닙니다.");
     const raw = form.get("notes") ?? "[]";

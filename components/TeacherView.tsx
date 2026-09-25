@@ -25,6 +25,7 @@ import InsertSlide from "./lecture/InsertSlide";
 import SpeakerNotes from "./lecture/SpeakerNotes";
 import LessonBackups from "./lecture/LessonBackups";
 import StudentJoinQr from "./lecture/StudentJoinQr";
+import { PDF_UPLOAD_MAX_BYTES, PDF_UPLOAD_SIZE_ERROR } from "@/lib/lecture/uploadLimits";
 
 const noSubscribe = () => () => {};
 const emptyString = () => "";
@@ -86,7 +87,7 @@ export default function TeacherView({ sessionId, localUploads = false, cloudConv
    */
   const storeAndUse = useCallback(
       async (buf: ArrayBuffer, name: string, notes: { slideNo: number; text: string }[] = [], original?: File) => {
-      if (!buf.byteLength || buf.byteLength > 60 * 1024 * 1024) throw new Error("60MB 이하 PDF를 선택해 주세요.");
+      if (!buf.byteLength || buf.byteLength > PDF_UPLOAD_MAX_BYTES) throw new Error(PDF_UPLOAD_SIZE_ERROR);
       if (!new TextDecoder().decode(buf.slice(0, 5)).startsWith("%PDF-")) throw new Error("올바른 PDF 파일을 선택해 주세요.");
       await liveClient(sessionId).send({ action: "patch", partial: {} });
       const token = localStorage.getItem(`classflow:teacher:${sessionId}`) ?? "";
@@ -175,6 +176,7 @@ export default function TeacherView({ sessionId, localUploads = false, cloudConv
         await importExistingQuizzes(file);
       } else {
         if (!/\.pdf$/i.test(file.name) && file.type !== "application/pdf") throw new Error(localUploads ? "PPTX 또는 PDF 파일을 선택해 주세요." : "PDF 파일만 업로드할 수 있습니다.");
+        if (!file.size || file.size > PDF_UPLOAD_MAX_BYTES) throw new Error(PDF_UPLOAD_SIZE_ERROR);
         await storeAndUse(await file.arrayBuffer(), file.name);
       }
     } catch (e) {
@@ -408,6 +410,7 @@ export default function TeacherView({ sessionId, localUploads = false, cloudConv
                 className="cursor-pointer rounded-full bg-ink px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-mocha-deep"
               >
                 {busy === "pdf" ? "자료 준비 중…" : supportsPpt ? "PPTX·PDF 올려 수업 시작" : "PDF 업로드"}
+                <span className="ml-2 text-xs opacity-75">PDF 최대 200MB</span>
                 <input
                   type="file"
                   disabled={busy !== ""}

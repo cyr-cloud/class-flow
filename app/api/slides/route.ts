@@ -1,5 +1,6 @@
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { isTeacher, readSession, validId } from "@/lib/live/server";
+import { PDF_UPLOAD_MAX_BYTES } from "@/lib/lecture/uploadLimits";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,7 +17,7 @@ export async function POST(request: Request) {
         const session = await readSession(sessionId);
         if (!session || !isTeacher(session, request.headers.get("x-teacher-token") ?? "")) throw new Error("이 수업을 연 강사만 PDF를 올릴 수 있어요.");
         if (!pathname.startsWith(`decks/${sessionId}/`) || !/^decks\/[\w-]+\/[a-f0-9-]+\.pdf$/.test(pathname)) throw new Error("잘못된 파일 경로입니다.");
-        return { allowedContentTypes: ["application/pdf"], maximumSizeInBytes: 60 * 1024 * 1024, addRandomSuffix: true, validUntil: Date.now() + 15 * 60 * 1000 };
+        return { allowedContentTypes: ["application/pdf"], maximumSizeInBytes: PDF_UPLOAD_MAX_BYTES, addRandomSuffix: true, validUntil: Date.now() + 15 * 60 * 1000 };
       },
     });
     return Response.json(result);
