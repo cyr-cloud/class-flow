@@ -46,6 +46,7 @@ export default function PresentView({
   onClose: () => void;
 }) {
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const qrDialogRef = useRef<HTMLDialogElement | null>(null);
   // 사용자가 이 슬라이드에서 패널을 접었는지. 슬라이드를 넘기면 다시 열린다.
   const [closedFor, setClosedFor] = useState<number | null>(null);
   const [qrVisible, setQrVisible] = useState(true);
@@ -83,6 +84,7 @@ export default function PresentView({
   // 발표 중 키보드
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (qrDialogRef.current?.open) return;
       const tag = (e.target as HTMLElement | null)?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA") return;
       if (e.key === "Escape") {
@@ -204,10 +206,19 @@ export default function PresentView({
       {isTeacher && studentUrl && qrVisible && <aside aria-label="학생 입장 안내" className="order-first flex shrink-0 items-start justify-end p-3 lg:order-last lg:border-l lg:border-white/10">
         <div id="presentation-join-qr" className="h-fit w-28 shrink-0 rounded-xl border border-line bg-white p-2 text-center text-ink shadow-lg lg:w-44">
           <p className="pt-1 text-xs font-bold">스캔하고 수업 참여</p>
-          <QRCodeSVG value={studentUrl} size={192} level="M" marginSize={4} className="h-auto w-full" role="img" aria-label="학생 입장 QR코드" />
+          <button type="button" aria-label="학생 입장 QR코드 크게 보기" aria-haspopup="dialog" onClick={() => qrDialogRef.current?.showModal()} className="block w-full rounded-lg focus-visible:outline-2 focus-visible:outline-mocha">
+            <QRCodeSVG value={studentUrl} size={192} level="M" marginSize={4} className="h-auto w-full" role="img" aria-label="학생 입장 QR코드" />
+            <span className="block pb-2 text-xs text-mocha underline">크게 보기</span>
+          </button>
           <p className="break-all px-1 pb-1 text-xs text-ink-soft">{sessionId}</p>
         </div>
       </aside>}
+      {isTeacher && studentUrl && <dialog ref={qrDialogRef} aria-label="학생 입장 QR코드 크게 보기" className="m-auto max-h-[94dvh] w-[min(92vw,600px)] overflow-auto rounded-3xl bg-white p-6 text-center text-ink shadow-xl backdrop:bg-black/70">
+        <h2 className="text-xl font-bold">QR코드를 찍고 수업에 참여하세요</h2>
+        <QRCodeSVG value={studentUrl} size={512} level="M" marginSize={4} className="mx-auto my-3 h-auto max-h-[60dvh] w-full" role="img" aria-label="학생 입장 QR코드" />
+        <p className="break-all text-sm text-ink-soft">참여 코드: <strong>{sessionId}</strong></p>
+        <form method="dialog"><button autoFocus className="mt-4 rounded-full bg-ink px-8 py-3 text-white">닫기</button></form>
+      </dialog>}
     </div>
   );
 }
