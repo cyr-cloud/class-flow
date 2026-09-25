@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useState } from "react";
 import SlideViewer from "../SlideViewer";
 import InkCanvas from "./InkCanvas";
-import SlideReactions from "./SlideReactions";
+import SlideReactions, { SlideReactionButtons } from "./SlideReactions";
 import { InkTool, inkStore } from "@/lib/lecture/inkStore";
 import { useCurrentSlide } from "@/lib/lecture/useDeck";
 import WordCloudSlide from "./WordCloudSlide";
@@ -88,7 +88,8 @@ export default function SlideStage({
     }`;
 
   return (
-    <div className={`relative ${className ?? ""}`}>
+    <div className={`relative flex min-h-0 flex-col ${className ?? ""}`}>
+      <div className={`relative min-h-0 ${fit === "contain" ? "flex-1" : ""}`}>
       {content ? <div className={fit === "contain" ? "h-full w-full overflow-auto" : "w-full"}>
         {content.type === "survey" ? <SurveySlide key={content.id} sessionId={sessionId} content={content} teacher={canDraw} /> : content.type === "wordcloud" ? <WordCloudSlide key={content.id} sessionId={sessionId} slideId={content.id} prompt={content.prompt} teacher={canDraw} /> :
           <div className={`flex items-center justify-center rounded-xl bg-gardenia ${fit === "contain" ? "h-full" : "aspect-video"}`}>
@@ -115,11 +116,14 @@ export default function SlideStage({
         lineWidth={width}
       />}
 
-      {pdfKey && !content && size.w > 0 && <SlideReactions key={`${sessionId}:${page}`} sessionId={sessionId} page={page} canReact={!canDraw} />}
+      {pdfKey && !content && size.w > 0 && <SlideReactions key={`${sessionId}:${page}`} sessionId={sessionId} page={page} />}
+      </div>
+
+      {pdfKey && !content && size.w > 0 && !canDraw && <SlideReactionButtons sessionId={sessionId} page={page} />}
 
       {canDraw && !content && size.w > 0 && (
-        // 슬라이드 제목은 대개 위쪽에 있으니 도구 모음은 아래에 띄운다
-        <div role="group" aria-label="판서 도구" className="absolute bottom-3 left-1/2 flex w-max max-w-[calc(100%_-_1.5rem)] -translate-x-1/2 flex-wrap items-center justify-center gap-1 rounded-2xl border border-line bg-paper/95 px-2 py-1.5 shadow-sm backdrop-blur">
+        // 도구 모음은 슬라이드 밖에 둬서 본문과 판서 좌표를 가리지 않는다
+        <div role="group" aria-label="판서 도구" className="mx-auto mt-2 flex w-fit max-w-full shrink-0 flex-wrap items-center justify-center gap-1 rounded-2xl border border-line bg-paper px-2 py-1.5 shadow-sm">
           <button
             onClick={() => setPenOn((v) => !v)}
             title="판서 켜기/끄기"

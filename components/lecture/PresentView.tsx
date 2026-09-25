@@ -106,16 +106,6 @@ export default function PresentView({
 
   return (
     <div ref={rootRef} className="fixed inset-0 z-50 flex flex-col bg-ink lg:flex-row">
-      {isTeacher && studentUrl && <div className="absolute right-4 top-4 z-30 flex flex-col items-end gap-2">
-        {qrVisible && <div id="presentation-join-qr" className="w-36 rounded-xl border border-line bg-white p-2 text-center text-ink shadow-lg sm:w-44">
-          <p className="pt-1 text-xs font-bold">스캔하고 수업 참여</p>
-          <QRCodeSVG value={studentUrl} size={192} level="M" marginSize={4} className="h-auto w-full" role="img" aria-label="학생 입장 QR코드" />
-          <p className="break-all px-1 pb-1 text-xs text-ink-soft">{sessionId}</p>
-        </div>}
-        <button type="button" aria-expanded={qrVisible} aria-controls="presentation-join-qr" onClick={() => setQrVisible(value => !value)} className="rounded-full border border-white/30 bg-ink px-4 py-2 text-sm text-white shadow-md hover:bg-mocha-deep">
-          {qrVisible ? "QR 숨기기" : "QR 보기"}
-        </button>
-      </div>}
       {/* 슬라이드 무대.
           min-w-0이 없으면 패널을 접어 커진 캔버스 폭이 이 칸의 최소 폭이 되어,
           패널을 다시 열어도 칸이 줄지 않고 패널이 화면 오른쪽 밖으로 밀려난다. */}
@@ -185,6 +175,10 @@ export default function PresentView({
             </button>
           )}
 
+          {isTeacher && studentUrl && <button type="button" aria-expanded={qrVisible} aria-controls="presentation-join-qr" onClick={() => setQrVisible(value => !value)} className="rounded-full border border-white/25 px-4 py-2 text-sm text-white hover:border-white">
+            {qrVisible ? "QR 숨기기" : "QR 보기"}
+          </button>}
+
           <button
             onClick={close}
             className="rounded-full bg-white/15 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/25"
@@ -207,6 +201,13 @@ export default function PresentView({
           />
         </aside>
       )}
+      {isTeacher && studentUrl && qrVisible && <aside aria-label="학생 입장 안내" className="order-first flex shrink-0 items-start justify-end p-3 lg:order-last lg:border-l lg:border-white/10">
+        <div id="presentation-join-qr" className="h-fit w-28 shrink-0 rounded-xl border border-line bg-white p-2 text-center text-ink shadow-lg lg:w-44">
+          <p className="pt-1 text-xs font-bold">스캔하고 수업 참여</p>
+          <QRCodeSVG value={studentUrl} size={192} level="M" marginSize={4} className="h-auto w-full" role="img" aria-label="학생 입장 QR코드" />
+          <p className="break-all px-1 pb-1 text-xs text-ink-soft">{sessionId}</p>
+        </div>
+      </aside>}
     </div>
   );
 }
