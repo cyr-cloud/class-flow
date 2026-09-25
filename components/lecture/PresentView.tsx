@@ -7,10 +7,14 @@
 //
 // 브라우저 전체화면(Fullscreen API)이 막힌 환경에서도 오버레이만으로 동작한다.
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { QRCodeSVG } from "qrcode.react";
 import { DeckSlide, LabPost, QuizResponse } from "@/lib/types";
 import SlideStage from "./SlideStage";
 import SlideActivities from "./SlideActivities";
+
+const noSubscribe = () => () => {};
+const emptyUrl = () => "";
 
 export default function PresentView({
   sessionId,
@@ -44,6 +48,9 @@ export default function PresentView({
   const rootRef = useRef<HTMLDivElement | null>(null);
   // 사용자가 이 슬라이드에서 패널을 접었는지. 슬라이드를 넘기면 다시 열린다.
   const [closedFor, setClosedFor] = useState<number | null>(null);
+  const [qrVisible, setQrVisible] = useState(true);
+  const studentUrl = useSyncExternalStore(noSubscribe,
+    useCallback(() => `${window.location.origin}/student/${sessionId}`, [sessionId]), emptyUrl);
 
   const isTeacher = role === "teacher";
   const hasActivity = Boolean(slide && (slide.items.length > 0 || slide.kind === "lab"));
@@ -82,6 +89,7 @@ export default function PresentView({
         close();
         return;
       }
+      if ((e.target as HTMLElement | null)?.closest("button,a,select,[contenteditable=true]")) return;
       if (!isTeacher) return;
       if (e.key === "ArrowRight" || e.key === "PageDown" || e.key === " ") {
         e.preventDefault();
@@ -98,6 +106,16 @@ export default function PresentView({
 
   return (
     <div ref={rootRef} className="fixed inset-0 z-50 flex flex-col bg-ink lg:flex-row">
+      {isTeacher && studentUrl && <div className="absolute right-4 top-4 z-30 flex flex-col items-end gap-2">
+        {qrVisible && <div id="presentation-join-qr" className="w-36 rounded-xl border border-line bg-white p-2 text-center text-ink shadow-lg sm:w-44">
+          <p className="pt-1 text-xs font-bold">스캔하고 수업 참여</p>
+          <QRCodeSVG value={studentUrl} size={192} level="M" marginSize={4} className="h-auto w-full" role="img" aria-label="학생 입장 QR코드" />
+          <p className="break-all px-1 pb-1 text-xs text-ink-soft">{sessionId}</p>
+        </div>}
+        <button type="button" aria-expanded={qrVisible} aria-controls="presentation-join-qr" onClick={() => setQrVisible(value => !value)} className="rounded-full border border-white/30 bg-ink px-4 py-2 text-sm text-white shadow-md hover:bg-mocha-deep">
+          {qrVisible ? "QR 숨기기" : "QR 보기"}
+        </button>
+      </div>}
       {/* 슬라이드 무대.
           min-w-0이 없으면 패널을 접어 커진 캔버스 폭이 이 칸의 최소 폭이 되어,
           패널을 다시 열어도 칸이 줄지 않고 패널이 화면 오른쪽 밖으로 밀려난다. */}
