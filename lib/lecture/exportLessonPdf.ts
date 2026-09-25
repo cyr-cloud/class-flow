@@ -1,5 +1,6 @@
 import { renderSurveyPdf } from "./renderSurveyPdf";
 import { wordCloudColor } from "./wordCloudColors";
+import { groupCloudWords, layoutCloud } from "./wordCloudLayout";
 import { mergeLessonPdf } from "./mergeLessonPdf";
 import type { DeckSlide } from "../types";
 import type { LiveState } from "../live/types";
@@ -36,21 +37,21 @@ export async function renderAddedPage(slide: DeckSlide, responses: LiveState["wo
     ctx.fillStyle = "#262626"; ctx.font = 'bold 40px "Malgun Gothic", sans-serif';
     const startY = wrapped(ctx, content.prompt, 65, 130, 1470, 52) + 20;
     const rows = (responses ?? []).filter(r => r.slideId === content.id);
-    const counts = new Map<string, { word: string; count: number }>();
-    for (const r of rows) { const key = r.word.toLocaleLowerCase(); const old = counts.get(key); if (old) old.count++; else counts.set(key, { word: r.word, count: 1 }); }
-    const words = [...counts.values()].sort((a, b) => b.count - a.count || a.word.localeCompare(b.word, "ko"));
-    const cols = words.length > 30 ? 5 : words.length > 6 ? 3 : 2;
-    const cellW = 1470 / cols, cellH = Math.min(135, (810 - startY) / Math.max(1, Math.ceil(words.length / cols)));
-    ctx.textAlign = "center";
-    for (const [i, word] of words.entries()) {
-      let font = Math.min(cellH * 0.7, 25 + 40 * word.count / words[0].count);
-      const label = `${word.word} (${word.count})`;
-      ctx.font = `bold ${font}px "Malgun Gothic", sans-serif`;
-      while (ctx.measureText(label).width > cellW - 20 && font > 8) { font--; ctx.font = `bold ${font}px "Malgun Gothic", sans-serif`; }
-        ctx.fillStyle = wordCloudColor(word.word);
-      ctx.fillText(label, 65 + cellW * (i % cols + 0.5), startY + cellH * (Math.floor(i / cols) + 0.7));
+    const words = layoutCloud(groupCloudWords(rows));
+    const scale = Math.min(1470 / 1000, (810 - startY) / 520);
+    ctx.save();
+    ctx.translate((1600 - 1000 * scale) / 2, startY);
+    ctx.scale(scale, scale);
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    for (const item of words) {
+      ctx.font = `bold ${item.fontSize}px "Malgun Gothic", sans-serif`;
+      ctx.fillStyle = wordCloudColor(item.word);
+      ctx.save(); ctx.translate(item.x, item.y);
+      ctx.scale(item.width / Math.max(1, ctx.measureText(item.word).width), 1);
+      ctx.fillText(item.word, 0, 0); ctx.restore();
     }
-    if (!words.length) { ctx.font = '32px "Malgun Gothic", sans-serif'; ctx.fillText("아직 참여한 단어가 없어요.", 800, 480); }
+    ctx.restore();
+    if (!words.length) { ctx.textAlign = "center"; ctx.font = '32px "Malgun Gothic", sans-serif'; ctx.fillText("아직 참여한 단어가 없어요.", 800, 480); }
     ctx.textAlign = "left"; ctx.font = '24px "Malgun Gothic", sans-serif'; ctx.fillStyle = "#777777";
     ctx.fillText(`${rows.length}명 참여 · 다운로드 시점의 결과`, 65, 855);
   }

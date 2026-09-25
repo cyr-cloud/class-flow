@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useState, useSyncExternalStore } from "react";
+import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
 import { emptyLive, liveClient } from "@/lib/live/client";
 import { useResponderId } from "@/lib/lecture/useDeck";
 import { wordCloudColor } from "@/lib/lecture/wordCloudColors";
 import SaveResultsImage from "./SaveResultsImage";
+import { groupCloudWords, layoutCloud } from "@/lib/lecture/wordCloudLayout";
 
 const empty = () => emptyLive;
 
@@ -20,21 +21,20 @@ export default function WordCloudSlide({ sessionId, slideId, prompt, teacher }: 
   const [message, setMessage] = useState("");
   const responses = (state.wordResponses ?? []).filter(r => r.slideId === slideId);
   const mine = responses.find(r => r.responderId === responderId);
-  const grouped = new Map<string, { word: string; count: number }>();
-  for (const response of responses) {
-    const key = response.word.toLocaleLowerCase();
-    const entry = grouped.get(key);
-    if (entry) entry.count++; else grouped.set(key, { word: response.word, count: 1 });
-  }
-  const words = [...grouped.values()].sort((a, b) => b.count - a.count || a.word.localeCompare(b.word, "ko"));
-  const max = words[0]?.count ?? 1;
+  const wordKey = JSON.stringify(groupCloudWords(responses));
+  const words = useMemo(() => layoutCloud(JSON.parse(wordKey)), [wordKey]);
 
   return <section aria-label="실시간 워드클라우드" className="flex h-full min-h-80 flex-col rounded-xl bg-[#faf7f2] p-5 text-ink sm:p-8">
     <div className="flex items-center justify-between gap-3 text-xs font-semibold text-mocha"><span>실시간 워드클라우드</span><span aria-live="polite">{responses.length}명 참여</span></div>
     {teacher && <div className="mt-2"><SaveResultsImage sessionId={sessionId} slideId={slideId} /></div>}
     <h2 className="mt-3 break-words text-center text-xl font-bold sm:text-3xl">{prompt}</h2>
-    <div className="my-5 flex min-h-32 flex-1 flex-wrap content-center items-center justify-center gap-x-5 gap-y-3 overflow-y-auto" aria-label="모인 단어">
-      {words.length ? words.map(({ word, count }) => <span key={word} title={`${word}: ${count}명`} className="max-w-full break-words font-bold transition-all" style={{ color: wordCloudColor(word), fontSize: `${Math.round(18 + 30 * count / max)}px` }}>{word}<small className="ml-1 align-super text-xs opacity-60">{count}</small></span>) : <p className="text-center text-mute">학생들의 단어가 이곳에 모여요.<br />많이 나온 단어일수록 크게 보여요.</p>}
+    <div className="my-3 flex min-h-40 flex-1 items-center justify-center" aria-label="모인 단어">
+      {words.length ? <svg viewBox="0 0 1000 520" role="img" aria-label={words.map(w => `${w.word}: ${w.count}명`).join(", ")} className="max-h-[60vh] w-full">
+        {words.map(({ word, count, x, y, width, fontSize }) => <g key={word} className="transition-transform duration-500 motion-reduce:transition-none" style={{ transform: `translate(${x}px, ${y}px)` }}>
+          <title>{word}: {count}명</title>
+          <text textAnchor="middle" dominantBaseline="central" textLength={width} lengthAdjust="spacingAndGlyphs" fill={wordCloudColor(word)} fontSize={fontSize} fontWeight="700">{word}</text>
+        </g>)}
+      </svg> : <p className="text-center text-mute">학생들의 단어가 이곳에 모여요.<br />많이 나온 단어일수록 크게 보여요.</p>}
     </div>
     {teacher ? <p className="text-center text-sm text-ink-soft">학생 화면에서 참여할 수 있어요. 한 사람당 한 표현씩, 다시 제출하면 바뀝니다.</p> : <form onSubmit={async e => {
       e.preventDefault(); if (busy || !responderId) return;
