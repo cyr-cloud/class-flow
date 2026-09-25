@@ -4,6 +4,7 @@ import { useCallback, useState, useSyncExternalStore } from "react";
 import { emptyLive, liveClient } from "@/lib/live/client";
 import { useResponderId } from "@/lib/lecture/useDeck";
 import { wordCloudColor } from "@/lib/lecture/wordCloudColors";
+import SaveResultsImage from "./SaveResultsImage";
 
 const empty = () => emptyLive;
 
@@ -30,6 +31,7 @@ export default function WordCloudSlide({ sessionId, slideId, prompt, teacher }: 
 
   return <section aria-label="실시간 워드클라우드" className="flex h-full min-h-80 flex-col rounded-xl bg-[#faf7f2] p-5 text-ink sm:p-8">
     <div className="flex items-center justify-between gap-3 text-xs font-semibold text-mocha"><span>실시간 워드클라우드</span><span aria-live="polite">{responses.length}명 참여</span></div>
+    {teacher && <div className="mt-2"><SaveResultsImage sessionId={sessionId} slideId={slideId} /></div>}
     <h2 className="mt-3 break-words text-center text-xl font-bold sm:text-3xl">{prompt}</h2>
     <div className="my-5 flex min-h-32 flex-1 flex-wrap content-center items-center justify-center gap-x-5 gap-y-3 overflow-y-auto" aria-label="모인 단어">
       {words.length ? words.map(({ word, count }) => <span key={word} title={`${word}: ${count}명`} className="max-w-full break-words font-bold transition-all" style={{ color: wordCloudColor(word), fontSize: `${Math.round(18 + 30 * count / max)}px` }}>{word}<small className="ml-1 align-super text-xs opacity-60">{count}</small></span>) : <p className="text-center text-mute">학생들의 단어가 이곳에 모여요.<br />많이 나온 단어일수록 크게 보여요.</p>}

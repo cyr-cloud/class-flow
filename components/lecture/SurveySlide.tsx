@@ -4,6 +4,7 @@ import { useCallback, useState, useSyncExternalStore } from "react";
 import { emptyLive, liveClient } from "@/lib/live/client";
 import { useResponderId } from "@/lib/lecture/useDeck";
 import { SURVEY_COLORS, surveyCounts, type SurveyContent } from "@/lib/lecture/survey";
+import SaveResultsImage from "./SaveResultsImage";
 const empty = () => emptyLive;
 const LABELS = { cards: "서술형 응답 카드", bar: "막대그래프", pie: "파이그래프", donut: "도넛그래프" };
 
@@ -27,6 +28,7 @@ export default function SurveySlide({ sessionId, content, teacher }: { sessionId
   const cards = content.display === "cards";
   return <section aria-label={LABELS[content.display]} className="flex h-full min-h-80 min-w-0 flex-col rounded-xl bg-[#faf7f2] p-4 text-ink sm:p-8">
     <div className="flex justify-between gap-3 text-xs font-semibold text-mocha"><span>{LABELS[content.display]}</span><span aria-live="polite">{responses.length}명 참여</span></div>
+    {teacher && <div className="mt-2"><SaveResultsImage sessionId={sessionId} slideId={content.id} /></div>}
     <h2 className="my-4 break-words text-xl font-bold sm:text-3xl">{content.prompt}</h2>
     <div className="min-h-32 flex-1 overflow-y-auto" aria-label="실시간 응답 결과">
       {cards ? <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 xl:grid-cols-3">{responses.length ? responses.map(r => <article key={r.responderId} className="min-w-0 whitespace-pre-wrap rounded-2xl bg-[#eae9e7] p-5 text-base leading-relaxed [overflow-wrap:anywhere] sm:text-xl">{r.text}</article>) : <p className="col-span-full p-8 text-center text-mute">참가자들의 답변이 카드로 나타납니다.</p>}</div> : <div className={content.display === "bar" ? "space-y-4" : "flex flex-col items-center gap-6 lg:flex-row"}>

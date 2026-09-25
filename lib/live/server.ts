@@ -14,11 +14,12 @@ import type { DeckSlide } from "../types";
 import type { LiveState, LiveCommand } from "./types";
 import { cleanSurvey, cleanSurveyResponse } from "../lecture/survey";
 import { REACTIONS } from "./reactions";
+import { BACKUP_INTERVAL, saveBackup } from "./backups";
 
 /** 학생도 보낼 수 있는 명령. 나머지는 수업을 연 강사만 */
 const STUDENT_ACTIONS: ReadonlySet<LiveCommand["action"]> = new Set(["respond", "addPost", "removePost", "likePost", "react", "wordRespond", "surveyRespond"]);
 
-interface Stored extends LiveState { teacherToken: string }
+interface Stored extends LiveState { teacherToken: string; backupAt?: number; backupRevision?: number }
 
 const RETRIES = 6;
 
@@ -141,6 +142,7 @@ function ensureSlide(state: Stored, id: string, slideNo: number): DeckSlide {
 /** 명령 하나를 상태에 적용한다. 저장은 호출한 쪽이 한다. */
 function apply(id: string, state: Stored, command: LiveCommand, teacher: boolean) {
     switch (command.action) {
+    case "backup": break;
     case "importQuiz": {
       const slide=state.deck?.slides.find(s=>s.slideNo===command.slideNo);
       if(state.session.pdfKey!==command.pdfKey||!slide||slide.content||(slide.pdfPage??slide.slideNo)!==command.pdfPage)
@@ -389,7 +391,7 @@ export async function execute(id: string, token: string, command: LiveCommand): 
   // 다른 응답이 먼저 저장되면 우리 쓰기가 거절된다 — 최신 상태를 다시 읽어 얹고 재시도한다.
   for (let attempt = 0; attempt < RETRIES; attempt += 1) {
     const raw = await kv().get(key(id));
-    const state = parse(raw) ?? (() => {
+    const state: Stored = parse(raw) ?? (() => {
       if (STUDENT_ACTIONS.has(command.action) || !/^[a-zA-Z0-9_-]{20,100}$/.test(token))
         throw new Error("열린 수업을 찾지 못했습니다.");
       return { session: { ...initialSessionState }, deck: null, responses: [], posts: [], revision: 0, teacherToken: token } satisfies Stored;
@@ -401,6 +403,14 @@ export async function execute(id: string, token: string, command: LiveCommand): 
     if (!STUDENT_ACTIONS.has(command.action) && !teacher)
       throw new Error("이 수업을 연 강사 화면에서만 변경할 수 있습니다.");
 
+    const destructive = ["sample", "replaceMaterial", "deck", "reset", "removeItem", "removePost", "guide"].includes(command.action);
+    if (command.action === "backup" && (!state.deck || state.backupRevision === state.revision)) return publicState(state, teacher);
+    if (state.deck && (destructive || command.action === "backup" || Date.now() - (state.backupAt ?? 0) >= BACKUP_INTERVAL)) {
+      // Await durable storage BEFORE any reset. A failed backup blocks the reset.
+      await saveBackup(id, state, destructive ? `변경 전: ${command.action}` : "자동 저장");
+      state.backupAt = Date.now();
+      state.backupRevision = command.action === "backup" ? state.revision + 1 : state.revision;
+    }
     apply(id, state, command, teacher);
     state.revision += 1;
     state.session.updatedAt = Date.now();

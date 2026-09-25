@@ -23,6 +23,7 @@ import OnboardingModal from "./lecture/OnboardingModal";
 import type { GenerationMode } from "@/lib/lecture/aiQuizRules";
 import InsertSlide from "./lecture/InsertSlide";
 import SpeakerNotes from "./lecture/SpeakerNotes";
+import LessonBackups from "./lecture/LessonBackups";
 
 const noSubscribe = () => () => {};
 const emptyString = () => "";
@@ -520,6 +521,8 @@ export default function TeacherView({ sessionId, localUploads = false, cloudConv
         {state.pdfKey && <SpeakerNotes key={`${sessionId}:${state.pdfKey}`} sessionId={sessionId}
           page={slide?.pdfPage ?? state.currentSlide} added={!!slide?.content}
           source={isSample ? "sample" : isCloudPpt ? "cloud" : isLocalPpt ? "local" : "pdf"} />}
+
+        <LessonBackups sessionId={sessionId} ready={!!deck} />
 
         <SlideComposer
           sessionId={sessionId}

@@ -15,6 +15,7 @@ export interface LiveState {
 }
 
 export type LiveCommand =
+  | { action: "backup" }
   | { action: "importQuiz"; slideNo: number; pdfPage: number; pdfKey: string; items: {question:string;options:string[];answers:number[]}[] }
   | ({ action: "surveyRespond" } & import("../lecture/survey").SurveyResponse)
   | { action: "replaceMaterial"; deck: Deck; pdfKey: string; name: string }
