@@ -217,7 +217,7 @@ export default function PresentView({
         <h2 className="text-xl font-bold">QR코드를 찍고 수업에 참여하세요</h2>
         <QRCodeSVG value={studentUrl} size={512} level="M" marginSize={4} className="mx-auto my-3 h-auto max-h-[60dvh] w-full" role="img" aria-label="학생 입장 QR코드" />
         <p className="break-all text-sm text-ink-soft">참여 코드: <strong>{sessionId}</strong></p>
-        <form method="dialog"><button autoFocus className="mt-4 rounded-full bg-ink px-8 py-3 text-white">닫기</button></form>
+        <form method="dialog" className="mt-4 flex justify-center"><button autoFocus className="min-h-12 min-w-32 rounded-full bg-ink px-8 py-3 text-base font-semibold text-white hover:bg-mocha-deep">닫기</button></form>
       </dialog>}
     </div>
   );
