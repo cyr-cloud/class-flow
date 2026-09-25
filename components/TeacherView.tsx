@@ -24,6 +24,7 @@ import type { GenerationMode } from "@/lib/lecture/aiQuizRules";
 import InsertSlide from "./lecture/InsertSlide";
 import SpeakerNotes from "./lecture/SpeakerNotes";
 import LessonBackups from "./lecture/LessonBackups";
+import StudentJoinQr from "./lecture/StudentJoinQr";
 
 const noSubscribe = () => () => {};
 const emptyString = () => "";
@@ -620,7 +621,8 @@ export default function TeacherView({ sessionId, localUploads = false, cloudConv
 
         {/* 학생 링크 */}
         {studentUrl && (
-          <section className="mt-6 rounded-2xl border border-line bg-gardenia/60 p-5">
+          <section className="mt-6 flex flex-col items-center gap-6 rounded-2xl border border-line bg-gardenia/60 p-5 sm:flex-row">
+            <div className="w-full min-w-0 flex-1">
             <p className="eyebrow">학생 입장 링크</p>
             <div className="mt-2 flex items-center gap-2">
               <code className="min-w-0 flex-1 truncate rounded-lg bg-paper px-3 py-2 font-mono text-sm text-ink-soft">
@@ -635,8 +637,10 @@ export default function TeacherView({ sessionId, localUploads = false, cloudConv
               </button>
             </div>
             <p className="mt-2 text-xs text-mute">
-              학생에게 위 링크를 보내 주세요. 가입 없이 참여하고, 같은 슬라이드를 보며 퀴즈와 실습을 할 수 있어요.
+              링크를 보내거나 QR코드를 보여 주세요. 학생은 가입 없이 수업에 참여할 수 있어요.
             </p>
+            </div>
+            <StudentJoinQr url={studentUrl} sessionId={sessionId} />
           </section>
         )}
       </main>
