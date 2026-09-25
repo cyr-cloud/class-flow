@@ -452,7 +452,7 @@ export default function TeacherView({ sessionId, localUploads = false, cloudConv
 
         {/* 슬라이드 */}
         <div className="relative flex items-center gap-2 sm:gap-3">
-        {localUploads && state.pdfKey && <InsertSlide key={`before-${state.currentSlide}`} sessionId={sessionId} page={state.currentSlide} side="before" disabled={!!busy}
+        {state.pdfKey && <InsertSlide key={`before-${state.currentSlide}`} sessionId={sessionId} page={state.currentSlide} side="before" disabled={!!busy}
           open={insertAt?.page === state.currentSlide && insertAt.side === "before"} onToggle={() => setInsertAt(insertAt?.page === state.currentSlide && insertAt.side === "before" ? null : { page: state.currentSlide, side: "before" })} onClose={() => setInsertAt(null)} />}
         <div className="min-w-0 flex-1 overflow-hidden rounded-2xl border border-line bg-paper p-3">
           <SlideStage
@@ -467,7 +467,7 @@ export default function TeacherView({ sessionId, localUploads = false, cloudConv
             }}
           />
         </div>
-        {localUploads && state.pdfKey && <InsertSlide key={`after-${state.currentSlide}`} sessionId={sessionId} page={state.currentSlide} side="after" disabled={!!busy}
+        {state.pdfKey && <InsertSlide key={`after-${state.currentSlide}`} sessionId={sessionId} page={state.currentSlide} side="after" disabled={!!busy}
           open={insertAt?.page === state.currentSlide && insertAt.side === "after"} onToggle={() => setInsertAt(insertAt?.page === state.currentSlide && insertAt.side === "after" ? null : { page: state.currentSlide, side: "after" })} onClose={() => setInsertAt(null)} />}
         </div>
 
