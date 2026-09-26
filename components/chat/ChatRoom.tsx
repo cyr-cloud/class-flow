@@ -157,7 +157,6 @@ export function ChatPanel() {
     {pinned && <div className="max-h-[35%] shrink-0 overflow-auto border-b border-tendril/40 bg-tendril-tint p-3"><p className="mb-2 text-xs font-bold">📌 진행 확인</p>{render(pinned, true)}{chat.teacher && <details className="mt-2 text-xs"><summary className="cursor-pointer">아직 반응하지 않은 참여자 {waiting.length}명</summary><p className="mt-2">{waiting.map(p => p.name).join(', ') || '모두 반응했어요.'}</p><p className="mt-1 text-mute">이 채팅에 입장한 학생 기준입니다. 미반응이 미완료를 의미하지는 않아요.</p></details>}</div>}
     <div className="min-h-0 flex-1 overflow-auto px-4 pb-3 pt-5" onScroll={e => { const el = e.currentTarget; nearBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 100; }}>
       {chat.data.hasMore && <button className="w-full text-sm underline" onClick={() => void chat.history().catch(() => setError('이전 대화를 읽지 못했어요.'))}>이전 대화 더 보기</button>}
-      {!chat.data.messages.length && <p className="py-6 text-center text-sm text-mute">질문이나 막힌 단계 번호를 남겨 주세요.<br />완료했다면 강사 메시지에 이모지를 눌러 주세요.</p>}
       {chat.data.messages.map((m, index) => {
         const previous = chat.data.messages[index - 1];
         const gap = previous ? Date.parse(m.createdAt) - Date.parse(previous.createdAt) : Infinity;
