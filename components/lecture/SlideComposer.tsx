@@ -136,7 +136,7 @@ export default function SlideComposer({
               }}
               disabled={busy || generating}
               title={generationBlockedMessage ?? "이 슬라이드의 발표자 노트(강의 대본)를 읽어 문항을 만듭니다"}
-              className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors disabled:opacity-40 ${generationBlockedMessage ? "border-line-strong bg-gardenia/50 text-mute hover:bg-gardenia" : "border-mocha text-mocha-deep hover:bg-mocha hover:text-white"}`}
+              className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors disabled:opacity-40 ${generationBlockedMessage ? "border-line-strong bg-gardenia/50 text-mute hover:bg-gardenia" : "ui-action ui-action-purple"}`}
             >
               {generating ? "대본 읽는 중…" : generationMode === "experience" || generationMode === "level" ? "✦ AI로 참여 질문 만들기" : "✦ AI로 퀴즈 만들기"}
             </button>

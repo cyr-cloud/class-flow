@@ -446,13 +446,13 @@ export default function TeacherView({ sessionId, localUploads = false, cloudConv
           <section aria-label="강의 구성" className="w-full border-b border-line bg-paper">
             <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-4 gap-y-2 px-6 py-3">
               <p className="eyebrow">강의 구성</p>
-              <p className="text-sm text-ink-soft">
-                슬라이드 {deck.slides.length}장 · 실습 {labSlides.length}개 · 참여요소{" "}
-                {deck.slides.reduce((n, s) => n + s.items.length + (s.content?.type === "wordcloud" || s.content?.type === "survey" ? 1 : 0), 0)}문항
+              <p className="flex flex-wrap items-center gap-2 text-sm text-ink-soft">
+                <span className="rounded-full bg-mocha-tint px-3 py-1 text-mocha-deep">슬라이드 {deck.slides.length}장</span>{" "}<span className="rounded-full bg-tendril-tint px-3 py-1 text-tendril-deep">실습 {labSlides.length}개</span>{" "}<span className="rounded-full bg-viola-tint px-3 py-1 text-viola-deep">참여요소{" "}
+                {deck.slides.reduce((n, s) => n + s.items.length + (s.content?.type === "wordcloud" || s.content?.type === "survey" ? 1 : 0), 0)}문항</span>
                 {deck.source === "pdf" && " (PDF 제목으로 감지)"}
               </p>
               {posts.length > 0 && (
-                <p className="text-sm text-mute sm:ml-auto">
+                <p className="rounded-full bg-rosetan-tint px-3 py-1 text-sm text-rosetan-deep sm:ml-auto">
                   올라온 결과물 <span className="tabular-nums text-ink-soft">{posts.length}</span>개
                 </p>
               )}

@@ -21,14 +21,14 @@
 
   - 잉크(#262626)는 교안 배경색과 같은 먹색. 순수 검정 대신 써서 따뜻한 중성으로 맞춘다.
   - 종이(흰색)와 Gardenia(#f0e9e0) 사이 톤으로 면을 나누고, 선은 옅게.
-  - 액센트는 Mocha 하나로 통일하고, 나머지 색은 의미가 있을 때만 (정답=Tendril 등).
+  - 브랜드 원본과 기능별 배치 원칙: docs/brand-colors.md. 보조색은 옅은 면 + 진한 글자로 사용한다.
 */
 
 @theme inline {
   /* 중성 */
   --color-ink: #262626;
   --color-ink-soft: #554d47;
-  --color-mute: #8d837b;
+  --color-mute: #71675f;
   --color-line: #e8e0d6;
   --color-line-strong: #d6cabb;
   --color-paper: #ffffff;
@@ -48,9 +48,54 @@
   --color-viola: #a692ba;
   --color-cobblestone: #a89a8e;
   --color-willow: #9a8b4f;
+  --color-cornflower-tint: #edf2fa;
+  --color-cornflower-deep: #365685;
+  --color-viola-tint: #f2eef7;
+  --color-viola-deep: #66517d;
+  --color-tendril-deep: #496239;
+  --color-rosetan-tint: #fbefed;
+  --color-rosetan-deep: #884d49;
 
   --font-sans: var(--font-sans-kr);
   --font-mono: var(--font-geist-mono);
+}
+
+/* Shared feedback without moving controls or covering slide content. */
+@layer base {
+  button, summary, [role="button"] {
+    -webkit-tap-highlight-color: transparent;
+    transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease, filter 140ms ease, box-shadow 140ms ease;
+  }
+  button:enabled, summary, [role="button"] { cursor: pointer; }
+  button:disabled { cursor: not-allowed; }
+  @media (hover: hover) {
+    button:enabled:hover, summary:hover {
+      filter: brightness(.96);
+      box-shadow: 0 0 0 2px var(--color-line-strong);
+    }
+  }
+  button:enabled:active, summary:active { filter: brightness(.88); }
+}
+.ui-action {
+  --action-accent: var(--color-mocha);
+  --action-tint: var(--color-mocha-tint);
+  --action-text: var(--color-mocha-deep);
+  color: var(--action-text);
+  background: var(--action-tint);
+  border-color: color-mix(in srgb, var(--action-accent) 55%, white);
+}
+.ui-action-blue { --action-accent: var(--color-cornflower); --action-tint: var(--color-cornflower-tint); --action-text: var(--color-cornflower-deep); }
+.ui-action-purple { --action-accent: var(--color-viola); --action-tint: var(--color-viola-tint); --action-text: var(--color-viola-deep); }
+.ui-action-green { --action-accent: var(--color-tendril); --action-tint: var(--color-tendril-tint); --action-text: var(--color-tendril-deep); }
+@media (hover: hover) {
+  .ui-action:enabled:hover { background: color-mix(in srgb, var(--action-accent) 25%, white); border-color: var(--action-text); filter: none; }
+}
+.ui-action:enabled:active, .ui-action[aria-expanded="true"], .ui-action[aria-pressed="true"] {
+  background: var(--action-text); color: white; border-color: var(--action-text); filter: none;
+}
+.ui-action[aria-expanded="true"]:hover, .ui-action[aria-pressed="true"]:hover { background: var(--action-text); }
+@media (prefers-reduced-motion: reduce) {
+  button, summary, [role="button"] { transition: none; }
 }
 
 html {

@@ -116,7 +116,7 @@ export default function ChatRoom({ children, sessionId, role, enabled }: { child
         <h2 className="text-xl font-bold">수업에서 사용할 이름</h2>
         <p className="my-3 text-sm text-ink-soft">채팅과 이모지 반응에 표시돼요. 같은 브라우저에서는 기억합니다.</p>
         {role === 'student' && <input aria-label="이름 또는 닉네임" autoFocus required maxLength={30} value={nameDraft} onChange={e => setNameDraft(e.target.value)} className="w-full rounded-lg border border-line p-3" placeholder="이름 또는 닉네임" />}
-        {error && <p role="alert" className="mt-2 text-sm text-rosetan">{error}</p>}
+        {error && <p role="alert" className="mt-2 text-sm text-rosetan-deep">{error}</p>}
         <div className="mt-4 flex gap-2"><button disabled={joining} className="min-h-12 flex-1 rounded-full bg-ink px-6 py-3 text-white">{joining ? '연결 중…' : '채팅 입장'}</button><button type="button" onClick={() => dialog.current?.close()} className="px-3">나중에</button></div>
       </form>
     </dialog>}
@@ -126,7 +126,7 @@ export default function ChatRoom({ children, sessionId, role, enabled }: { child
 export function ChatToggle() {
   const chat = useChat();
   if (!chat?.enabled) return null;
-  return <button type="button" aria-expanded={chat.open} onClick={() => chat.setOpen(!chat.open)} className="rounded-full border border-line-strong bg-paper px-4 py-2 text-sm text-ink">💬 채팅{chat.unread > 0 ? ` ${chat.unread}` : ''}</button>;
+  return <button type="button" aria-expanded={chat.open} onClick={() => chat.setOpen(!chat.open)} className="ui-action ui-action-blue rounded-full border px-4 py-2 text-sm font-medium">💬 채팅{chat.unread > 0 ? ` ${chat.unread}` : ''}</button>;
 }
 
 export function ChatPanel() {
@@ -141,15 +141,15 @@ export function ChatPanel() {
   const render = (m: Message, pinned = false) => <ChatMessage key={m.id} message={m} pinned={pinned} teacher={chat.teacher} actorId={chat.id} run={run} />;
   const pinned = chat.data.pinned;
   const waiting = chat.data.people?.filter(p => !pinned?.reactions.some(r => r.actor === p.id)) || [];
-  return <aside aria-label="실시간 수업 채팅" className="flex h-full min-h-0 flex-col border-l border-mocha/40 bg-[#eaded5] text-ink shadow-xl">
-    <header className="flex shrink-0 items-center justify-between bg-mocha-deep p-3 text-white"><div><h2 className="font-bold">수업 채팅</h2><p className="text-xs text-white/90" role="status">{chat.status}</p></div><button aria-label="채팅 닫기" onClick={() => chat.setOpen(false)} className="min-h-11 px-3">닫기</button></header>
-    {pinned && <div className="max-h-[35%] shrink-0 overflow-auto border-b border-mocha/30 bg-white/60 p-3"><p className="mb-2 text-xs font-bold">📌 진행 확인</p>{render(pinned, true)}{chat.teacher && <details className="mt-2 text-xs"><summary className="cursor-pointer">아직 반응하지 않은 참여자 {waiting.length}명</summary><p className="mt-2">{waiting.map(p => p.name).join(', ') || '모두 반응했어요.'}</p><p className="mt-1 text-mute">이 채팅에 입장한 학생 기준입니다. 미반응이 미완료를 의미하지는 않아요.</p></details>}</div>}
+  return <aside aria-label="실시간 수업 채팅" className="flex h-full min-h-0 flex-col border-l border-line-strong bg-cream text-ink shadow-xl">
+    <header className="flex shrink-0 items-center justify-between border-b border-line bg-gardenia p-4 text-ink"><div><h2 className="font-bold">수업 채팅</h2><p className="text-xs text-ink-soft" role="status">{chat.status}</p></div><button aria-label="채팅 닫기" onClick={() => chat.setOpen(false)} className="ui-action min-h-11 rounded-full border px-3">닫기</button></header>
+    {pinned && <div className="max-h-[35%] shrink-0 overflow-auto border-b border-tendril/40 bg-tendril-tint p-3"><p className="mb-2 text-xs font-bold">📌 진행 확인</p>{render(pinned, true)}{chat.teacher && <details className="mt-2 text-xs"><summary className="cursor-pointer">아직 반응하지 않은 참여자 {waiting.length}명</summary><p className="mt-2">{waiting.map(p => p.name).join(', ') || '모두 반응했어요.'}</p><p className="mt-1 text-mute">이 채팅에 입장한 학생 기준입니다. 미반응이 미완료를 의미하지는 않아요.</p></details>}</div>}
     <div className="min-h-0 flex-1 space-y-2 overflow-auto px-4 pb-3 pt-5" onScroll={e => { const el = e.currentTarget; nearBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 100; }}>
       {chat.data.hasMore && <button className="w-full text-sm underline" onClick={() => void chat.history().catch(() => setError('이전 대화를 읽지 못했어요.'))}>이전 대화 더 보기</button>}
       {!chat.data.messages.length && <p className="py-6 text-center text-sm text-mute">질문이나 막힌 단계 번호를 남겨 주세요.<br />완료했다면 강사 메시지에 이모지를 눌러 주세요.</p>}
       {chat.data.messages.map(m => render(m, m.id === pinned?.id))}<div ref={bottom} />
     </div>
-    {(error || chat.error) && <p role="alert" className="px-3 text-sm text-rosetan">{error || chat.error}</p>}
+    {(error || chat.error) && <p role="alert" className="px-3 text-sm text-rosetan-deep">{error || chat.error}</p>}
     <form className="shrink-0 border-t border-mocha/30 bg-paper p-3" onSubmit={async e => {
       e.preventDefault(); if (busy || !draft.trim()) return;
       setError('');
@@ -182,7 +182,7 @@ function ChatMessage({ message: m, pinned, teacher, actorId, run }: { message: M
     <div className="flex flex-wrap items-center gap-1">
       {EMOJIS.filter(emoji => m.reactions.some(r => r.emoji === emoji)).map(emoji => {
         const reactions = m.reactions.filter(r => r.emoji === emoji), mine = reactions.some(r => r.actor === actorId);
-        return <button type="button" key={emoji} title={reactions.map(r => r.name).join(', ')} aria-label={`${emoji} 반응 ${reactions.length}명`} aria-pressed={mine} onClick={() => react(emoji)} className={`rounded-full border px-2 py-1 text-sm ${mine ? 'border-mocha bg-gardenia' : 'border-line'}`}>{emoji} {reactions.length}</button>;
+        return <button type="button" key={emoji} title={reactions.map(r => r.name).join(', ')} aria-label={`${emoji} 반응 ${reactions.length}명`} aria-pressed={mine} onClick={() => react(emoji)} className={`rounded-full border px-2 py-1 text-sm ${mine ? 'border-cornflower bg-cornflower-tint text-cornflower-deep' : 'border-line bg-paper'}`}>{emoji} {reactions.length}</button>;
       })}
       <button type="button" aria-label="반응 추가 및 메시지 작업" aria-expanded={expanded} onClick={() => setExpanded(!expanded)} className={`${styles.touchTrigger} min-h-11 min-w-11 rounded-full border border-line text-sm text-mute`}>☺＋</button>
     </div>

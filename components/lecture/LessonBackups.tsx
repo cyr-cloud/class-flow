@@ -32,7 +32,7 @@ export default function LessonBackups({ sessionId, ready }: { sessionId: string;
     return body;
   };
   return <>
-      <button type="button" aria-haspopup="dialog" className={`rounded-full border px-4 py-2 text-sm ${failed ? "border-rosetan text-rosetan" : "border-line-strong text-ink-soft"}`} onClick={async () => {
+      <button type="button" aria-haspopup="dialog" className={`rounded-full border px-4 py-2 text-sm ${failed ? "border-rosetan text-rosetan-deep bg-rosetan-tint" : "ui-action ui-action-green"}`} onClick={async () => {
         dialog.current?.showModal();
         setEntries(null);
         try { setEntries((await request()).backups); } catch (e) { setMessage((e as Error).message); }
