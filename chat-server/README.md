@@ -1,6 +1,6 @@
 # ClassFlow 수업 채팅
 
-현재 상태: **로컬 구현·검증 중, 운영 서버 미연결**. 제출한 웹 주소는
+현재 상태: **2026-09-26 Production 연결 및 브라우저 기능 검증 완료**. 제출한 웹 주소는
 `https://class-flow-fawn.vercel.app` 그대로 유지한다. 별도 HTTPS 주소는
 브라우저가 접속할 채팅 백엔드에만 사용한다.
 
@@ -39,7 +39,7 @@ PGlite(PostgreSQL 엔진)로 저장한다. 개발용 키도 `.classflow`에만 �
 - 작성 중 문장은 패널 닫기·전체화면 전환 동안 유지되지만 브라우저 새로고침 전에는
   서버에 저장되지 않는다. 전송 완료된 대화만 DB 보존 대상이다.
 
-## 운영 연결 순서 — 아직 미완료
+## 운영 구성 및 유지보수
 
 1. 2026-09-26 Lightsail 유휴 상태 확인: 서울 4GB/2vCPU/80GB, `free -h` 사용 가능 3.1GiB, `df -h /` 여유 73GB. classflow-agent·classflow-convert 서비스 정상 실행. 변환 작업 중 동시 부하는 추가 확인한다.
    현재 PPT 변환 프로세스를 중단하지 않는다. compose 메모리 제한은 합계 896MiB이며
@@ -49,7 +49,7 @@ PGlite(PostgreSQL 엔진)로 저장한다. 개발용 키도 `.classflow`에만 �
 3. `docker compose up -d --build`. PostgreSQL은 외부에 공개하지 않는다.
    채팅 포트도 127.0.0.1에만 바인딩한다. `/health`는 프로세스 확인용이며 DB 상태 보증은 아니다.
 4. DNS가 연결된 HTTPS 호스트와 Caddy 리버스 프록시 구성 (`Caddyfile.example`).
-   실제 도메인·방화벽은 아직 설정하지 않았다. Vercel 웹 주소 변경은 필요 없다.
+   무료 sslip.io 주소와 Caddy HTTPS, Lightsail IPv4 TCP 443 연결 완료. Vercel 웹 주소는 유지한다.
 5. DB 백업을 운영자가 승인한 외부 저장소에도 보관하고 복원 시험한다.
    아래 `backup.sh`는 수동 덤프 도구일 뿐 예약·외부 복제는 별도로 설정해야 한다.
 6. 배포 프리뷰에서 CHAT_SERVER_URL과 서버와 동일한 CHAT_TOKEN_SECRET을 설정하고
@@ -65,8 +65,7 @@ npm test --prefix chat-server
 
 실제 Socket.IO 연결 + 파일 기반 PostgreSQL 엔진으로 30명 동시 반응,
 중복 전송, 역할 제한, 수업 격리, 만료 티켓, 재접속, 과거 페이지 조회,
-DB 종료·재시작 후 보존을 검증한다. **운영 Docker PostgreSQL·HTTPS·휴대폰 실기기는
-별도 검증 대상**이다. 로컬 테스트 통과는 운영 부하 시험 완료를 의미하지 않는다.
+DB 종료·재시작 후 보존을 검증한다. 운영 Docker PostgreSQL 저장, 공개 HTTPS/WSS 및 강사·학생 브라우저 검증도 완료했다. **휴대폰 실기기, 운영 30명 동시 부하 및 PPT 변환 동시 부하는 미검증**이다.
 
 DB 백업 예시(Linux, 이 디렉터리에서):
 
@@ -84,7 +83,16 @@ bash backup.sh /var/backups/classflow-chat
 - `classflow-chat.43-200-221-32.sslip.io` DNS A 응답 확인. 무료 외부 DNS 운영에 의존하며 직접 소유한 도메인은 아니다.
 - 채팅 DB/앱은 기본 compose로 내부에서 먼저 검증한다. DB를 외부에 공개하지 않는다.
 - HTTPS는 Caddy 공식 이미지와 Let's Encrypt 인증서를 사용한다. 공개 전 허용된 연결 출처·서명 인증·DB 보존 검증을 마친다.
-- 준비된 공개 구성: `docker compose -f compose.yaml -f compose.https.yaml up -d --build`. 아직 실행하지 않음. Lightsail TCP 443 허용 및 HTTP/HTTPS 서비스 공개 직전 확인 필요.
+- 실행 중인 공개 구성: `docker compose -f compose.yaml -f compose.https.yaml up -d --build`. 사용자 승인 후 Lightsail IPv4 TCP 443 및 HTTP/HTTPS 게이트웨이를 활성화했다.
 - 비밀 설정: 서버에서 `node setup-env.mjs classflow-chat.43-200-221-32.sslip.io`. 기존 `.env`를 덮어쓰지 않으며 키를 출력하지 않는다.
 - Vercel 환경변수: CHAT_SERVER_URL은 위 호스트의 HTTPS URL, CHAT_TOKEN_SECRET은 서버와 동일. 키는 사용자 직접 입력 또는 승인된 비밀 전달 경로로만 설정한다.
 - 추가 도메인·서버·로드밸런서 구입 없음. 기존 Lightsail 트래픽 한도 초과 비용까지 없어지는 것은 아니다.
+
+## 배포 검증 기록 (2026-09-26)
+
+- Vercel Production 재배포 `D5RFdoxTHivRFJGiTH7FKFWJE6gB`, 소스 `983b460`, Ready 확인.
+- CHAT_SERVER_URL 및 사용자 직접 등록한 CHAT_TOKEN_SECRET을 Production에 적용.
+- 격리한 검증 수업 `chat-deploy-check-0926`에서 강사/학생 두 탭으로 양방향 메시지, 완료 반응, 강사 고정, 미반응 0명 표시 확인.
+- 양쪽 새로고침 후 이름, 메시지, 반응, 고정 복원 확인. 전체화면 메시지 송수신 및 QR/슬라이드 분리 배치 확인.
+- Lightsail 기본 compose의 DB는 외부 포트 없음, 채팅은 127.0.0.1:3400. 공개 게이트웨이만 80/443 사용. 기존 변환 서비스 2개 active 확인.
+- 수동 DB 덤프 생성 및 pg_restore 목록 검사 완료. **백업 예약, 서버 외부 복제, 별도 DB 실제 복원 시험은 아직 미완료**. 서버 디스크 자체 소실까지 보호하는 상태는 아니다.
