@@ -1,0 +1,19 @@
+# Enable only after verifying the internal chat service and approving public HTTPS.
+services:
+  gateway:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      CHAT_HOSTNAME: ${CHAT_HOSTNAME:?set hostname}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    mem_limit: 192m
+    depends_on: [chat]
+volumes:
+  caddy-data:
+  caddy-config:

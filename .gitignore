@@ -2,6 +2,8 @@
 
 # dependencies
 /node_modules
+/chat-server/node_modules/
+/chat-server/.data/
 /.pnp
 .pnp.*
 .yarn/*
@@ -15,6 +17,7 @@
 
 # next.js
 /.next/
+/.next-chat/
 /out/
 
 # production

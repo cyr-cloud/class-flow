@@ -1,0 +1,3 @@
+{$CHAT_HOSTNAME} {
+    reverse_proxy chat:3400
+}

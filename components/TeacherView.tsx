@@ -1,4 +1,5 @@
 "use client";
+import { ChatToggle } from "./chat/ChatRoom";
 
 // 강사용 진행 화면.
 // 슬라이드를 넘기면 patch()로 상태가 전파되어 학생 화면이 따라온다.
@@ -513,6 +514,7 @@ export default function TeacherView({ sessionId, localUploads = false, cloudConv
           )}
 
           <LessonBackups sessionId={sessionId} ready={!!deck} />
+            <ChatToggle />
 
           {state.pdfKey && (
             <button

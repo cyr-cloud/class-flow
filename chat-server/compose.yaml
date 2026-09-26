@@ -1,0 +1,29 @@
+services:
+  chat:
+    build: .
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://classflow:${POSTGRES_PASSWORD:?set database password}@db:5432/classflow
+      CHAT_TOKEN_SECRET: ${CHAT_TOKEN_SECRET:?set shared signing secret}
+      CHAT_ALLOWED_ORIGINS: https://class-flow-fawn.vercel.app
+    ports: ["127.0.0.1:3400:3400"]
+    mem_limit: 384m
+    depends_on:
+      db:
+        condition: service_healthy
+  db:
+    image: postgres:17-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: classflow
+      POSTGRES_USER: classflow
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set database password}
+    volumes: ["chat-db:/var/lib/postgresql/data"]
+    mem_limit: 512m
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U classflow"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+volumes:
+  chat-db:

@@ -1,4 +1,5 @@
 "use client";
+import { ChatToggle } from "./chat/ChatRoom";
 
 // 학생용 화면.
 // 강사가 넘긴 슬라이드를 자동으로 따라가고, 참여요소가 걸린 슬라이드에서는 직접 눌러 답한다.
@@ -44,6 +45,7 @@ export default function StudentView({ sessionId }: { sessionId: string }) {
             </h1>
           </div>
           <div className="ml-auto flex shrink-0 items-center gap-2">
+            <ChatToggle />
             {state.pdfKey && <button disabled={exporting} onClick={async () => {
               setExporting(true); setDownloadNotice("PDF를 만드는 중이에요…");
               try {

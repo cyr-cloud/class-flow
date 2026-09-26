@@ -12,6 +12,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { DeckSlide, LabPost, QuizResponse } from "@/lib/types";
 import SlideStage from "./SlideStage";
 import SlideActivities from "./SlideActivities";
+import { ChatToggle, ChatPanel, useChat } from "../chat/ChatRoom";
 
 const noSubscribe = () => () => {};
 const emptyUrl = () => "";
@@ -46,6 +47,12 @@ export default function PresentView({
   onClose: () => void;
 }) {
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const chat = useChat();
+  const setChatFullscreen = chat?.setFullscreen;
+  useEffect(() => {
+    setChatFullscreen?.(true);
+    return () => setChatFullscreen?.(false);
+  }, [setChatFullscreen]);
   const qrDialogRef = useRef<HTMLDialogElement | null>(null);
   // 사용자가 이 슬라이드에서 패널을 접었는지. 슬라이드를 넘기면 다시 열린다.
   const [closedFor, setClosedFor] = useState<number | null>(null);
@@ -85,6 +92,7 @@ export default function PresentView({
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (qrDialogRef.current?.open) return;
+      if ((e.target as HTMLElement | null)?.closest('[aria-label="실시간 수업 채팅"]')) return;
       const tag = (e.target as HTMLElement | null)?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA") return;
       if (e.key === "Escape") {
@@ -181,6 +189,7 @@ export default function PresentView({
             {qrVisible ? "QR 숨기기" : "QR 보기"}
           </button>}
 
+          <ChatToggle />
           <button
             onClick={close}
             className="rounded-full bg-white/15 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/25"
@@ -190,6 +199,7 @@ export default function PresentView({
         </div>
       </div>
 
+      {chat?.enabled && chat.open && <div className="h-[45dvh] shrink-0 lg:h-full lg:w-96"><ChatPanel /></div>}
       {/* 참여 패널 */}
       {panelOpen && (
         <aside className="max-h-[45vh] shrink-0 overflow-y-auto border-t border-line bg-cream p-4 lg:max-h-none lg:w-[26rem] lg:border-l lg:border-t-0">
