@@ -141,23 +141,23 @@ export function ChatPanel() {
   const render = (m: Message, pinned = false) => <ChatMessage key={m.id} message={m} pinned={pinned} teacher={chat.teacher} actorId={chat.id} run={run} />;
   const pinned = chat.data.pinned;
   const waiting = chat.data.people?.filter(p => !pinned?.reactions.some(r => r.actor === p.id)) || [];
-  return <aside aria-label="실시간 수업 채팅" className="flex h-full min-h-0 flex-col border-l border-line bg-cream text-ink shadow-xl">
-    <header className="flex shrink-0 items-center justify-between border-b border-line p-3"><div><h2 className="font-bold">수업 채팅</h2><p className="text-xs text-mute" role="status">{chat.status}</p></div><button aria-label="채팅 닫기" onClick={() => chat.setOpen(false)} className="min-h-11 px-3">닫기</button></header>
-    {pinned && <div className="max-h-[35%] shrink-0 overflow-auto border-b border-line bg-gardenia p-3"><p className="mb-2 text-xs font-bold">📌 진행 확인</p>{render(pinned, true)}{chat.teacher && <details className="mt-2 text-xs"><summary className="cursor-pointer">아직 반응하지 않은 참여자 {waiting.length}명</summary><p className="mt-2">{waiting.map(p => p.name).join(', ') || '모두 반응했어요.'}</p><p className="mt-1 text-mute">이 채팅에 입장한 학생 기준입니다. 미반응이 미완료를 의미하지는 않아요.</p></details>}</div>}
+  return <aside aria-label="실시간 수업 채팅" className="flex h-full min-h-0 flex-col border-l border-mocha/40 bg-[#eaded5] text-ink shadow-xl">
+    <header className="flex shrink-0 items-center justify-between bg-mocha-deep p-3 text-white"><div><h2 className="font-bold">수업 채팅</h2><p className="text-xs text-white/90" role="status">{chat.status}</p></div><button aria-label="채팅 닫기" onClick={() => chat.setOpen(false)} className="min-h-11 px-3">닫기</button></header>
+    {pinned && <div className="max-h-[35%] shrink-0 overflow-auto border-b border-mocha/30 bg-white/60 p-3"><p className="mb-2 text-xs font-bold">📌 진행 확인</p>{render(pinned, true)}{chat.teacher && <details className="mt-2 text-xs"><summary className="cursor-pointer">아직 반응하지 않은 참여자 {waiting.length}명</summary><p className="mt-2">{waiting.map(p => p.name).join(', ') || '모두 반응했어요.'}</p><p className="mt-1 text-mute">이 채팅에 입장한 학생 기준입니다. 미반응이 미완료를 의미하지는 않아요.</p></details>}</div>}
     <div className="min-h-0 flex-1 space-y-2 overflow-auto px-4 pb-3 pt-5" onScroll={e => { const el = e.currentTarget; nearBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 100; }}>
       {chat.data.hasMore && <button className="w-full text-sm underline" onClick={() => void chat.history().catch(() => setError('이전 대화를 읽지 못했어요.'))}>이전 대화 더 보기</button>}
       {!chat.data.messages.length && <p className="py-6 text-center text-sm text-mute">질문이나 막힌 단계 번호를 남겨 주세요.<br />완료했다면 강사 메시지에 이모지를 눌러 주세요.</p>}
       {chat.data.messages.map(m => render(m, m.id === pinned?.id))}<div ref={bottom} />
     </div>
     {(error || chat.error) && <p role="alert" className="px-3 text-sm text-rosetan">{error || chat.error}</p>}
-    <form className="shrink-0 border-t border-line p-3" onSubmit={async e => {
+    <form className="shrink-0 border-t border-mocha/30 bg-paper p-3" onSubmit={async e => {
       e.preventDefault(); if (busy || !draft.trim()) return;
       setError('');
       try { await chat.sendDraft(); nearBottom.current = true; }
       catch { setError('전송을 확인하지 못했어요. 다시 보내도 같은 메시지는 중복 저장되지 않습니다.'); }
     }}>
-      <button type="button" onClick={chat.rename} className="mb-2 text-xs text-mocha underline">{chat.name ? `${chat.name} · 이름 변경 / 다시 입장` : '이름 입력하고 채팅 입장'}</button>
-      <div className="flex gap-2"><textarea aria-label="채팅 메시지" value={draft} onChange={e => setDraft(e.target.value)} maxLength={2000} rows={2} placeholder="질문 또는 단계 번호" className="min-w-0 flex-1 resize-none rounded-lg border border-line bg-paper p-2 text-sm" /><button disabled={busy || !draft.trim()} className="rounded-lg bg-ink px-3 text-sm text-white disabled:opacity-40">보내기</button></div>
+      <button type="button" onClick={chat.rename} className="mb-2 text-xs text-mocha-deep underline">{chat.name ? `${chat.name} · 이름 변경 / 다시 입장` : '이름 입력하고 채팅 입장'}</button>
+      <div className="flex gap-2"><textarea aria-label="채팅 메시지" value={draft} onChange={e => setDraft(e.target.value)} maxLength={2000} rows={2} placeholder="질문 또는 단계 번호" className="min-w-0 flex-1 resize-none rounded-lg border border-mocha/40 bg-paper p-2 text-sm" /><button disabled={busy || !draft.trim()} className="rounded-lg bg-mocha-deep px-3 text-sm text-white disabled:opacity-40">보내기</button></div>
       <p className="mt-2 text-xs text-mute">결과물 캡처는 실습 갤러리에 올려 주세요.</p>
     </form>
   </aside>;
@@ -177,7 +177,7 @@ function ChatMessage({ message: m, pinned, teacher, actorId, run }: { message: M
         <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill={pinned ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3h8l-1 7 4 4v2H5v-2l4-4zM12 16v5" /></svg>
       </button>}
     </div>
-    <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-xs text-mute"><strong className="break-all text-ink">{m.role === 'teacher' ? '강사' : m.name}</strong><time className="shrink-0">{new Date(m.createdAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}</time></div>
+    <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-xs text-ink-soft"><strong className="break-all text-ink">{m.role === 'teacher' ? '강사' : m.name}</strong><time className="shrink-0">{new Date(m.createdAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}</time></div>
     <p className="mb-1 mt-1 whitespace-pre-wrap break-words text-sm leading-relaxed text-ink">{m.text}</p>
     <div className="flex flex-wrap items-center gap-1">
       {EMOJIS.filter(emoji => m.reactions.some(r => r.emoji === emoji)).map(emoji => {
@@ -186,6 +186,6 @@ function ChatMessage({ message: m, pinned, teacher, actorId, run }: { message: M
       })}
       <button type="button" aria-label="반응 추가 및 메시지 작업" aria-expanded={expanded} onClick={() => setExpanded(!expanded)} className={`${styles.touchTrigger} min-h-11 min-w-11 rounded-full border border-line text-sm text-mute`}>☺＋</button>
     </div>
-    {m.reactions.length > 0 && <details className="mt-2 text-xs text-mute"><summary className="cursor-pointer">반응한 사람 {new Set(m.reactions.map(r => r.actor)).size}명</summary><p className="mt-1 break-words">{Array.from(new Map(m.reactions.map(r => [r.actor, r.name])).values()).join(', ')}</p></details>}
+    {m.reactions.length > 0 && <details className="mt-2 text-xs text-ink-soft"><summary className="cursor-pointer">반응한 사람 {new Set(m.reactions.map(r => r.actor)).size}명</summary><p className="mt-1 break-words">{Array.from(new Map(m.reactions.map(r => [r.actor, r.name])).values()).join(', ')}</p></details>}
   </article>;
 }
