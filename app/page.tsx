@@ -6,6 +6,7 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import PromoVideo from "@/components/PromoVideo";
 
 function newCode() {
   return Math.random().toString(36).slice(2, 8);
@@ -40,6 +41,7 @@ export default function Home() {
       <p className="mt-5 max-w-xl text-lg font-medium text-ink-soft">
         학생과 한 화면으로 소통하면서 수업해보세요.
       </p>
+      <PromoVideo />
 
       <div className="mt-12 grid gap-4 sm:grid-cols-2">
         {/* 강사 */}
