@@ -440,7 +440,27 @@ export default function TeacherView({ sessionId, localUploads = false, cloudConv
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-6 py-8">
+        {/* 강의 구성 요약 */}
+        {deck && (
+          <section aria-label="강의 구성" className="w-full border-b border-line bg-paper">
+            <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-4 gap-y-2 px-6 py-3">
+              <p className="eyebrow">강의 구성</p>
+              <p className="text-sm text-ink-soft">
+                슬라이드 {deck.slides.length}장 · 실습 {labSlides.length}개 · 참여요소{" "}
+                {deck.slides.reduce((n, s) => n + s.items.length + (s.content?.type === "wordcloud" || s.content?.type === "survey" ? 1 : 0), 0)}문항
+                {deck.source === "pdf" && " (PDF 제목으로 감지)"}
+              </p>
+              {posts.length > 0 && (
+                <p className="text-sm text-mute sm:ml-auto">
+                  올라온 결과물 <span className="tabular-nums text-ink-soft">{posts.length}</span>개
+                </p>
+              )}
+            </div>
+
+          </section>
+        )}
+
+      <main className="mx-auto max-w-5xl px-6 py-6">
         <LiveStatus sessionId={sessionId} />
         {!slidesShared && (
           <p className="mb-4 rounded-xl border border-rosetan/40 bg-rosetan/10 px-4 py-3 text-sm text-ink-soft">
@@ -610,26 +630,6 @@ export default function TeacherView({ sessionId, localUploads = false, cloudConv
           role="teacher"
           reveal={state.revealAnswer}
         />
-
-        {/* 강의 구성 요약 */}
-        {deck && (
-          <section className="mt-8 rounded-2xl border border-line bg-paper p-5">
-            <div className="flex flex-wrap items-center gap-3">
-              <p className="eyebrow">강의 구성</p>
-              <p className="text-sm text-ink-soft">
-                슬라이드 {deck.slides.length}장 · 실습 {labSlides.length}개 · 참여요소{" "}
-                {deck.slides.reduce((n, s) => n + s.items.length + (s.content?.type === "wordcloud" || s.content?.type === "survey" ? 1 : 0), 0)}문항
-                {deck.source === "pdf" && " (PDF 제목으로 감지)"}
-              </p>
-              {posts.length > 0 && (
-                <p className="ml-auto text-sm text-mute">
-                  올라온 결과물 <span className="tabular-nums text-ink-soft">{posts.length}</span>개
-                </p>
-              )}
-            </div>
-
-          </section>
-        )}
 
         {/* 학생 링크 */}
         {studentUrl && (
