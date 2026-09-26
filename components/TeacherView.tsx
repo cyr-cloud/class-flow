@@ -326,6 +326,7 @@ export default function TeacherView({ sessionId, localUploads = false, cloudConv
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (presenting || e.defaultPrevented || e.isComposing || e.ctrlKey || e.metaKey || e.altKey) return;
+      if ((e.target as HTMLElement | null)?.closest("dialog[open]")) return;
       const tag = (e.target as HTMLElement | null)?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
       if (e.key === "ArrowRight" || e.key === "PageDown") go(1);
@@ -454,29 +455,8 @@ export default function TeacherView({ sessionId, localUploads = false, cloudConv
           </p>
         )}
 
-        {/* 슬라이드 */}
-        <div className="relative flex items-center gap-2 sm:gap-3">
-        {state.pdfKey && <InsertSlide key={`before-${state.currentSlide}`} sessionId={sessionId} page={state.currentSlide} side="before" disabled={!!busy}
-          open={insertAt?.page === state.currentSlide && insertAt.side === "before"} onToggle={() => setInsertAt(insertAt?.page === state.currentSlide && insertAt.side === "before" ? null : { page: state.currentSlide, side: "before" })} onClose={() => setInsertAt(null)} />}
-        <div className="min-w-0 flex-1 overflow-hidden rounded-2xl border border-line bg-paper p-3">
-          <SlideStage
-            sessionId={sessionId}
-            pdfKey={state.pdfKey}
-            page={state.currentSlide}
-            canDraw
-            keyboardActive={!presenting}
-            onLoaded={(total) => {
-              const count = deck?.slides.length || total;
-              if (count !== state.totalSlides) patch({ totalSlides: count });
-            }}
-          />
-        </div>
-        {state.pdfKey && <InsertSlide key={`after-${state.currentSlide}`} sessionId={sessionId} page={state.currentSlide} side="after" disabled={!!busy}
-          open={insertAt?.page === state.currentSlide && insertAt.side === "after"} onToggle={() => setInsertAt(insertAt?.page === state.currentSlide && insertAt.side === "after" ? null : { page: state.currentSlide, side: "after" })} onClose={() => setInsertAt(null)} />}
-        </div>
-
         {/* 넘김 조작 */}
-        <div className="mt-4 flex flex-wrap items-center gap-3">
+        <div className="mb-3 flex flex-wrap items-center gap-2">
           <button
             onClick={() => go(-1)}
             disabled={state.currentSlide <= 1}
@@ -512,6 +492,8 @@ export default function TeacherView({ sessionId, localUploads = false, cloudConv
             </button>
           )}
 
+          <LessonBackups sessionId={sessionId} ready={!!deck} />
+
           {state.pdfKey && (
             <button
               onClick={() => setPresenting(true)}
@@ -522,53 +504,9 @@ export default function TeacherView({ sessionId, localUploads = false, cloudConv
           )}
         </div>
 
-        {state.pdfKey && <SpeakerNotes key={`${sessionId}:${state.pdfKey}`} sessionId={sessionId}
-          page={slide?.pdfPage ?? state.currentSlide} added={!!slide?.content}
-          source={isSample ? "sample" : isCloudPpt ? "cloud" : isLocalPpt ? "local" : "pdf"} />}
-
-        <LessonBackups sessionId={sessionId} ready={!!deck} />
-
-        <SlideComposer
-          sessionId={sessionId}
-          slideNo={state.currentSlide}
-          slide={slide}
-          hasSlides={Boolean(state.pdfKey)}
-          onAddBoard={addBoardHere}
-          // 대본이 없는 자료여도 버튼은 보여준다 — 눌렀을 때 왜 안 되는지 알려주는 편이
-          // 버튼이 없어서 «AI 기능이 어디 갔지» 하고 헤매는 것보다 낫다
-          onGenerate={extractWithAi}
-          generating={busy === "ai"}
-          generationBlockedMessage={(!isSample && !isLocalPpt && !isCloudPpt) || slide?.content ? "해당 기능은 발표자 노트가 포함된 PPT에서만 사용 가능합니다." : undefined}
-        />
-
-        <SlideActivities
-          sessionId={sessionId}
-          slide={slide}
-          posts={posts}
-          responses={responses}
-          role="teacher"
-          reveal={state.revealAnswer}
-        />
-
-        {/* 강의 구성 요약 */}
-        {deck && (
-          <section className="mt-8 rounded-2xl border border-line bg-paper p-5">
-            <div className="flex flex-wrap items-center gap-3">
-              <p className="eyebrow">강의 구성</p>
-              <p className="text-sm text-ink-soft">
-                슬라이드 {deck.slides.length}장 · 실습 {labSlides.length}개 · 참여요소{" "}
-                {deck.slides.reduce((n, s) => n + s.items.length + (s.content?.type === "wordcloud" || s.content?.type === "survey" ? 1 : 0), 0)}문항
-                {deck.source === "pdf" && " (PDF 제목으로 감지)"}
-              </p>
-              {posts.length > 0 && (
-                <p className="ml-auto text-sm text-mute">
-                  올라온 결과물 <span className="tabular-nums text-ink-soft">{posts.length}</span>개
-                </p>
-              )}
-            </div>
-
+        {deck && <>
             {/* 슬라이드 바로가기 — 번호를 알면 치고, 모르면 목록에서 고른다 */}
-            <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2">
+            <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-2">
               <span className="text-sm text-ink-soft">슬라이드 바로가기</span>
 
               <form
@@ -619,12 +557,85 @@ export default function TeacherView({ sessionId, localUploads = false, cloudConv
                 })}
               </select>
             </div>
+        </>}
+
+        {/* 슬라이드 */}
+        <div className="relative flex items-center gap-2 sm:gap-3">
+        {state.pdfKey && <InsertSlide key={`before-${state.currentSlide}`} sessionId={sessionId} page={state.currentSlide} side="before" disabled={!!busy}
+          open={insertAt?.page === state.currentSlide && insertAt.side === "before"} onToggle={() => setInsertAt(insertAt?.page === state.currentSlide && insertAt.side === "before" ? null : { page: state.currentSlide, side: "before" })} onClose={() => setInsertAt(null)} />}
+        <div className="min-w-0 flex-1 overflow-hidden rounded-2xl border border-line bg-paper p-3">
+          <SlideStage
+            sessionId={sessionId}
+            pdfKey={state.pdfKey}
+            page={state.currentSlide}
+            canDraw
+            keyboardActive={!presenting}
+            onLoaded={(total) => {
+              const count = deck?.slides.length || total;
+              if (count !== state.totalSlides) patch({ totalSlides: count });
+            }}
+          />
+        </div>
+        {state.pdfKey && <InsertSlide key={`after-${state.currentSlide}`} sessionId={sessionId} page={state.currentSlide} side="after" disabled={!!busy}
+          open={insertAt?.page === state.currentSlide && insertAt.side === "after"} onToggle={() => setInsertAt(insertAt?.page === state.currentSlide && insertAt.side === "after" ? null : { page: state.currentSlide, side: "after" })} onClose={() => setInsertAt(null)} />}
+        </div>
+
+        {state.pdfKey && <SpeakerNotes key={`${sessionId}:${state.pdfKey}`} sessionId={sessionId}
+          page={slide?.pdfPage ?? state.currentSlide} added={!!slide?.content}
+          source={isSample ? "sample" : isCloudPpt ? "cloud" : isLocalPpt ? "local" : "pdf"} />}
+
+
+        <details className="mt-4 rounded-xl border border-line bg-paper p-4">
+          <summary className="cursor-pointer text-sm font-medium">퀴즈·실습 추가</summary>
+        <SlideComposer
+          sessionId={sessionId}
+          slideNo={state.currentSlide}
+          slide={slide}
+          hasSlides={Boolean(state.pdfKey)}
+          onAddBoard={addBoardHere}
+          // 대본이 없는 자료여도 버튼은 보여준다 — 눌렀을 때 왜 안 되는지 알려주는 편이
+          // 버튼이 없어서 «AI 기능이 어디 갔지» 하고 헤매는 것보다 낫다
+          onGenerate={extractWithAi}
+          generating={busy === "ai"}
+          generationBlockedMessage={(!isSample && !isLocalPpt && !isCloudPpt) || slide?.content ? "해당 기능은 발표자 노트가 포함된 PPT에서만 사용 가능합니다." : undefined}
+        />
+
+        </details>
+
+        <SlideActivities
+          sessionId={sessionId}
+          slide={slide}
+          posts={posts}
+          responses={responses}
+          role="teacher"
+          reveal={state.revealAnswer}
+        />
+
+        {/* 강의 구성 요약 */}
+        {deck && (
+          <section className="mt-8 rounded-2xl border border-line bg-paper p-5">
+            <div className="flex flex-wrap items-center gap-3">
+              <p className="eyebrow">강의 구성</p>
+              <p className="text-sm text-ink-soft">
+                슬라이드 {deck.slides.length}장 · 실습 {labSlides.length}개 · 참여요소{" "}
+                {deck.slides.reduce((n, s) => n + s.items.length + (s.content?.type === "wordcloud" || s.content?.type === "survey" ? 1 : 0), 0)}문항
+                {deck.source === "pdf" && " (PDF 제목으로 감지)"}
+              </p>
+              {posts.length > 0 && (
+                <p className="ml-auto text-sm text-mute">
+                  올라온 결과물 <span className="tabular-nums text-ink-soft">{posts.length}</span>개
+                </p>
+              )}
+            </div>
+
           </section>
         )}
 
         {/* 학생 링크 */}
         {studentUrl && (
-          <section className="mt-6 flex flex-col items-center gap-6 rounded-2xl border border-line bg-gardenia/60 p-5 sm:flex-row">
+          <details className="mt-4 rounded-2xl border border-line bg-gardenia/60 p-5">
+            <summary className="cursor-pointer text-sm font-medium">학생 초대 · 링크와 QR코드 보기</summary>
+            <div className="mt-4 flex flex-col items-center gap-6 sm:flex-row">
             <div className="w-full min-w-0 flex-1">
             <p className="eyebrow">학생 입장 링크</p>
             <div className="mt-2 flex items-center gap-2">
@@ -644,7 +655,8 @@ export default function TeacherView({ sessionId, localUploads = false, cloudConv
             </p>
             </div>
             <StudentJoinQr url={studentUrl} sessionId={sessionId} />
-          </section>
+            </div>
+          </details>
         )}
       </main>
 
