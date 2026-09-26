@@ -167,13 +167,13 @@ export function ChatPanel() {
       })}<div ref={bottom} />
     </div>
     {(error || chat.error) && <p role="alert" className="px-3 text-sm text-rosetan-deep">{error || chat.error}</p>}
-    <form className="shrink-0 border-t border-mocha/30 bg-paper p-3" onSubmit={async e => {
+    <form className="shrink-0 border-t border-mocha/30 bg-paper p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]" onSubmit={async e => {
       e.preventDefault(); if (busy || !draft.trim()) return;
       setError('');
       try { await chat.sendDraft(); nearBottom.current = true; }
       catch { setError('전송을 확인하지 못했어요. 다시 보내도 같은 메시지는 중복 저장되지 않습니다.'); }
     }}>
-      <div className="flex gap-2"><textarea aria-label="채팅 메시지" value={draft} onChange={e => setDraft(e.target.value)} maxLength={2000} rows={2} placeholder="메시지를 입력하세요" className="min-w-0 flex-1 resize-none rounded-lg border border-mocha/40 bg-paper p-2 text-sm" /><button disabled={busy || !draft.trim()} className="rounded-lg bg-mocha-deep px-3 text-sm text-white disabled:opacity-40">보내기</button></div>
+      <div className="flex gap-2"><textarea aria-label="채팅 메시지" value={draft} onChange={e => setDraft(e.target.value)} maxLength={2000} rows={2} placeholder="메시지를 입력하세요" className="min-w-0 flex-1 resize-none rounded-lg border border-mocha/40 bg-paper p-2 text-base sm:text-sm" /><button disabled={busy || !draft.trim()} className="rounded-lg bg-mocha-deep px-3 text-sm text-white disabled:opacity-40">보내기</button></div>
     </form>
   </aside>;
 }

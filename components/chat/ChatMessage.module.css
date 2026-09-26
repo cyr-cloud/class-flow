@@ -21,7 +21,7 @@
 @media (hover: hover) {
   .message:hover .actions { visibility: visible; opacity: 1; pointer-events: auto; }
 }
-@media (hover: none), (pointer: coarse) {
+@media (hover: none), (pointer: coarse), (max-width: 640px) {
   .touchTrigger { display: inline-flex; align-items: center; justify-content: center; }
   .message:focus-within .actions:not(.expanded) { visibility: hidden; opacity: 0; pointer-events: none; }
   .actions button { min-width: 36px; min-height: 40px; }

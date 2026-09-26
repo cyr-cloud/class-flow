@@ -44,7 +44,7 @@ export default function StudentView({ sessionId }: { sessionId: string }) {
               {slide?.title ?? "강의를 기다리는 중"}
             </h1>
           </div>
-          <div className="ml-auto flex shrink-0 items-center gap-2">
+          <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:ml-auto sm:w-auto">
             <ChatToggle />
             {state.pdfKey && <button disabled={exporting} onClick={async () => {
               setExporting(true); setDownloadNotice("PDF를 만드는 중이에요…");
