@@ -151,7 +151,9 @@ export function ChatPanel() {
             <button type="button" onClick={e => { e.currentTarget.closest('details')?.removeAttribute('open'); chat.rename(); }} className="w-full rounded-lg px-3 py-3 text-left text-sm">{chat.name ? '이름 변경 / 다시 입장' : '이름 입력하고 입장'}</button>
           </div>
         </details>
-        <button aria-label="채팅 닫기" onClick={() => chat.setOpen(false)} className="ui-action min-h-11 rounded-full border px-3">닫기</button>
+        <button type="button" aria-label="채팅 닫기" title="채팅 닫기" onClick={() => chat.setOpen(false)} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-ink-soft hover:bg-mocha-tint hover:text-ink">
+          <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="m6 6 12 12M18 6 6 18" /></svg>
+        </button>
       </div>
     </header>
     {pinned && <div className="max-h-[35%] shrink-0 overflow-auto border-b border-tendril/40 bg-tendril-tint p-3"><p className="mb-2 text-xs font-bold">📌 진행 확인</p>{render(pinned, true)}{chat.teacher && <details className="mt-2 text-xs"><summary className="cursor-pointer">아직 반응하지 않은 참여자 {waiting.length}명</summary><p className="mt-2">{waiting.map(p => p.name).join(', ') || '모두 반응했어요.'}</p><p className="mt-1 text-mute">이 채팅에 입장한 학생 기준입니다. 미반응이 미완료를 의미하지는 않아요.</p></details>}</div>}
