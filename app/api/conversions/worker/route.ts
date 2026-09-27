@@ -28,7 +28,7 @@ export async function POST(request: Request) {
     else {
       const output = await head(job.pdfPath);
       if (output.size < 5 || output.size > OUTPUT_LIMIT || output.contentType !== "application/pdf") throw new Error("Invalid output");
-      await queue.complete(job.id, body.lease, { pdfUrl: output.url });
+      await queue.complete(job.id, body.lease, { pdfUrl: output.url, outputBytes: output.size });
     }
     return Response.json({ ok: true });
   } catch { return Response.json({ error: "Worker request failed" }, { status: 400 }); }

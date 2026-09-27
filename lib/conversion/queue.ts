@@ -6,6 +6,7 @@ export interface ConversionJob {
   status: "uploading" | "queued" | "converting" | "done" | "failed";
   sourcePath: string; pdfPath: string; sourceUrl?: string; pdfUrl?: string;
   key: string; iv: string; lease?: string; leaseUntil?: number; error?: string;
+  storedBytes?: number;
 }
 interface Queue { jobs: ConversionJob[]; day: string; attempts: number }
 const QUEUE_KEY = "conversion:queue:v1";
@@ -39,8 +40,8 @@ export class ConversionQueue {
       if (q.jobs.some(j => j.sessionId === sessionId && !["done", "failed"].includes(j.status))) throw new Error("이 수업의 PPT를 이미 처리 중이에요.");
       if (q.attempts >= 20) throw new Error("오늘의 PPT 변환 한도에 도달했어요. PDF 업로드는 계속 사용할 수 있어요.");
       if (!Number.isInteger(inputBytes) || inputBytes <= 16 || inputBytes > INPUT_LIMIT) throw new Error("PPT 파일 크기를 확인해 주세요.");
-      if (q.jobs.reduce((sum, j) => sum + (j.inputBytes ?? INPUT_LIMIT) + OUTPUT_LIMIT, 0) + inputBytes + OUTPUT_LIMIT > 512 * 1024 * 1024)
-        throw new Error("PPT 변환 자료의 시험 운영 보관 한도에 도달했어요. 관리자에게 문의해 주세요.");
+      if (q.jobs.reduce((sum, j) => sum + (j.storedBytes ?? ((j.inputBytes ?? INPUT_LIMIT) + OUTPUT_LIMIT)), 0) + inputBytes + OUTPUT_LIMIT > 512 * 1024 * 1024)
+        throw new Error("PPT 자료 보관 공간이 부족해요. 기존 자료를 정리하거나 PDF로 올려 주세요.");
       if (q.jobs.filter(j => !["done", "failed"].includes(j.status)).length >= 5) throw new Error("변환 대기열이 가득 찼어요. 잠시 후 다시 시도해 주세요.");
       // Completed jobs remain available for original downloads. Explicit capacity, no silent eviction.
       if (q.jobs.length >= 500) throw new Error("변환 자료 보관 한도에 도달했어요. 관리자에게 문의해 주세요.");
@@ -51,6 +52,14 @@ export class ConversionQueue {
     });
   }
   async get(id: string) { return this.change(q => q.jobs.find(j => j.id === id) ?? null); }
+  async maintenanceJobs() { return this.change((q, now) => q.jobs.filter(j => j.storedBytes === undefined && (j.status === "done" || j.status === "failed" && j.createdAt + 60 * 60_000 < now)).slice(0, 20)); }
+  async recordStoredBytes(id: string, status: "done" | "failed", bytes: number) {
+    if (!Number.isSafeInteger(bytes) || bytes < 0) throw new Error("Invalid stored size");
+    return this.change(q => {
+      const job = q.jobs.find(j => j.id === id);
+      if (job?.status === status) job.storedBytes = bytes;
+    });
+  }
   async material(sessionId: string, pdfUrl: string) { return this.change(q => q.jobs.find(j => j.sessionId === sessionId && j.status === "done" && j.pdfUrl === pdfUrl) ?? null); }
   async enqueue(id: string, sourceUrl: string) {
     return this.change(q => {
@@ -76,14 +85,18 @@ export class ConversionQueue {
       return job;
     });
   }
-  async complete(id: string, lease: string, result: { pdfUrl: string } | { error: string }) {
+  async complete(id: string, lease: string, result: { pdfUrl: string; outputBytes?: number } | { error: string }) {
     return this.change(q => {
       const job = q.jobs.find(j => j.id === id);
       if (!job || job.lease !== lease) throw new Error("잘못된 변환 작업입니다.");
       if (job.status === "done" || job.status === "failed") return job;
       if (job.status !== "converting") throw new Error("진행 중인 변환이 아닙니다.");
       if ("error" in result) { job.status = "failed"; job.error = result.error; }
-      else { job.status = "done"; job.pdfUrl = result.pdfUrl; }
+      else {
+        if (result.outputBytes !== undefined && (!Number.isSafeInteger(result.outputBytes) || result.outputBytes < 5 || result.outputBytes > OUTPUT_LIMIT)) throw new Error("Invalid output size");
+        job.status = "done"; job.pdfUrl = result.pdfUrl;
+        if (result.outputBytes !== undefined) job.storedBytes = job.inputBytes + result.outputBytes;
+      }
       return job;
     });
   }

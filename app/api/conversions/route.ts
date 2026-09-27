@@ -4,6 +4,7 @@ import { z } from "zod";
 import { ConversionQueue, conversionEnabled, INPUT_LIMIT, publicJob } from "@/lib/conversion/queue";
 import { readSession, isTeacher } from "@/lib/live/server";
 import networking from "@/data/events/networking-20260923.json";
+import { reconcileConversionStorage } from "@/lib/conversion/maintenance";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,6 +22,7 @@ export async function POST(request: Request) {
     const body = z.union([Prepare, Submit]).parse(JSON.parse(text));
     const queue = new ConversionQueue();
     if (body.action === "prepare") {
+      await reconcileConversionStorage(queue);
       const job = await queue.prepare(sessionId, body.name, body.key, body.iv, body.inputBytes);
       const token = await generateClientTokenFromReadWriteToken({ pathname: job.sourcePath, allowedContentTypes: ["application/octet-stream"], maximumSizeInBytes: job.inputBytes, addRandomSuffix: false, allowOverwrite: false, validUntil: Date.now() + 15 * 60_000 });
       return Response.json({ id: job.id, pathname: job.sourcePath, token }, { headers: { "Cache-Control": "no-store" } });

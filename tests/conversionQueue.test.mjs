@@ -50,6 +50,29 @@ test('unchanged idle polls do not write, teacher-visible status omits encryption
   const visible = exports.publicJob(job);
   for (const key of ['key', 'iv', 'lease', 'sourceUrl']) assert.equal(key in visible, false);
 });
+test('completed jobs count actual PDF bytes rather than reserving 60 MiB forever', async () => {
+  const { q } = fixture();
+  for (let i = 0; i < 10; i++) {
+    const job = await prepare(q);
+    await q.enqueue(job.id, 'https://source'); const claim = await q.claim();
+    await q.complete(job.id, claim.lease, { pdfUrl: 'https://pdf/' + i, outputBytes: 1000 });
+  }
+  assert.ok(await prepare(q));
+});
+test('failed uploads retain reservation until verified cleanup; active jobs cannot be discounted', async () => {
+  const { q, advance } = fixture();
+  const job = await prepare(q);
+  await q.recordStoredBytes(job.id, 'failed', 0);
+  assert.equal((await q.get(job.id)).storedBytes, undefined);
+  await q.cancelUpload(job.id);
+  assert.equal((await q.maintenanceJobs()).length, 0);
+  advance(60 * 60_000 + 1);
+  assert.equal((await q.maintenanceJobs()).length, 1);
+  await q.recordStoredBytes(job.id, 'failed', 0);
+  assert.equal((await q.get(job.id)).storedBytes, 0);
+  assert.equal((await q.maintenanceJobs()).length, 0);
+  await assert.rejects(q.recordStoredBytes(job.id, 'failed', -1));
+});
 test('browser AES-GCM ciphertext decrypts in the worker and rejects tampering', async () => {
   const key = webcrypto.getRandomValues(new Uint8Array(32)); const iv = webcrypto.getRandomValues(new Uint8Array(12));
   const imported = await webcrypto.subtle.importKey('raw', key, 'AES-GCM', false, ['encrypt']);
