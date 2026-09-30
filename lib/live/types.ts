@@ -1,6 +1,7 @@
 import type { Deck, LabPost, QuizResponse } from "../types";
 import type { SessionState } from "../sync/types";
 import type { SlideReaction } from "./reactions";
+import type { InkBySlide, Stroke } from "../lecture/inkStore";
 
 export interface LiveState {
   session: SessionState;
@@ -12,6 +13,8 @@ export interface LiveState {
   reactions?: SlideReaction[];
   surveyResponses?: import("../lecture/survey").SurveyResponse[];
   wordResponses?: { slideId: string; responderId: string; word: string }[];
+  /** 판서 — 지금 보이는 슬라이드(PDF 쪽 번호 기준) 것만 내려준다 */
+  ink?: InkBySlide;
 }
 
 export type LiveCommand =
@@ -29,6 +32,11 @@ export type LiveCommand =
   | { action: "class"; classId: string | null }
   | { action: "respond"; itemId: string; responderId: string; choiceIndex: number; choiceIndices?: number[] }
   | { action: "reset"; itemId: string }
+  // 판서 (강사만). slideNo는 PDF 쪽 번호
+  | { action: "ink"; slideNo: number; stroke: Stroke }
+  | { action: "inkUndo"; slideNo: number }
+  /** slideNo가 null이면 전체를 지운다 */
+  | { action: "inkClear"; slideNo: number | null }
   // 교안 없이 강사가 이 슬라이드에 직접 넣는 것들
   | { action: "addItem"; slideNo: number; question: string; options: string[]; answers: number[] }
   | { action: "removeItem"; slideNo: number; itemId: string }
@@ -40,4 +48,3 @@ export type LiveCommand =
   | { action: "removePost"; postId: string; ownerId: string }
   /** 다시 보내면 좋아요가 취소된다 */
   | { action: "likePost"; postId: string; ownerId: string };
-

@@ -4,10 +4,13 @@
 // 같은 자리에 다시 그려진다.
 //
 // 두 갈래로 나눠 보낸다:
-//  - 그리는 중  : BroadcastChannel로만 흘려보낸다 (localStorage에 매 점마다 쓰면 버벅인다)
-//  - 손을 뗐을 때: 저장 + 전파
+//  - 그리는 중  : 같은 브라우저의 다른 탭에만 BroadcastChannel로 흘려보낸다 (매 점마다 서버에 보내면 버벅인다)
+//  - 손을 뗐을 때: 수업 서버(/api/live)에 한 획씩 올린다 → 다른 기기의 학생은 폴링으로 받는다
 //
-// 나중에 Supabase Realtime 구현으로 교체할 자리.
+// 서버 응답이 오기 전까지는 방금 그린 획을 "보내는 중"으로 들고 있다가 겹쳐 그린다.
+// 안 그러면 손을 떼는 순간 획이 잠깐 사라졌다가 다시 나타난다.
+
+import { liveClient, sendLive } from "../live/client";
 
 export type InkTool = "pen" | "highlighter" | "line" | "arrow" | "rect" | "ellipse";
 
@@ -28,143 +31,135 @@ export type InkBySlide = Record<number, Stroke[]>;
 
 export interface InkState {
   strokes: InkBySlide;
-  /** 다른 사람이 지금 그리고 있는 획 (저장 전) */
+  /** 같은 브라우저의 다른 탭에서 지금 그리고 있는 획 (저장 전) */
   live: Stroke | null;
 }
 
-const KEY = (sessionId: string) => `classflow:ink:${sessionId}`;
 const CHANNEL = (sessionId: string) => `classflow:ink:${sessionId}`;
+/** 다른 탭이 방금 올린 획을 서버에서 받아올 때까지 들고 있는 시간 (폴링 최대 간격보다 길게) */
+const ECHO_MS = 3000;
 
-const EMPTY: InkState = { strokes: {}, live: null };
+interface Pending { slideNo: number; stroke: Stroke }
+const NO_PENDING: Pending[] = [];
 
-const states = new Map<string, InkState>();
+const pendings = new Map<string, Pending[]>();
+const lives = new Map<string, Stroke | null>();
 const listeners = new Map<string, Set<() => void>>();
 const channels = new Map<string, BroadcastChannel>();
-const bridged = new Set<string>();
+const cache = new Map<string, { revision: number; pending: Pending[]; live: Stroke | null; value: InkState }>();
 
 type Message =
   | { kind: "live"; stroke: Stroke }
-  | { kind: "commit" }
-  | { kind: "changed" };
-
-function parse(raw: string | null): InkBySlide {
-  if (!raw) return {};
-  try {
-    return (JSON.parse(raw) as InkBySlide) ?? {};
-  } catch {
-    return {};
-  }
-}
+  | { kind: "commit"; slideNo: number; stroke: Stroke }
+  | { kind: "cancel" };
 
 function emit(sessionId: string) {
   const set = listeners.get(sessionId);
   if (set) for (const l of set) l();
 }
 
-function current(sessionId: string): InkState {
-  return states.get(sessionId) ?? EMPTY;
-}
-
-function setState(sessionId: string, next: InkState) {
-  states.set(sessionId, next);
+function setLive(sessionId: string, stroke: Stroke | null) {
+  lives.set(sessionId, stroke);
   emit(sessionId);
 }
 
-/** 저장소에서 다시 읽는다 (다른 탭 쓰기와 겹치지 않게) */
-function freshStrokes(sessionId: string): InkBySlide {
-  if (typeof window === "undefined") return current(sessionId).strokes;
-  return parse(window.localStorage.getItem(KEY(sessionId)));
+function addPending(sessionId: string, entry: Pending) {
+  pendings.set(sessionId, [...(pendings.get(sessionId) ?? NO_PENDING), entry]);
+  emit(sessionId);
 }
 
-function persist(sessionId: string, strokes: InkBySlide) {
-  try {
-    window.localStorage.setItem(KEY(sessionId), JSON.stringify(strokes));
-  } catch {
-    /* 용량 초과는 무시 */
-  }
-  setState(sessionId, { strokes, live: null });
-  channels.get(sessionId)?.postMessage({ kind: "commit" } satisfies Message);
+function dropPending(sessionId: string, strokeId: string) {
+  const list = pendings.get(sessionId) ?? NO_PENDING;
+  if (!list.some(p => p.stroke.id === strokeId)) return;
+  pendings.set(sessionId, list.filter(p => p.stroke.id !== strokeId));
+  emit(sessionId);
 }
 
-function load(sessionId: string) {
-  if (typeof window === "undefined") return;
-  setState(sessionId, { strokes: freshStrokes(sessionId), live: current(sessionId).live });
-}
-
-function ensureBridge(sessionId: string) {
-  if (bridged.has(sessionId) || typeof window === "undefined") return;
-  bridged.add(sessionId);
-
-  if (typeof BroadcastChannel !== "undefined") {
-    const ch = new BroadcastChannel(CHANNEL(sessionId));
-    ch.addEventListener("message", (e: MessageEvent<Message>) => {
-      const msg = e.data;
-      if (msg?.kind === "live") {
-        setState(sessionId, { ...current(sessionId), live: msg.stroke });
-      } else {
-        setState(sessionId, { strokes: freshStrokes(sessionId), live: null });
-      }
-    });
-    channels.set(sessionId, ch);
-  }
-  // BroadcastChannel을 놓쳐도 저장된 획은 따라오게
-  window.addEventListener("storage", (e) => {
-    if (e.key === KEY(sessionId)) load(sessionId);
+function ensureChannel(sessionId: string) {
+  if (channels.has(sessionId) || typeof BroadcastChannel === "undefined") return;
+  const ch = new BroadcastChannel(CHANNEL(sessionId));
+  ch.addEventListener("message", (e: MessageEvent<Message>) => {
+    const msg = e.data;
+    if (msg?.kind === "live") setLive(sessionId, msg.stroke);
+    else if (msg?.kind === "commit") {
+      lives.set(sessionId, null);
+      addPending(sessionId, { slideNo: msg.slideNo, stroke: msg.stroke });
+      setTimeout(() => dropPending(sessionId, msg.stroke.id), ECHO_MS);
+    } else setLive(sessionId, null);
   });
+  channels.set(sessionId, ch);
+}
+
+function post(sessionId: string, msg: Message) {
+  channels.get(sessionId)?.postMessage(msg);
 }
 
 export const inkStore = {
   subscribe(sessionId: string, listener: () => void) {
-    if (!states.has(sessionId)) load(sessionId);
-    ensureBridge(sessionId);
+    ensureChannel(sessionId);
     let set = listeners.get(sessionId);
     if (!set) {
       set = new Set();
       listeners.set(sessionId, set);
     }
     set.add(listener);
+    const unsubscribeLive = liveClient(sessionId).subscribe(listener);
     return () => {
       set.delete(listener);
+      unsubscribeLive();
     };
   },
 
+  /** 서버 판서 + 보내는 중인 획. 바뀐 게 없으면 같은 객체를 돌려준다 */
   snapshot(sessionId: string): InkState {
-    return current(sessionId);
+    const server = liveClient(sessionId).snapshot();
+    const pending = pendings.get(sessionId) ?? NO_PENDING;
+    const live = lives.get(sessionId) ?? null;
+    const hit = cache.get(sessionId);
+    if (hit && hit.revision === server.revision && hit.pending === pending && hit.live === live) return hit.value;
+
+    let strokes: InkBySlide = server.ink ?? {};
+    if (pending.length) {
+      strokes = { ...strokes };
+      for (const { slideNo, stroke } of pending) {
+        const list = strokes[slideNo] ?? [];
+        if (!list.some(s => s.id === stroke.id)) strokes[slideNo] = [...list, stroke];
+      }
+    }
+    const value = { strokes, live };
+    cache.set(sessionId, { revision: server.revision, pending, live, value });
+    return value;
   },
 
-  /** 그리는 중 — 저장하지 않고 다른 화면에만 흘려보낸다 */
+  /** 그리는 중 — 저장하지 않고 같은 브라우저의 다른 화면에만 흘려보낸다 */
   stream(sessionId: string, stroke: Stroke) {
-    setState(sessionId, { ...current(sessionId), live: stroke });
-    channels.get(sessionId)?.postMessage({ kind: "live", stroke } satisfies Message);
+    post(sessionId, { kind: "live", stroke });
   },
 
-  /** 손을 뗐다 — 저장 + 전파 */
+  /** 손을 뗐다 — 서버에 올린다 */
   commit(sessionId: string, slideNo: number, stroke: Stroke) {
     if (stroke.points.length < 2) {
-      setState(sessionId, { ...current(sessionId), live: null });
+      post(sessionId, { kind: "cancel" });
       return;
     }
-    const strokes = freshStrokes(sessionId);
-    persist(sessionId, { ...strokes, [slideNo]: [...(strokes[slideNo] ?? []), stroke] });
+    addPending(sessionId, { slideNo, stroke });
+    post(sessionId, { kind: "commit", slideNo, stroke });
+    void liveClient(sessionId)
+      .send({ action: "ink", slideNo, stroke })
+      .catch(() => {})
+      .finally(() => dropPending(sessionId, stroke.id));
   },
 
   undo(sessionId: string, slideNo: number) {
-    const strokes = freshStrokes(sessionId);
-    const list = strokes[slideNo] ?? [];
-    if (list.length === 0) return;
-    persist(sessionId, { ...strokes, [slideNo]: list.slice(0, -1) });
+    sendLive(sessionId, { action: "inkUndo", slideNo });
   },
 
   clearSlide(sessionId: string, slideNo: number) {
-    const strokes = freshStrokes(sessionId);
-    if (!strokes[slideNo]?.length) return;
-    const next = { ...strokes };
-    delete next[slideNo];
-    persist(sessionId, next);
+    sendLive(sessionId, { action: "inkClear", slideNo });
   },
 
   clearAll(sessionId: string) {
-    persist(sessionId, {});
+    sendLive(sessionId, { action: "inkClear", slideNo: null });
   },
 };
 

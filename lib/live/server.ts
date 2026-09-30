@@ -11,6 +11,7 @@ import { parseDeckMarkdown } from "../lecture/parseDeck";
 import { kv } from "./storage";
 import { SEED_OWNER, guideFor, seedPostsFor } from "./sample";
 import type { DeckSlide } from "../types";
+import type { Stroke } from "../lecture/inkStore";
 import type { LiveState, LiveCommand } from "./types";
 import { cleanSurvey, cleanSurveyResponse } from "../lecture/survey";
 import { REACTIONS } from "./reactions";
@@ -20,6 +21,37 @@ import { BACKUP_INTERVAL, saveBackup } from "./backups";
 const STUDENT_ACTIONS: ReadonlySet<LiveCommand["action"]> = new Set(["respond", "addPost", "removePost", "likePost", "react", "wordRespond", "surveyRespond"]);
 
 interface Stored extends LiveState { teacherToken: string; backupAt?: number; backupRevision?: number }
+
+const INK_TOOLS: ReadonlySet<string> = new Set(["pen", "highlighter", "line", "arrow", "rect", "ellipse"]);
+const INK_MAX_POINTS = 2000;
+const INK_MAX_STROKES = 300;
+
+/** 판서 한 획을 검사하고 좌표를 줄여 담는다 (매 폴링마다 내려가므로 작게) */
+function cleanStroke(stroke: Stroke): Stroke {
+  if (!stroke || typeof stroke.id !== "string" || !/^[a-zA-Z0-9_-]{1,40}$/.test(stroke.id) ||
+    !INK_TOOLS.has(stroke.tool) || typeof stroke.color !== "string" || !/^#[0-9a-fA-F]{3,8}$/.test(stroke.color) ||
+    typeof stroke.width !== "number" || !(stroke.width > 0 && stroke.width < 0.1) ||
+    !Array.isArray(stroke.points) || stroke.points.length < 2)
+    throw new Error("판서를 확인해 주세요.");
+  let points = stroke.points;
+  // 아주 긴 획은 솎아낸다 — 끝점은 남긴다
+  if (points.length > INK_MAX_POINTS) {
+    const step = Math.ceil(points.length / INK_MAX_POINTS);
+    points = [...points.filter((_, i) => i % step === 0), points[points.length - 1]];
+  }
+  const round = (n: unknown) => {
+    if (typeof n !== "number" || !Number.isFinite(n)) throw new Error("판서를 확인해 주세요.");
+    return Math.round(Math.min(1.5, Math.max(-0.5, n)) * 10000) / 10000;
+  };
+  return { id: stroke.id, tool: stroke.tool, color: stroke.color, width: stroke.width,
+    points: points.map(p => [round(p?.[0]), round(p?.[1])] as [number, number]) };
+}
+
+/** 지금 화면에 걸린 슬라이드의 PDF 쪽 번호 — 판서는 이 번호로 묶인다 */
+function currentInkPage(state: Stored) {
+  const slide = state.deck?.slides.find(s => s.slideNo === state.session.currentSlide);
+  return slide?.pdfPage ?? state.session.currentSlide;
+}
 
 const RETRIES = 6;
 
@@ -96,6 +128,8 @@ export function publicState(state: Stored, teacher: boolean): LiveState {
     surveyResponses: state.surveyResponses ?? [],
     wordResponses: state.wordResponses ?? [],
     reactions: (state.reactions ?? []).filter(r => Date.now() - r.createdAt < 5000),
+    // 판서는 쌓이면 커진다 — 모두가 보고 있는 한 장 것만 내려준다
+    ink: (() => { const page = currentInkPage(state); const strokes = state.ink?.[page]; return strokes?.length ? { [page]: strokes } : {}; })(),
     deck: state.deck && { ...state.deck, slides: state.deck.slides.map(slide => ({
       guide: sample && slide.kind === "lab" && slide.labNo !== null ? guideFor(slide.labNo) : slide.guide ?? null,
       // 파서를 고치기 전에 저장된 수업에는 퀴즈가 아닌 슬라이드에도 문항이 남아 있다.
@@ -161,6 +195,7 @@ function apply(id: string, state: Stored, command: LiveCommand, teacher: boolean
         typeof command.pdfKey !== "string" || !(/^(https:\/\/|\/api\/local-material\/)/.test(command.pdfKey))) throw new Error("교안 정보를 확인해 주세요.");
       state.deck = { ...command.deck, sessionId: id, updatedAt: Date.now() };
       state.responses = []; state.posts = []; state.reactions = []; state.wordResponses = []; state.surveyResponses = [];
+      state.ink = {};
       state.session = { ...initialSessionState, pdfKey: command.pdfKey, pdfName: command.name.slice(0, 200), totalSlides: command.deck.slides.length, currentSlide: 1 };
       break;
     }
@@ -246,6 +281,7 @@ function apply(id: string, state: Stored, command: LiveCommand, teacher: boolean
       state.responses = [];
       state.reactions = [];
       state.wordResponses = []; state.surveyResponses = [];
+      state.ink = {};
       state.posts = seedPostsFor(slides.filter((s) => s.kind === "lab"));
       state.session = { ...initialSessionState, pdfKey: SAMPLE.pdf, pdfName: SAMPLE.name,
         totalSlides: SAMPLE.intro.length + parsed.length, currentSlide: 1 };
@@ -284,6 +320,29 @@ function apply(id: string, state: Stored, command: LiveCommand, teacher: boolean
       break;
     }
     case "reset": state.responses = state.responses.filter(r => r.itemId !== command.itemId); break;
+
+    // ── 판서 ────────────────────────────────────────────────────────
+    case "ink": {
+      if (!Number.isInteger(command.slideNo) || command.slideNo < 1) throw new Error("슬라이드 번호를 확인해 주세요.");
+      const stroke = cleanStroke(command.stroke);
+      const ink = state.ink ?? {};
+      const list = ink[command.slideNo] ?? [];
+      // 같은 획을 다시 보내도(재시도) 한 번만 남긴다
+      if (list.some(s => s.id === stroke.id)) break;
+      if (list.length >= INK_MAX_STROKES) throw new Error("이 슬라이드에는 판서를 더 넣을 수 없어요. 지우고 다시 그려 주세요.");
+      state.ink = { ...ink, [command.slideNo]: [...list, stroke] };
+      break;
+    }
+    case "inkUndo": {
+      const list = state.ink?.[command.slideNo];
+      if (list?.length) state.ink = { ...state.ink, [command.slideNo]: list.slice(0, -1) };
+      break;
+    }
+    case "inkClear": {
+      if (command.slideNo === null) { state.ink = {}; break; }
+      if (state.ink?.[command.slideNo]) { const next = { ...state.ink }; delete next[command.slideNo]; state.ink = next; }
+      break;
+    }
 
     // ── 교안 없이 강사가 직접 넣는 것들 ──────────────────────────────
     case "addItem": {
