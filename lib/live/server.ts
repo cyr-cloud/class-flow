@@ -9,7 +9,7 @@ import path from "node:path";
 import { initialSessionState } from "../sync/types";
 import { parseDeckMarkdown } from "../lecture/parseDeck";
 import { kv } from "./storage";
-import { SEED_OWNER, guideFor, seedPostsFor } from "./sample";
+import { SEED_OWNER, guideFor, seedDemoStudents, seedPostsFor } from "./sample";
 import type { DeckSlide } from "../types";
 import type { Stroke } from "../lecture/inkStore";
 import type { LiveState, LiveCommand } from "./types";
@@ -198,7 +198,7 @@ function apply(id: string, state: Stored, command: LiveCommand, teacher: boolean
         typeof command.pdfKey !== "string" || !(/^(https:\/\/|\/api\/local-material\/)/.test(command.pdfKey))) throw new Error("교안 정보를 확인해 주세요.");
       state.deck = { ...command.deck, sessionId: id, updatedAt: Date.now() };
       state.responses = []; state.posts = []; state.reactions = []; state.wordResponses = []; state.surveyResponses = [];
-      state.ink = {}; state.studentReport = null;
+      state.ink = {}; state.studentReport = null; state.roster = {};
       state.session = { ...initialSessionState, pdfKey: command.pdfKey, pdfName: command.name.slice(0, 200), totalSlides: command.deck.slides.length, currentSlide: 1 };
       break;
     }
@@ -285,7 +285,11 @@ function apply(id: string, state: Stored, command: LiveCommand, teacher: boolean
       state.reactions = [];
       state.wordResponses = []; state.surveyResponses = [];
       state.ink = {}; state.studentReport = null;
-      state.posts = seedPostsFor(slides.filter((s) => s.kind === "lab"));
+      // 강사 예시 결과물 + 예시 학생 참여 기록 — 리포트와 AI 버튼을 바로 체험할 수 있게
+      const demo = seedDemoStudents(slides);
+      state.posts = [...seedPostsFor(slides.filter((s) => s.kind === "lab")), ...demo.posts];
+      state.responses = demo.responses;
+      state.roster = demo.roster;
       state.session = { ...initialSessionState, pdfKey: SAMPLE.pdf, pdfName: SAMPLE.name,
         totalSlides: SAMPLE.intro.length + parsed.length, currentSlide: 1 };
       break;
