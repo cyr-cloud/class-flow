@@ -178,32 +178,77 @@ export function ChatPanel() {
   </aside>;
 }
 
+/** 복사. 수업을 http(내부망 주소)로 열면 clipboard API가 막혀 있어서 예전 방식으로 한 번 더 시도한다 */
+async function copyText(text: string) {
+  try { await navigator.clipboard.writeText(text); return true; } catch { /* 아래로 */ }
+  const area = document.createElement('textarea');
+  area.value = text; area.setAttribute('readonly', ''); area.style.position = 'fixed'; area.style.opacity = '0';
+  document.body.appendChild(area); area.select();
+  try { return document.execCommand('copy'); } finally { area.remove(); }
+}
+
+/** 복사 아이콘. 누르면 잠깐 체크 표시로 바뀐다 */
+function CopyButton({ text, className = '' }: { text: string; className?: string }) {
+  const [done, setDone] = useState(false);
+  return <button type="button" title={done ? '복사됨' : '복사'} aria-label={done ? '복사됨' : '복사하기'} onClick={async () => { if (await copyText(text)) { setDone(true); setTimeout(() => setDone(false), 1500); } }}
+    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors ${done ? 'text-tendril' : 'text-mute hover:bg-gardenia hover:text-mocha'} ${className}`}>
+    {done
+      ? <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7" /></svg>
+      : <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V5a2 2 0 0 1 2-2h10" /></svg>}
+  </button>;
+}
+
+const CODE_BLOCK = /```[^\n`]*\n?([\s\S]*?)```/g;
+
+/** ``` 로 감싼 부분은 코드 블록으로 — 명령어를 한 번에 복사할 수 있게 */
+function MessageText({ text }: { text: string }) {
+  const parts = text.split(CODE_BLOCK);
+  if (parts.length === 1) return <p className="mb-1 mt-1 whitespace-pre-wrap break-words text-sm leading-relaxed text-ink">{text}</p>;
+  return <div className="mb-1 mt-1 space-y-1">{parts.map((part, i) => {
+    if (i % 2 === 0) return part.trim() ? <p key={i} className="whitespace-pre-wrap break-words text-sm leading-relaxed text-ink">{part.replace(/^\n+|\n+$/g, '')}</p> : null;
+    const code = part.replace(/\n$/, '');
+    return <div key={i} className="relative rounded-lg border border-line bg-cream">
+      <pre className="overflow-x-auto p-2 pr-10 font-mono text-[13px] leading-relaxed text-ink"><code>{code}</code></pre>
+      <CopyButton text={code} className="absolute right-1 top-1" />
+    </div>;
+  })}</div>;
+}
+
 function ChatMessage({ message: m, grouped, pinned, teacher, actorId, run }: { message: Message; grouped: boolean; pinned: boolean; teacher: boolean; actorId: string; run: (cmd: Command) => Promise<void> }) {
   const [expanded, setExpanded] = useState(false);
+  // 코드 블록이 있으면 블록마다 복사 아이콘이 붙으므로 메시지 전체 복사는 두지 않는다
+  const copyable = m.role === 'teacher' && m.text.split(CODE_BLOCK).length === 1;
   const react = (emoji: string) => {
     const mine = m.reactions.some(r => r.emoji === emoji && r.actor === actorId);
     void run({ type: 'reaction', messageId: m.id, emoji, active: !mine });
     setExpanded(false);
   };
   return <article tabIndex={0} aria-label={`${m.role === 'teacher' ? '강사' : m.name}의 메시지`} title={new Date(m.createdAt).toLocaleString("ko-KR")} className={`${styles.message} px-1 pb-1 ${grouped ? "pt-0.5" : "mt-4 pt-2 first:mt-0"} outline-offset-2`} onKeyDown={e => { if (e.key === 'Escape' && expanded) { e.stopPropagation(); setExpanded(false); } }}>
-    <div aria-label="메시지 작업" className={`${styles.actions} ${expanded ? styles.expanded : ''} rounded-full border border-line bg-paper p-1 shadow-md`}>
-      {EMOJIS.map(emoji => <button type="button" key={emoji} title={`${emoji} 반응`} aria-label={`${emoji} 반응 추가 또는 취소`} aria-pressed={m.reactions.some(r => r.emoji === emoji && r.actor === actorId)} onClick={() => react(emoji)} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-lg hover:bg-gardenia focus-visible:bg-gardenia">{emoji}</button>)}
-      {teacher && <button type="button" title={pinned ? '고정 해제' : '진행 확인으로 고정'} aria-label={pinned ? '고정 해제' : '진행 확인으로 고정'} aria-pressed={pinned} onClick={() => { void run({ type: 'pin', messageId: m.id, active: !pinned }); setExpanded(false); }} className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-l border-line hover:bg-gardenia ${pinned ? 'text-mocha' : 'text-ink-soft'}`}>
-        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill={pinned ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3h8l-1 7 4 4v2H5v-2l4-4zM12 16v5" /></svg>
-      </button>}
-    </div>
     <div className={grouped ? 'sr-only' : 'flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-soft'}>
       <strong className="break-all text-sm text-ink">{m.name}</strong>
       {m.role === 'teacher' && m.name !== '강사' && <span className="rounded bg-mocha-tint px-1.5 py-0.5 text-[11px] font-medium text-mocha-deep">강사</span>}
       <time dateTime={m.createdAt} className="shrink-0">{new Date(m.createdAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}</time>
     </div>
-    <p className="mb-1 mt-1 whitespace-pre-wrap break-words text-sm leading-relaxed text-ink">{m.text}</p>
+    {/* 오른쪽 끝 도구: 핀(강사 화면만 · 고정돼 있으면 항상, 아니면 마우스를 올렸을 때) + 복사(강사 메시지) */}
+    <div className="flex items-start gap-1">
+      <div className="min-w-0 flex-1"><MessageText text={m.text} /></div>
+      {(teacher || copyable) && <div className="mt-0.5 flex shrink-0 items-center">
+        {teacher && <button type="button" title={pinned ? '고정 해제' : '진행 확인으로 고정'} aria-label={pinned ? '고정 해제' : '진행 확인으로 고정'} aria-pressed={pinned} onClick={() => { void run({ type: 'pin', messageId: m.id, active: !pinned }); setExpanded(false); }}
+          className={`${styles.pin} ${pinned ? styles.pinned : ''} ${expanded ? styles.expanded : ''} h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors hover:bg-gardenia ${pinned ? 'text-mocha' : 'text-mute hover:text-mocha'}`}>
+          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill={pinned ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3h8l-1 7 4 4v2H5v-2l4-4zM12 16v5" /></svg>
+        </button>}
+        {copyable && <CopyButton text={m.text} />}
+      </div>}
+    </div>
     <div className="flex flex-wrap items-center gap-1">
       {EMOJIS.filter(emoji => m.reactions.some(r => r.emoji === emoji)).map(emoji => {
         const reactions = m.reactions.filter(r => r.emoji === emoji), mine = reactions.some(r => r.actor === actorId);
         return <button type="button" key={emoji} title={reactions.map(r => r.name).join(', ')} aria-label={`${emoji} 반응 ${reactions.length}명, ${reactions.map(r => r.name).join(', ')}. ${mine ? '내 반응 취소' : '반응 추가'}`} aria-pressed={mine} onClick={() => react(emoji)} className={`rounded-full border px-2 py-1 text-sm ${mine ? 'border-cornflower bg-cornflower-tint text-cornflower-deep' : 'border-line bg-paper'}`}>{emoji} {reactions.length}</button>;
       })}
       <button type="button" aria-label="반응 추가 및 메시지 작업" aria-expanded={expanded} onClick={() => setExpanded(!expanded)} className={`${styles.touchTrigger} min-h-11 min-w-11 rounded-full border border-line text-sm text-mute`}>☺＋</button>
+    </div>
+    <div aria-label="메시지 작업" className={`${styles.actions} ${expanded ? styles.expanded : ''} rounded-full border border-line bg-paper p-1`}>
+      {EMOJIS.map(emoji => <button type="button" key={emoji} title={`${emoji} 반응`} aria-label={`${emoji} 반응 추가 또는 취소`} aria-pressed={m.reactions.some(r => r.emoji === emoji && r.actor === actorId)} onClick={() => react(emoji)} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-lg hover:bg-gardenia focus-visible:bg-gardenia">{emoji}</button>)}
     </div>
 
   </article>;

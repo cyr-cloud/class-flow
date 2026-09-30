@@ -1,31 +1,29 @@
 .message { position: relative; }
+/* 반응 고르기 바는 메시지 아래 자리를 차지하며 나온다 — 글을 가리지 않고 뒤 메시지를 밀어낸다 */
 .actions {
-  position: absolute;
-  right: 8px;
-  top: -12px;
-  z-index: 2;
-  display: flex;
-  max-width: calc(100% - 16px);
-  visibility: hidden;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 100ms ease;
+  display: none;
+  width: fit-content;
+  max-width: 100%;
+  flex-wrap: wrap;
+  margin-top: 4px;
 }
 .message:focus-within .actions,
 .actions.expanded {
-  visibility: visible;
-  opacity: 1;
-  pointer-events: auto;
+  display: flex;
 }
+/* 핀(강사 화면): 고정돼 있으면 항상, 아니면 이모지 바와 같은 때에 나온다 */
+.pin { display: none; }
+.pin.pinned,
+.message:focus-within .pin,
+.pin.expanded { display: inline-flex; }
 .touchTrigger { display: none; }
 @media (hover: hover) {
-  .message:hover .actions { visibility: visible; opacity: 1; pointer-events: auto; }
+  .message:hover .actions { display: flex; }
+  .message:hover .pin { display: inline-flex; }
 }
 @media (hover: none), (pointer: coarse), (max-width: 640px) {
   .touchTrigger { display: inline-flex; align-items: center; justify-content: center; }
-  .message:focus-within .actions:not(.expanded) { visibility: hidden; opacity: 0; pointer-events: none; }
+  .message:focus-within .actions:not(.expanded) { display: none; }
+  .message:focus-within .pin:not(.expanded):not(.pinned) { display: none; }
   .actions button { min-width: 36px; min-height: 40px; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .actions { transition: none; }
 }
