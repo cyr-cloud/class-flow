@@ -119,7 +119,7 @@ function ReportModal({ sessionId, onClose }: { sessionId: string; onClose: () =>
                   <td className="py-2 pr-2 text-ink">{s.name}{!s.named && <span className="ml-1 text-xs text-mute">(이름 없음)</span>}</td>
                   <td className="py-2 pr-2">{fmt(s.participation)}</td>
                   <td className="py-2 pr-2">{s.quizGraded ? `${s.quizCorrect}/${s.quizGraded} (${fmt(s.accuracy)})` : "–"}</td>
-                  <td className="py-2 pr-2">{s.posts}{s.likesReceived > 0 && <span className="ml-1 text-xs text-mute">♥{s.likesReceived}</span>}</td>
+                  <td className="py-2 pr-2">{s.posts}</td>
                   <td className="py-2 pr-2">{s.chats}</td>
                   <td className="py-2">{s.surveys + s.words}</td>
                 </tr>

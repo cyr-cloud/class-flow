@@ -26,7 +26,6 @@ export interface StudentStat {
   /** 0~100. 채점할 문항이 없으면 null */
   accuracy: number | null;
   posts: number;
-  likesReceived: number;
   surveys: number;
   words: number;
   chats: number;
@@ -86,7 +85,7 @@ export function computeStudentStats(input: StudentStatsInput, chat: ChatCounts =
   const entry = (key: string, name: string, named: boolean) => {
     let stat = byKey.get(key);
     if (!stat) {
-      stat = { key, name, named, quizAnswered: 0, quizGraded: 0, quizCorrect: 0, accuracy: null, posts: 0, likesReceived: 0, surveys: 0, words: 0, chats: 0, participation: null };
+      stat = { key, name, named, quizAnswered: 0, quizGraded: 0, quizCorrect: 0, accuracy: null, posts: 0, surveys: 0, words: 0, chats: 0, participation: null };
       byKey.set(key, stat);
     }
     return stat;
@@ -119,9 +118,7 @@ export function computeStudentStats(input: StudentStatsInput, chat: ChatCounts =
   }
 
   for (const p of posts) {
-    const stat = byKey.get(keyOfId.get(p.ownerId)!)!;
-    stat.posts += 1;
-    stat.likesReceived += (p.likes ?? []).filter(l => l !== p.ownerId).length;
+    byKey.get(keyOfId.get(p.ownerId)!)!.posts += 1;
   }
   const surveyDone = new Set<string>();
   for (const r of surveys) {

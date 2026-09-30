@@ -75,7 +75,7 @@ export async function POST(request: Request) {
         ...(notes.has(s.key) ? { teacherNote: notes.get(s.key) } : {}),
         key: s.key, name: s.name, named: s.named,
         quiz: { answered: s.quizAnswered, graded: s.quizGraded, correct: s.quizCorrect, accuracy: s.accuracy },
-        posts: s.posts, likesReceived: s.likesReceived, surveys: s.surveys, wordclouds: s.words, chats: s.chats,
+        posts: s.posts, surveys: s.surveys, wordclouds: s.words, chats: s.chats,
         participation: s.participation,
         writing: writing(s.name, s.key),
       })),

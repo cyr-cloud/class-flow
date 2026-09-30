@@ -25,12 +25,12 @@ test('merges tabs with the same name and keeps only the latest answer per item',
  assert.equal(students[0].quizAnswered,1); assert.equal(students[0].quizCorrect,1);
 });
 
-test('uses post author name when not in roster, ignores seed posts and self-likes',()=>{
+test('uses post author name when not in roster and ignores seed posts',()=>{
  const {students,summary}=computeStudentStats({deck,roster:{},responses:[],
   posts:[post('x','하윤',['x','y','z']),post('x','하윤'),post('seed','강사')]});
  assert.equal(summary.posts,2);
  assert.equal(students.length,1); assert.equal(students[0].name,'하윤');
- assert.equal(students[0].posts,2); assert.equal(students[0].likesReceived,2);
+ assert.equal(students[0].posts,2);
 });
 
 test('unnamed tabs get placeholders; chat-only students are listed; leaders handle ties and zeros',()=>{
