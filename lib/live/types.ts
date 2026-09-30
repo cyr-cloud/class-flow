@@ -44,6 +44,8 @@ export type LiveCommand =
   // 교안 없이 강사가 이 슬라이드에 직접 넣는 것들
   | { action: "addItem"; slideNo: number; question: string; options: string[]; answers: number[] }
   | { action: "removeItem"; slideNo: number; itemId: string }
+  /** 문항 고치기 (AI가 만든 문항 검수 등). 선택지가 바뀌면 그 문항 응답은 비운다 */
+  | { action: "editItem"; slideNo: number; itemId: string; question: string; options: string[]; answers: number[] }
   /** labNo가 null이면 실습 표시를 뗀다 */
   | { action: "markLab"; slideNo: number; labNo: number | null }
   | { action: "guide"; slideNo: number; markdown: string }

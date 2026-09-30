@@ -277,7 +277,7 @@ export default function TeacherView({ sessionId, localUploads = false, cloudConv
       }
       await attach(new Map([[slideNo, items]]));
       // 화면은 그대로 둔다 — 문항이 이 슬라이드 바로 아래에 생긴다
-      setNotice(`${slideNo}쪽 대본에서 ${items.length}문항을 만들었어요. 아래에서 확인하고 고쳐주세요.`);
+      setNotice(`${slideNo}쪽 대본에서 ${items.length}문항을 만들었어요. 아래에서 확인하고, 고칠 곳은 «문항 수정»으로 바꿔 주세요.`);
       return `${slideNo}쪽 대본에서 ${items.length}문항을 만들고 저장했어요. 아래에서 확인해 주세요.`;
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "문항을 뽑지 못했어요.");

@@ -6,6 +6,8 @@ import { onboardingSteps, OnboardingRole } from "./onboardingSteps";
 
 const STORAGE_KEY = (role: OnboardingRole) => `classflow:onboarding:${role}:v2`;
 const EVENT = "classflow:onboarding-change";
+/** 사용법 창이 닫혔다는 신호 — 겹쳐 뜨지 않게 기다리던 창들이 듣는다 */
+export const ONBOARDING_CLOSED = "classflow:onboarding-closed";
 function subscribe(listener: () => void) {
   window.addEventListener(EVENT, listener);
   window.addEventListener("storage", listener);
@@ -52,6 +54,16 @@ function RoleGuide({ role, open, onOpenChange, onStartSample, loading }: Props) 
     setIndex(0);
     onOpenChange(false);
   }, [dontShowAgain, onOpenChange, role]);
+
+  // 사용법이 떠 있는 동안에는 채팅 이름 입력 창이 기다렸다가 뜬다 (components/chat/ChatRoom.tsx)
+  useEffect(() => {
+    if (!visible) return;
+    document.documentElement.dataset.onboarding = "open";
+    return () => {
+      delete document.documentElement.dataset.onboarding;
+      window.dispatchEvent(new Event(ONBOARDING_CLOSED));
+    };
+  }, [visible]);
 
   useEffect(() => {
     if (!visible) return;

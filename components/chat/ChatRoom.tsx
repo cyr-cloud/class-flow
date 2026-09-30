@@ -3,6 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState, us
 import { io, type Socket } from 'socket.io-client';
 import { liveClient, emptyLive, responderId, sendLive } from '@/lib/live/client';
 import styles from './ChatMessage.module.css';
+import { ONBOARDING_CLOSED } from '../lecture/OnboardingModal';
 
 const EMOJIS = ['👍', '✅', '❤️', '👏', '😂', '🙋'];
 type Reaction = { actor: string; name: string; emoji: string };
@@ -72,7 +73,11 @@ export default function ChatRoom({ children, sessionId, role, enabled }: { child
     void Promise.resolve().then(() => {
       if (!active) return;
       const saved = role === 'teacher' ? '강사' : localStorage.getItem(key);
-      if (saved) void join(saved); else dialog.current?.showModal();
+      if (saved) { void join(saved); return; }
+      // 첫 방문이면 사용법 창이 먼저 떠 있다 — 두 창이 겹치지 않게 닫힌 뒤에 이름을 묻는다
+      const ask = () => { if (active && !dialog.current?.open) dialog.current?.showModal(); };
+      if (document.documentElement.dataset.onboarding === 'open') window.addEventListener(ONBOARDING_CLOSED, ask, { once: true });
+      else ask();
     });
     const invalidate = () => { generation.current++; socket.current?.disconnect(); };
     return () => { active = false; invalidate(); };

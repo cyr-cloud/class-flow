@@ -15,6 +15,7 @@ export default function SlideActivities({
   responses,
   role,
   reveal,
+  publicScreen = false,
 }: {
   sessionId: string;
   slide: DeckSlide | null;
@@ -22,6 +23,8 @@ export default function SlideActivities({
   responses: QuizResponse[];
   role: "teacher" | "student";
   reveal: boolean;
+  /** 프로젝터로 띄우는 발표 화면 — 학생도 보므로 정답 공개 전 집계를 가린다 */
+  publicScreen?: boolean;
 }) {
   const [openTab, setOpenTab] = useState<"guide" | "gallery" | null>(null);
 
@@ -90,6 +93,7 @@ export default function SlideActivities({
           responses={responses}
           role={role}
           reveal={reveal}
+          hideTallyBeforeReveal={role === "student" || publicScreen}
         />
       ))}
     </div>

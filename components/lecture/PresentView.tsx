@@ -210,6 +210,7 @@ export default function PresentView({
             responses={responses}
             role={role}
             reveal={reveal}
+            publicScreen
           />
         </aside>
       )}

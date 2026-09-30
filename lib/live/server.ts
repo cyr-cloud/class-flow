@@ -376,6 +376,23 @@ function apply(id: string, state: Stored, command: LiveCommand, teacher: boolean
       if (slide.kind === "quiz" && slide.items.length === 0) slide.kind = "normal";
       break;
     }
+    case "editItem": {
+      const slide = state.deck?.slides.find(s => s.slideNo === command.slideNo);
+      const item = slide?.items.find(i => i.id === command.itemId);
+      if (!item) throw new Error("문항을 찾지 못했어요. 새로고침 후 다시 시도해 주세요.");
+      if (typeof command.question !== "string" || !Array.isArray(command.options) || !Array.isArray(command.answers)) throw new Error("문항을 확인해 주세요.");
+      const question = command.question.trim().slice(0, 2000);
+      const options = command.options.map(o => (typeof o === "string" ? o.trim().slice(0, 1000) : "")).filter(Boolean);
+      if (!question) throw new Error("질문을 입력해 주세요.");
+      if (options.length < 2) throw new Error("선택지를 두 개 이상 입력해 주세요.");
+      if (options.length > 9) throw new Error("선택지는 아홉 개까지 넣을 수 있어요.");
+      const answers = [...new Set(command.answers)].filter(i => Number.isInteger(i) && i >= 0 && i < options.length).sort((a, b) => a - b);
+      // 선택지가 바뀌면 이미 받은 응답의 번호가 다른 뜻이 된다 — 그 문항 응답은 비운다
+      const optionsChanged = options.length !== item.options.length || options.some((o, i) => o !== item.options[i]);
+      if (optionsChanged) state.responses = state.responses.filter(r => r.itemId !== item.id);
+      Object.assign(item, { question, options, answers });
+      break;
+    }
     case "markLab": {
       const slide = ensureSlide(state, id, command.slideNo);
       if (command.labNo === null) {
