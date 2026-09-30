@@ -6,7 +6,7 @@
 
 import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
-import { liveClient } from "@/lib/live/client";
+import { liveClient, sendLive } from "@/lib/live/client";
 import { compressImage } from "@/lib/board/image";
 
 export default function LabPostForm({
@@ -20,7 +20,10 @@ export default function LabPostForm({
   me: string;
   onDone: () => void;
 }) {
-  const [name, setName] = useState("");
+  // 채팅에 적은 이름이 있으면 미리 채운다 — 학생별 집계에서 한 사람으로 이어지게
+  const [name, setName] = useState(() => {
+    try { return localStorage.getItem(`classflow:chat-name:student:${sessionId}`) ?? ""; } catch { return ""; }
+  });
   const [description, setDescription] = useState("");
   const [attachment, setAttachment] = useState<{ file: File; preview: string } | null>(null);
   const file = attachment?.file ?? null;
@@ -84,6 +87,7 @@ export default function LabPostForm({
         imageUrl,
         ownerId: me,
       });
+      if (name.trim()) sendLive(sessionId, { action: "identify", responderId: me, name: name.trim() });
       onDone();
     } catch (e) {
       setError(e instanceof Error ? e.message : "올리지 못했어요. 다시 시도해 주세요.");

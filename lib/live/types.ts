@@ -15,6 +15,10 @@ export interface LiveState {
   wordResponses?: { slideId: string; responderId: string; word: string }[];
   /** 판서 — 지금 보이는 슬라이드(PDF 쪽 번호 기준) 것만 내려준다 */
   ink?: InkBySlide;
+  /** 탭 식별자 → 학생이 적은 이름. 강사에게만 내려간다 */
+  roster?: import("../lecture/studentStats").Roster;
+  /** 강사가 «학생 성향 분석»을 눌러 만든 AI 일지. 강사에게만 내려간다 */
+  studentReport?: import("../lecture/studentStats").StudentReport | null;
 }
 
 export type LiveCommand =
@@ -47,4 +51,12 @@ export type LiveCommand =
   | { action: "addPost"; slideNo: number; authorName: string; description: string; imageUrl: string | null; ownerId: string }
   | { action: "removePost"; postId: string; ownerId: string }
   /** 다시 보내면 좋아요가 취소된다 */
-  | { action: "likePost"; postId: string; ownerId: string };
+  | { action: "likePost"; postId: string; ownerId: string }
+  // 학생이 이름을 적으면 탭 식별자와 이어 둔다 — 학생별 집계용
+  | { action: "identify"; responderId: string; name: string }
+  // AI 결과 저장 (강사만, 버튼을 눌렀을 때 API가 보낸다)
+  | { action: "setLabFeedback"; items: { postId: string; feedback: string }[] }
+  | { action: "setStudentReport"; report: import("../lecture/studentStats").StudentReport }
+  /** 강사가 학생 한 명의 일지를 고쳐 저장. refined면 «AI로 다듬기» 결과 */
+  | { action: "updateJournal"; key: string; draft: import("../lecture/studentStats").JournalDraft; refined?: boolean };
+

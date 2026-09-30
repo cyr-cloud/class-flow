@@ -1,7 +1,7 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { io, type Socket } from 'socket.io-client';
-import { liveClient, emptyLive } from '@/lib/live/client';
+import { liveClient, emptyLive, responderId, sendLive } from '@/lib/live/client';
 import styles from './ChatMessage.module.css';
 
 const EMOJIS = ['👍', '✅', '❤️', '👏', '😂', '🙋'];
@@ -46,6 +46,8 @@ export default function ChatRoom({ children, sessionId, role, enabled }: { child
       if (attempt !== generation.current) return;
       socket.current?.disconnect();
       setName(body.actor.name); setId(body.actor.id); localStorage.setItem(key, body.actor.name);
+      // 퀴즈 응답·결과물(탭 식별자)과 이름을 이어 둔다 — 강사의 학생별 집계용
+      if (role === 'student') sendLive(sessionId, { action: 'identify', responderId: responderId(), name: body.actor.name });
       dialog.current?.close();
       const connection = io(body.url, { auth: { ticket: body.ticket }, transports: ['websocket'], reconnectionDelayMax: 5000 });
       socket.current = connection;

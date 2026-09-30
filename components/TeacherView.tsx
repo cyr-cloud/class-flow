@@ -26,6 +26,7 @@ import InsertSlide from "./lecture/InsertSlide";
 import SpeakerNotes from "./lecture/SpeakerNotes";
 import LessonBackups from "./lecture/LessonBackups";
 import StudentJoinQr from "./lecture/StudentJoinQr";
+import StudentReport from "./lecture/StudentReport";
 import { PDF_UPLOAD_MAX_BYTES, PDF_UPLOAD_SIZE_ERROR } from "@/lib/lecture/uploadLimits";
 
 const noSubscribe = () => () => {};
@@ -451,8 +452,9 @@ export default function TeacherView({ sessionId, localUploads = false, cloudConv
                 {deck.slides.reduce((n, s) => n + s.items.length + (s.content?.type === "wordcloud" || s.content?.type === "survey" ? 1 : 0), 0)}문항</span>
                 {deck.source === "pdf" && " (PDF 제목으로 감지)"}
               </p>
+              <span className="sm:ml-auto"><StudentReport sessionId={sessionId} /></span>
               {posts.length > 0 && (
-                <p className="rounded-full bg-rosetan-tint px-3 py-1 text-sm text-rosetan-deep sm:ml-auto">
+                <p className="rounded-full bg-rosetan-tint px-3 py-1 text-sm text-rosetan-deep">
                   올라온 결과물 <span className="tabular-nums text-ink-soft">{posts.length}</span>개
                 </p>
               )}

@@ -132,6 +132,8 @@ export interface LabPost {
   ownerId: string;
   /** 좋아요를 누른 사람들. 누른 사람을 담아둬야 다시 눌러 뗄 수 있다 */
   likes?: string[];
+  /** 강사가 «AI 피드백 달기»를 눌렀을 때만 붙는 한두 문장 */
+  aiFeedback?: string;
   createdAt: number;
 }
 

@@ -14,11 +14,12 @@ import type { DeckSlide } from "../types";
 import type { Stroke } from "../lecture/inkStore";
 import type { LiveState, LiveCommand } from "./types";
 import { cleanSurvey, cleanSurveyResponse } from "../lecture/survey";
+import { cleanJournalDraft } from "../lecture/studentStats";
 import { REACTIONS } from "./reactions";
 import { BACKUP_INTERVAL, saveBackup } from "./backups";
 
 /** 학생도 보낼 수 있는 명령. 나머지는 수업을 연 강사만 */
-const STUDENT_ACTIONS: ReadonlySet<LiveCommand["action"]> = new Set(["respond", "addPost", "removePost", "likePost", "react", "wordRespond", "surveyRespond"]);
+const STUDENT_ACTIONS: ReadonlySet<LiveCommand["action"]> = new Set(["respond", "addPost", "removePost", "likePost", "react", "wordRespond", "surveyRespond", "identify"]);
 
 interface Stored extends LiveState { teacherToken: string; backupAt?: number; backupRevision?: number }
 
@@ -130,6 +131,8 @@ export function publicState(state: Stored, teacher: boolean): LiveState {
     reactions: (state.reactions ?? []).filter(r => Date.now() - r.createdAt < 5000),
     // 판서는 쌓이면 커진다 — 모두가 보고 있는 한 장 것만 내려준다
     ink: (() => { const page = currentInkPage(state); const strokes = state.ink?.[page]; return strokes?.length ? { [page]: strokes } : {}; })(),
+    // 학생 이름과 AI 일지는 강사 화면에서만 본다
+    ...(teacher ? { roster: state.roster ?? {}, studentReport: state.studentReport ?? null } : {}),
     deck: state.deck && { ...state.deck, slides: state.deck.slides.map(slide => ({
       guide: sample && slide.kind === "lab" && slide.labNo !== null ? guideFor(slide.labNo) : slide.guide ?? null,
       // 파서를 고치기 전에 저장된 수업에는 퀴즈가 아닌 슬라이드에도 문항이 남아 있다.
@@ -195,7 +198,7 @@ function apply(id: string, state: Stored, command: LiveCommand, teacher: boolean
         typeof command.pdfKey !== "string" || !(/^(https:\/\/|\/api\/local-material\/)/.test(command.pdfKey))) throw new Error("교안 정보를 확인해 주세요.");
       state.deck = { ...command.deck, sessionId: id, updatedAt: Date.now() };
       state.responses = []; state.posts = []; state.reactions = []; state.wordResponses = []; state.surveyResponses = [];
-      state.ink = {};
+      state.ink = {}; state.studentReport = null;
       state.session = { ...initialSessionState, pdfKey: command.pdfKey, pdfName: command.name.slice(0, 200), totalSlides: command.deck.slides.length, currentSlide: 1 };
       break;
     }
@@ -281,7 +284,7 @@ function apply(id: string, state: Stored, command: LiveCommand, teacher: boolean
       state.responses = [];
       state.reactions = [];
       state.wordResponses = []; state.surveyResponses = [];
-      state.ink = {};
+      state.ink = {}; state.studentReport = null;
       state.posts = seedPostsFor(slides.filter((s) => s.kind === "lab"));
       state.session = { ...initialSessionState, pdfKey: SAMPLE.pdf, pdfName: SAMPLE.name,
         totalSlides: SAMPLE.intro.length + parsed.length, currentSlide: 1 };
@@ -438,6 +441,42 @@ function apply(id: string, state: Stored, command: LiveCommand, teacher: boolean
       if (post.ownerId === SEED_OWNER) throw new Error("강사 예시는 지울 수 없어요.");
       if (!teacher && post.ownerId !== command.ownerId) throw new Error("내가 올린 결과물만 지울 수 있어요.");
       state.posts = state.posts.filter(p => p.id !== command.postId);
+      break;
+    }
+    // ── 학생별 집계 · AI 결과 ────────────────────────────────────────
+    case "identify": {
+      if (!/^[a-zA-Z0-9_-]{1,100}$/.test(command.responderId) || typeof command.name !== "string") throw new Error("이름을 확인해 주세요.");
+      const name = command.name.normalize("NFKC").trim().slice(0, 30);
+      if (!name || /[\u0000-\u001f]/.test(name)) throw new Error("이름을 확인해 주세요.");
+      const roster = state.roster ?? {};
+      if (roster[command.responderId]?.name === name) break;
+      if (!roster[command.responderId] && Object.keys(roster).length >= 500) throw new Error("이 수업에는 학생을 더 등록할 수 없어요.");
+      state.roster = { ...roster, [command.responderId]: { name, at: Date.now() } };
+      break;
+    }
+    case "setLabFeedback": {
+      if (!Array.isArray(command.items) || command.items.length > 200) throw new Error("피드백을 확인해 주세요.");
+      for (const { postId, feedback } of command.items) {
+        const post = state.posts.find(p => p.id === postId);
+        if (!post || typeof feedback !== "string" || !feedback.trim()) continue;
+        post.aiFeedback = feedback.trim().slice(0, 400);
+      }
+      break;
+    }
+    case "setStudentReport": {
+      const r = command.report;
+      if (!r || !Array.isArray(r.journals) || r.journals.length > 500 || typeof r.overview !== "string") throw new Error("리포트를 확인해 주세요.");
+      // 다시 분석해도 강사가 적은 관찰 메모는 남긴다
+      const notes = new Map((state.studentReport?.journals ?? []).filter(j => j.teacherNote).map(j => [j.key, j.teacherNote!]));
+      state.studentReport = { ...r, journals: r.journals.map(j => (notes.has(j.key) ? { ...j, teacherNote: notes.get(j.key) } : j)) };
+      break;
+    }
+    case "updateJournal": {
+      const journal = state.studentReport?.journals.find(j => j.key === command.key);
+      if (!state.studentReport || !journal) throw new Error("일지를 찾지 못했어요. 먼저 «학생 성향 분석»을 눌러 주세요.");
+      const draft = cleanJournalDraft(command.draft);
+      if (!draft.summary) throw new Error("요약은 비워 둘 수 없어요.");
+      Object.assign(journal, draft, command.refined ? { refinedAt: Date.now() } : { editedAt: Date.now() });
       break;
     }
     default: throw new Error("지원하지 않는 요청입니다.");

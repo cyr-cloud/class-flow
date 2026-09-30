@@ -102,6 +102,64 @@ function Heart({ filled }: { filled: boolean }) {
   );
 }
 
+/** 강사가 «AI 피드백 달기»를 눌렀을 때만 붙는 피드백. 카드에서는 «피드백 보기»를 눌러야 펼쳐진다 */
+function Feedback({ post, collapsible }: { post: LabPost; collapsible?: boolean }) {
+  const [open, setOpen] = useState(!collapsible);
+  if (!post.aiFeedback) return null;
+  if (!open)
+    return (
+      <button onClick={() => setOpen(true)} aria-expanded={false}
+        className="mt-2 self-start rounded-full border border-viola/40 bg-viola-tint px-3 py-1 text-xs text-viola-deep transition-colors hover:border-viola">
+        ✦ AI 피드백 보기
+      </button>
+    );
+  return (
+    <div className={`rounded-xl bg-viola-tint px-3 py-2 text-viola-deep ${collapsible ? "mt-2 text-xs leading-5" : "mt-4 text-sm leading-6"}`}>
+      <p>
+        <span className="mr-1.5 font-medium">✦ AI 피드백</span>
+        {post.aiFeedback}
+      </p>
+      {collapsible && (
+        <button onClick={() => setOpen(false)} aria-expanded className="mt-1 text-[11px] text-viola-deep/70 underline-offset-2 hover:underline">접기</button>
+      )}
+    </div>
+  );
+}
+
+/** 아직 피드백이 없는 결과물을 모아 AI에 한 번 보낸다. 강사 화면에서만 보인다 */
+function FeedbackButton({ sessionId, slideNo, pending }: { sessionId: string; slideNo: number; pending: number }) {
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState("");
+  if (pending === 0 && !message) return null;
+  return (
+    <span className="flex items-center gap-2">
+      {message && <span role="status" className="text-xs text-mute">{message}</span>}
+      {pending > 0 && (
+        <button
+          disabled={busy}
+          onClick={async () => {
+            setBusy(true); setMessage("");
+            try {
+              const res = await fetch("/api/lab-feedback", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "x-teacher-token": localStorage.getItem(`classflow:teacher:${sessionId}`) ?? "" },
+                body: JSON.stringify({ sessionId, slideNo }),
+              });
+              const body = (await res.json()) as { done?: number; remaining?: number; error?: string };
+              if (!res.ok) throw new Error(body.error ?? "피드백을 만들지 못했어요.");
+              setMessage(body.remaining ? `${body.done}건 완료 · ${body.remaining}건 남음` : `${body.done}건에 피드백을 달았어요`);
+            } catch (e) { setMessage(e instanceof Error ? e.message : "피드백을 만들지 못했어요."); }
+            finally { setBusy(false); }
+          }}
+          className="rounded-full border border-viola/50 bg-viola-tint px-4 py-1.5 text-sm text-viola-deep transition-colors hover:border-viola disabled:opacity-50"
+        >
+          {busy ? "AI가 결과물을 읽는 중…" : `✦ AI 피드백 달기 · ${pending}`}
+        </button>
+      )}
+    </span>
+  );
+}
+
 export default function LabGallery({
   sessionId,
   slideNo,
@@ -132,6 +190,7 @@ export default function LabGallery({
     [posts],
   );
   const detail = detailId ? (ordered.find((p) => p.id === detailId) ?? null) : null;
+  const pendingFeedback = posts.filter((p) => p.createdAt !== 0 && !p.aiFeedback).length;
   const canRemove = (post: LabPost) =>
     post.createdAt !== 0 && (role === "teacher" || post.ownerId === me);
 
@@ -154,6 +213,7 @@ export default function LabGallery({
         </div>
 
         <span className="ml-auto text-sm text-mute">{ordered.length}개</span>
+        {role === "teacher" && <FeedbackButton sessionId={sessionId} slideNo={slideNo} pending={pendingFeedback} />}
 
         <button
           onClick={() => setUploading(true)}
@@ -191,6 +251,7 @@ export default function LabGallery({
                     {post.description || "설명 없음"}
                   </p>
                 </button>
+                <Feedback post={post} collapsible />
                 <div className="mt-3 flex items-center">
                   <LikeButton post={post} me={me} onLike={onLike} />
                 </div>
@@ -259,6 +320,7 @@ export default function LabGallery({
                   {detail.description}
                 </p>
               )}
+              <Feedback post={detail} />
               <div className="mt-5 flex items-center gap-2">
                 <button
                   onClick={() => setDetailId(null)}
