@@ -27,6 +27,7 @@ import InsertSlide from "./lecture/InsertSlide";
 import SpeakerNotes from "./lecture/SpeakerNotes";
 import LessonBackups from "./lecture/LessonBackups";
 import StudentJoinQr from "./lecture/StudentJoinQr";
+import TeacherLink from "./lecture/TeacherLink";
 import StudentReport from "./lecture/StudentReport";
 import { PDF_UPLOAD_MAX_BYTES, PDF_UPLOAD_SIZE_ERROR } from "@/lib/lecture/uploadLimits";
 
@@ -665,6 +666,7 @@ export default function TeacherView({ sessionId, localUploads = false, cloudConv
             </div>
           </details>
         )}
+        <TeacherLink sessionId={sessionId} />
       </main>
 
       {presenting && (
