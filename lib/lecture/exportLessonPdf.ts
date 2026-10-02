@@ -1,5 +1,5 @@
 import { renderSurveyPdf } from "./renderSurveyPdf";
-import { wordCloudColor } from "./wordCloudColors";
+import { assignWordColors } from "./wordCloudColors";
 import { groupCloudWords, layoutCloud } from "./wordCloudLayout";
 import { mergeLessonPdf } from "./mergeLessonPdf";
 import type { DeckSlide } from "../types";
@@ -38,6 +38,7 @@ export async function renderAddedPage(slide: DeckSlide, responses: LiveState["wo
     const startY = wrapped(ctx, content.prompt, 65, 130, 1470, 52) + 20;
     const rows = (responses ?? []).filter(r => r.slideId === content.id);
     const words = layoutCloud(groupCloudWords(rows));
+    const colorOf = assignWordColors(rows);
     const scale = Math.min(1470 / 1000, (810 - startY) / 520);
     ctx.save();
     ctx.translate((1600 - 1000 * scale) / 2, startY);
@@ -45,7 +46,7 @@ export async function renderAddedPage(slide: DeckSlide, responses: LiveState["wo
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
     for (const item of words) {
       ctx.font = `bold ${item.fontSize}px "Malgun Gothic", sans-serif`;
-      ctx.fillStyle = wordCloudColor(item.word);
+      ctx.fillStyle = colorOf(item.word);
       ctx.save(); ctx.translate(item.x, item.y);
       ctx.scale(item.width / Math.max(1, ctx.measureText(item.word).width), 1);
       ctx.fillText(item.word, 0, 0); ctx.restore();
