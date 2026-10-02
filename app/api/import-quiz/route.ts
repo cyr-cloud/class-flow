@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import {zodOutputFormat} from "@anthropic-ai/sdk/helpers/zod";
 import {z} from "zod";
 import {readSession,isTeacher} from "@/lib/live/server";
+import {quizFromNotes} from "@/lib/lecture/quizNotes";
 
 export const runtime="nodejs";
 export const maxDuration=60;
@@ -19,6 +20,8 @@ export async function POST(request:Request) {
     if(!slide||slide.kind!=="quiz"||slide.content||form.get("pdfKey")!==state.session.pdfKey) throw Error("퀴즈 슬라이드를 다시 확인해 주세요.");
     const notes=form.get("notes"),image=form.get("image");
     if(typeof notes!=="string"||!notes.trim()||notes.length>100000) throw Error("발표자 노트가 없거나 너무 길어 정답을 확인할 수 없어요.");
+    const fromNotes=quizFromNotes(notes);
+    if(fromNotes) return Response.json(fromNotes);
     if(!(image instanceof File)||image.type!=="image/png"||image.size>2*1024*1024) throw Error("퀴즈 화면을 읽지 못했어요.");
     const client=new Anthropic({maxRetries:0,timeout:45000});
     const response=await client.messages.parse({model:"claude-opus-5",max_tokens:6000,thinking:{type:"adaptive"},

@@ -1,3 +1,4 @@
+import {quizFromNotes} from "./quizNotes";
 import {liveClient} from "../live/client";
 import {quizPageImages} from "./pdfTitles";
 import type {SlideNote} from "./pptxNotes";
@@ -9,7 +10,8 @@ export async function importPptQuizzes(sessionId:string,notes:SlideNote[],progre
   if(!slides.length) return "불러올 빈 퀴즈 페이지가 없습니다.";
   if(!pdfKey) throw Error("PPT를 먼저 올려 주세요.");
   progress(`PPT 속 퀴즈 ${slides.length}쪽을 읽고 있어요. 기존 문제와 선택지를 그대로 옮깁니다…`);
-  const images=await quizPageImages(pdfKey,slides.map(s=>s.pdfPage??s.slideNo));
+  const imagePages=slides.filter(s=>!notes.find(n=>n.slideNo===(s.pdfPage??s.slideNo))?.text.includes("[ClassFlow Quiz JSON]")).map(s=>s.pdfPage??s.slideNo);
+  const images=imagePages.length?await quizPageImages(pdfKey,imagePages):new Map<number,Blob>();
   const failed:string[]=[]; let saved=0;
   for(const [i,slide] of slides.entries()) {
     const originalPage=slide.pdfPage??slide.slideNo;
@@ -18,7 +20,9 @@ export async function importPptQuizzes(sessionId:string,notes:SlideNote[],progre
     try {
       if(client.snapshot().session.pdfKey!==pdfKey) throw Error("자료가 교체되어 불러오기를 중단했어요.");
       if(!note?.text.trim()) throw Error("발표자 노트가 없어 정답을 확인할 수 없음");
-      const form=new FormData();form.set("slideNo",String(slide.slideNo));form.set("pdfKey",pdfKey);form.set("notes",note.text);form.set("image",images.get(originalPage)!,"quiz.png");
+      // Check explicit source before requesting an image or an AI model.
+      const fromNotes=quizFromNotes(note.text);
+      const form=new FormData();form.set("slideNo",String(slide.slideNo));form.set("pdfKey",pdfKey);form.set("notes",note.text);if(!fromNotes) form.set("image",images.get(originalPage)!,"quiz.png");
       const response=await fetch(`/api/import-quiz?sessionId=${encodeURIComponent(sessionId)}`,{method:"POST",headers:{"x-teacher-token":localStorage.getItem(`classflow:teacher:${sessionId}`)??""},body:form,signal:AbortSignal.timeout(60000)});
       const result=await response.json();
       if(!response.ok||!result.items?.length) throw Error(result.error||result.reason||"기존 문항을 확인하지 못함");

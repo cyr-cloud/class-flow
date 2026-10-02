@@ -1,3 +1,5 @@
+import {readSession} from "@/lib/live/server";
+import {lessonMetadata} from "@/lib/lecture/lessonMetadata";
 import ChatRoom from "@/components/chat/ChatRoom";
 import TeacherView from "@/components/TeacherView";
 import { localMaterialEnabled } from "@/lib/localMaterial";
@@ -10,4 +12,10 @@ export default async function TeacherPage({
 }) {
   const { sessionId } = await params;
   return <ChatRoom sessionId={sessionId} role="teacher" enabled={!!process.env.CHAT_SERVER_URL && !!process.env.CHAT_TOKEN_SECRET}><TeacherView sessionId={sessionId} localUploads={localMaterialEnabled()} cloudConversion={conversionEnabled()} /></ChatRoom>;
+}
+
+export async function generateMetadata({params}:{params:Promise<{sessionId:string}>}) {
+  const {sessionId}=await params;
+  const state=await readSession(sessionId);
+  return lessonMetadata(sessionId,"teacher",state?.session??null);
 }
