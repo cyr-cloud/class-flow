@@ -26,7 +26,7 @@ export async function saveBackup(id: string, state: LiveState, reason: string) {
   };
   const summary: BackupSummary = {
     revision: state.revision, savedAt: Date.now(), reason,
-    name: state.session.pdfName ?? "수업",
+    name: state.session.title || state.session.pdfName || "수업",
     answers: state.responses.length + (state.wordResponses?.length ?? 0) + (state.surveyResponses?.length ?? 0),
   };
   // Immutable revision snapshots have no automatic expiry. Never overwrite a backup.

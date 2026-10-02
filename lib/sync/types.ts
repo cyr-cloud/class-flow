@@ -8,6 +8,8 @@ export interface SessionState {
   // 현재 로드된 PDF를 식별하는 키. 실제 파일 바이트는 별도 저장소(IndexedDB)에 둔다.
   pdfKey: string | null;
   pdfName: string | null;
+  /** 강사가 적은 수업 제목. 없으면 파일 이름(pdfName)을 보여준다 */
+  title?: string | null;
   /** 지금 열려 있는 참여요소 문항 id. null이면 닫힌 상태 */
   activeActivityId: string | null;
   /** 강사가 정답을 공개했는지 */

@@ -14,6 +14,7 @@ import PresentView from "./lecture/PresentView";
 import { isSharedKey } from "@/lib/sync/pdfStore";
 import { upload } from "@vercel/blob/client";
 import { useSync } from "@/lib/sync/useSync";
+import LessonTitle from "./lecture/LessonTitle";
 import { deckFromTitles } from "@/lib/lecture/parseDeck";
 import { extractTitles } from "@/lib/lecture/pdfTitles";
 import { useCurrentSlide, useDeckState, useLabSlides } from "@/lib/lecture/useDeck";
@@ -356,9 +357,11 @@ export default function TeacherView({ sessionId, localUploads = false, cloudConv
                 {state.totalSlides ? `${state.totalSlides}장` : "슬라이드 없음"}
               </span>
             </p>
-            <h1 className="mt-2 truncate text-2xl font-bold leading-tight text-ink">
-              {state.pdfName ?? "슬라이드를 올려주세요"}
-            </h1>
+            {state.pdfName ? (
+              <LessonTitle title={state.title} fallback={state.pdfName} onSave={(title) => patch({ title })} />
+            ) : (
+              <h1 className="mt-2 truncate text-2xl font-bold leading-tight text-ink">슬라이드를 올려주세요</h1>
+            )}
           </div>
 
           <div className="ml-auto flex flex-wrap items-center gap-2">

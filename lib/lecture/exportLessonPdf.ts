@@ -71,7 +71,7 @@ export async function downloadLessonPdf(state: LiveState) {
   });
   const url = URL.createObjectURL(new Blob([new Uint8Array(bytes)], { type: "application/pdf" }));
   const a = document.createElement("a"); a.href = url;
-  a.download = `${(state.session.pdfName ?? "ClassFlow").replace(/\.(pdf|pptx)$/i, "").replace(/[\\/:*?"<>|]/g, "_")}-수업자료.pdf`;
+  a.download = `${(state.session.title || state.session.pdfName || "ClassFlow").replace(/\.(pdf|pptx)$/i, "").replace(/[\\/:*?"<>|]/g, "_")}-수업자료.pdf`;
   a.click();
   return { total, url };
 }

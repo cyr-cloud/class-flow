@@ -10,8 +10,9 @@ import { useCallback, useState } from "react";
 import SlideStage from "./lecture/SlideStage";
 import SlideActivities from "./lecture/SlideActivities";
 import PresentView from "./lecture/PresentView";
+import LabBoardButton from "./lecture/LabBoardButton";
 import { useSync } from "@/lib/sync/useSync";
-import { useCurrentSlide, useDeckState } from "@/lib/lecture/useDeck";
+import { useCurrentSlide, useDeckState, useLabSlides } from "@/lib/lecture/useDeck";
 import LiveStatus from "./lecture/LiveStatus";
 import OnboardingModal from "./lecture/OnboardingModal";
 import { liveClient } from "@/lib/live/client";
@@ -20,6 +21,7 @@ export default function StudentView({ sessionId }: { sessionId: string }) {
   const { state } = useSync(sessionId);
   const { responses, posts } = useDeckState(sessionId);
   const slide = useCurrentSlide(sessionId, state.currentSlide);
+  const hasLabs = useLabSlides(sessionId).length > 0;
   const [presenting, setPresenting] = useState(false);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -39,6 +41,7 @@ export default function StudentView({ sessionId }: { sessionId: string }) {
               <span className="tabular-nums text-xs text-mute">
                 {state.totalSlides ? `${state.currentSlide} / ${state.totalSlides}장` : "대기 중"}
               </span>
+              {state.title && <span className="min-w-0 truncate text-xs font-medium text-ink-soft">{state.title}</span>}
             </p>
             <h1 className="mt-2 truncate text-2xl font-bold leading-tight text-ink">
               {slide?.title ?? "강의를 기다리는 중"}
@@ -46,6 +49,7 @@ export default function StudentView({ sessionId }: { sessionId: string }) {
           </div>
           <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:ml-auto sm:w-auto">
             <ChatToggle />
+            <LabBoardButton sessionId={sessionId} posts={posts} currentSlide={state.currentSlide} />
             {state.pdfKey && <button disabled={exporting} onClick={async () => {
               setExporting(true); setDownloadNotice("PDF를 만드는 중이에요…");
               try {
@@ -119,7 +123,7 @@ export default function StudentView({ sessionId }: { sessionId: string }) {
         />
 
         <p className="mt-6 text-center text-xs text-mute">
-          화면은 강사님을 따라 자동으로 넘어가요.
+          화면은 강사님을 따라 자동으로 넘어가요.{hasLabs && " 지난 실습은 위 «실습 게시판»에서 올릴 수 있어요."}
         </p>
       </main>
 

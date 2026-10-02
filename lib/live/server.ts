@@ -299,6 +299,10 @@ function apply(id: string, state: Stored, command: LiveCommand, teacher: boolean
       if (p.currentSlide !== undefined && (!Number.isInteger(p.currentSlide) || p.currentSlide < 1 ||
         (state.session.totalSlides > 0 && p.currentSlide > state.session.totalSlides))) throw new Error("슬라이드 번호를 확인해 주세요.");
       if (p.totalSlides !== undefined && (!Number.isInteger(p.totalSlides) || p.totalSlides < 0)) throw new Error("슬라이드 수를 확인해 주세요.");
+      if (p.title !== undefined && p.title !== null) {
+        if (typeof p.title !== "string" || p.title.trim().length > 60) throw new Error("수업 제목은 60자까지 적을 수 있어요.");
+        p.title = p.title.replace(/\s+/g, " ").trim() || null;
+      }
       state.session = { ...state.session, ...p };
       if (p.currentSlide !== undefined) state.session.revealAnswer = false;
       break;
