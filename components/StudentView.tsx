@@ -41,10 +41,11 @@ export default function StudentView({ sessionId }: { sessionId: string }) {
               <span className="tabular-nums text-xs text-mute">
                 {state.totalSlides ? `${state.currentSlide} / ${state.totalSlides}장` : "대기 중"}
               </span>
-              {state.title && <span className="min-w-0 truncate text-xs font-medium text-ink-soft">{state.title}</span>}
+              {slide?.title && <span className="min-w-0 truncate text-xs font-medium text-ink-soft">{slide.title}</span>}
             </p>
+            {/* 강사 화면과 같은 수업 제목 — 지금 슬라이드 제목은 위 작은 줄에 둔다 */}
             <h1 className="mt-2 truncate text-2xl font-bold leading-tight text-ink">
-              {slide?.title ?? "강의를 기다리는 중"}
+              {state.title || state.pdfName || "강의를 기다리는 중"}
             </h1>
           </div>
           <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:ml-auto sm:w-auto">
