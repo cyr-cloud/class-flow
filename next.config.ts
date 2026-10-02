@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Link-preview crawlers must receive lesson metadata in the initial head.
+  htmlLimitedBots: /.*/,
   distDir: process.env.CHAT_LOCAL_DATA ? '.next-chat' : '.next',
   // 로컬 변환의 동적 파일 경로가 시험 자료/환경 파일을 배포 번들로 끌어들이지 않게 한다.
   outputFileTracingExcludes: {
