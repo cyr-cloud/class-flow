@@ -53,3 +53,4 @@ next-env.d.ts
 # 로컬 전용 자료 (비공개 원문 포함, 1.5GB) — 저장소에 올리지 않는다
 /library-site/
 /output/
+/generated/
