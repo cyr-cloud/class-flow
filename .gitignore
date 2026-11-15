@@ -49,3 +49,7 @@ next-env.d.ts
 
 # .env 틀은 배포 안내용으로 올린다 (값은 비어 있다)
 !.env.example
+
+# 로컬 전용 자료 (비공개 원문 포함, 1.5GB) — 저장소에 올리지 않는다
+/library-site/
+/output/
