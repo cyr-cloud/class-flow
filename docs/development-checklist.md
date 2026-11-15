@@ -230,12 +230,13 @@ PPTX에는 업로드한 원본 내용이 유지된다. 수업 중 추가한 이�
 ### 1-1 로그인
 - [x] **AUTH-01a** 스토어 Supabase(개발 프로젝트) 공개 주소·publishable key를 `.env.local`에 연결, `.env.example`에 안내 추가. 서버 전용 secret key는 복사하지 않음. 운영 키는 배포 때 (2026-11-15)
 - [x] **AUTH-01b** `lib/supabase/server.ts`(createUserClient·currentUser), `lib/auth/*`(config·cookies·input·service·provider), `proxy.ts`(/me·/admin 세션 갱신). yuco-store 코드 기반 (2026-11-15)
-- [x] **AUTH-01c** `/login`(이메일 → 매직링크·인증번호), `/api/auth/[request|verify|logout]`(Origin 검사·크기 제한), `/auth/callback`(PKCE), 확인용 최소 `/me`. 단위 테스트 5개 추가(전체 50개 통과), tsc·eslint 통과, 로컬 서버에서 403/400/404/415·리디렉트·실제 Supabase 오답 응답 확인, 기존 화면 회귀 200 (2026-11-15). **실제 메일 수신 → 로그인 완료는 미확인**(사용자 메일함 필요)
+- [x] **AUTH-01c** `/login`(이메일 → 매직링크·인증번호), `/api/auth/[request|verify|logout]`(Origin 검사·크기 제한), `/auth/callback`(PKCE), 확인용 최소 `/me`. 단위 테스트 5개 추가(전체 50개 통과), tsc·eslint 통과, 로컬 서버에서 403/400/404/415·리디렉트, 기존 화면 회귀 200 (2026-11-15). ⚠️ 정정: 오답 400은 Supabase 응답이 아니라 연결 실패였음 — 스토어 .env.local의 Supabase 주소가 DNS에서 조회되지 않음(프로젝트 일시정지·삭제 또는 주소 변경 의심). **Supabase 연결과 실제 로그인은 미확인**
 - [ ] **AUTH-02** 로그인 후 원래 차시 올리기 화면으로 복귀, 외부 주소 복귀 차단 — 코드(next 파라미터·safeReturnPath·콜백 next)는 AUTH-01c에 포함. 차시 페이지가 생긴 뒤 실제 흐름으로 검증
 - [ ] **AUTH-04a** profiles 테이블·RLS migration (스토어와 공용, 기존 테이블 있으면 확장)
 - [ ] **AUTH-03** 첫 로그인 닉네임 설정 화면
 - [ ] **AUTH-04b** admin 역할 확인 미들웨어, /admin 보호
 - [ ] **AUTH-검증** 두 계정으로 로그인 · 다른 사람 프로필 수정 차단 확인
+- [ ] **AUTH-05** 소셜 로그인(1단계로 앞당김) — **구글·네이버 필수**(2026-11-15 사용자 결정). 코드 완료: `/api/auth/oauth/[google|naver]`(Origin 검사·PKCE), 로그인 화면 버튼, 콜백 취소·오류 안내, 네트워크 오류를 "번호 틀림"과 구분, 네이버 userinfo 변환 Edge Function(`supabase/functions/naver-userinfo`, email_verified=false로 다른 계정 자동 연결 방지). 테스트 54개·tsc·eslint 통과, 버튼 화면 확인. **남은 일(사용자)**: ① Supabase 프로젝트 접속 복구(현재 주소 DNS 조회 실패) ② 구글 Cloud OAuth 클라이언트 발급 → Supabase Google 공급자 켜기 ③ 네이버 개발자센터 앱 등록(이메일 필수 동의) → Supabase 사용자 지정 공급자 `custom:naver` 등록 + `naver-userinfo` 배포 ④ 각 공급자 켠 뒤 `AUTH_GOOGLE_ENABLED`/`AUTH_NAVER_ENABLED`=1 ⑤ 실제 로그인 확인. 카카오는 나중(Supabase 기본 지원)
 
 ### 1-2 강의 · 차시
 - [ ] **COURSE-01a** courses·lessons 테이블·RLS migration (공개 강의는 누구나 읽기, 쓰기는 admin)
@@ -315,5 +316,5 @@ PPTX에는 업로드한 원본 내용이 유지된다. 수업 중 추가한 이�
 - [ ] **BOOK-06** 영상 함께 보기
 - [ ] **BOOK-07** 수업 후 복습 모드 (CLASS-03)
 - [ ] **CLASS-02 확장** 내 강의실 · 기수 강의실 · 스토어 결제 권한 연동
-- [ ] **AUTH-05/06** 소셜 로그인 · 실시간 참여 기록 계정 연결
+- [ ] **AUTH-06** 실시간 참여 기록 계정 연결 · 카카오 로그인
 - [ ] 자료실(library-site 이전) · 실습문제 생성기 · 오늘의 MVP 뽑기권 · 주간 랭킹

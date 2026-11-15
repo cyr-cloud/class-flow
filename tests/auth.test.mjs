@@ -44,6 +44,10 @@ test('verifyCode checks code format, returns next only on success', async () => 
   const bad = await verifyCode(fakeProvider({verify: {error: {status: 400}, userId: null}}), {email: 'a@b.co', token: '123456'});
   assert.equal(bad.status, 400);
   assert.equal(bad.body.next, undefined);
+  for (const status of [undefined, 0, 500, 503]) {
+    const down = await verifyCode(fakeProvider({verify: {error: {status}, userId: null}}), {email: 'a@b.co', token: '123456'});
+    assert.equal(down.status, 503, `network/server error ${status} must not look like a wrong code`);
+  }
   const ok = await verifyCode(fakeProvider(), {email: 'a@b.co', token: '123456', next: '/courses/x/1/new'});
   assert.equal(ok.status, 200);
   assert.equal(ok.body.next, '/courses/x/1/new');

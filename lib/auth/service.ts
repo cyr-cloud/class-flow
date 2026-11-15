@@ -29,6 +29,11 @@ export async function verifyCode(provider: AuthProvider, input: { email?: unknow
   const t = codeSchema.safeParse(input.token);
   if (!e.success || !t.success) return { status: 400, body: { message: '이메일과 메일에 적힌 인증번호를 확인해주세요.' } };
   const result = await provider.verify(e.data, t.data);
+  // 연결 실패·서버 오류(상태 없음/0/5xx)를 "번호가 틀렸다"로 보이지 않게 따로 알린다.
+  const s = result.error?.status;
+  if (result.error && (!s || s >= 500)) {
+    return { status: 503, body: { message: '로그인 서비스에 연결하지 못했어요. 잠시 후 다시 시도해주세요.' } };
+  }
   if (result.error || !result.userId) {
     const limited = result.error?.status === 429;
     return {

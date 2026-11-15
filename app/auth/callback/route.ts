@@ -18,6 +18,13 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get('code');
   const next = safeReturnPath(url.searchParams.get('next'));
+  // 구글 동의 화면에서 취소했거나 공급자 설정이 안 된 경우 Supabase가 error를 붙여 돌려보낸다.
+  if (url.searchParams.get('error')) {
+    const fail = new URL('/login', config.NEXT_PUBLIC_SITE_URL);
+    fail.searchParams.set('oauth_error', url.searchParams.get('error') === 'access_denied' ? 'cancelled' : 'provider');
+    fail.searchParams.set('next', next);
+    return privateRedirect(fail);
+  }
   if (code && code.length < 2048) {
     try {
       const client = await createUserClient();

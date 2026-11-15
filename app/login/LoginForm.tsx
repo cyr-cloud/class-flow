@@ -43,7 +43,7 @@ export default function LoginForm({ configured, next }: { configured: boolean; n
   }
 
   return (
-    <form className="mt-8" onSubmit={(e) => { e.preventDefault(); void submit(sent ? 'verify' : 'request'); }}>
+    <form className="mt-6" onSubmit={(e) => { e.preventDefault(); void submit(sent ? 'verify' : 'request'); }}>
       {!configured && (
         <p role="status" className="mb-6 rounded-xl border border-line-strong bg-cream px-4 py-3 text-sm text-ink-soft">
           로그인 서비스를 준비 중이에요. 수업 참여와 결과물 보기는 로그인 없이 이용할 수 있어요.
