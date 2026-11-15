@@ -220,7 +220,7 @@ PPTX에는 업로드한 원본 내용이 유지된다. 수업 중 추가한 이�
 - [x] **REPO-01a** GitHub `cyr-cloud/class-flow` 최신 커밋과 두 폴더 비교 — 원격 master = 로컬 master = `f9be9f9`(2026-10-02). 두 폴더 겹치는 파일 없음. 줄바꿈 차이를 빼면 실제 변경은 2026-11-15 명세 문서 2개뿐 (2026-11-15 확인)
 - [x] **REPO-01b** `Desktop/yuniqcoding/class-flow-merged`에 GitHub 최신본 clone 후 두 폴더 작업 파일 합침(node_modules·.next 제외). .env·.classflow·data·output·library-site 포함. 원본 두 폴더는 그대로 보관 (2026-11-15)
 - [x] **REPO-01c** 합친 폴더에서 `git status`·`git log` 정상 동작 확인. library-site(비공개 원문 포함 1.5GB)·output은 .gitignore에 추가. 커밋은 사용자 확인 후 (2026-11-15)
-- [ ] **REPO-02** `npm install` → `npx tsc --noEmit` → 기존 테스트 스크립트 → 로컬 전용 실행 확인
+- [x] **REPO-02** `npm ci`(507개) → `npx tsc --noEmit` 통과 → `node --test tests/*.test.mjs` 45개 통과 → 로컬 전용 서버(3311)에서 `/`·`/board`·`/student/sample`·`/teacher/sample` 200 → `scripts/test-insert-slides.mjs` PASS (2026-11-15, 로컬만. 배포 검증 아님)
 - [ ] **REPO-03** OneDrive 동기화에서 node_modules·.next·.classflow 제외 또는 저장소를 OneDrive 밖으로 이동
 - [ ] **POLICY-01** 인프런에 강의 내 외부 링크(갤러리) 허용 여부 문의 · 답변 기록 (사용자 직접)
 - [ ] **DECIDE-01** 이미지 저장소 결정: Supabase Storage / Vercel Blob
