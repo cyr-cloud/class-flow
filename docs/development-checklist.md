@@ -230,7 +230,7 @@ PPTX에는 업로드한 원본 내용이 유지된다. 수업 중 추가한 이�
 ### 1-1 로그인
 - [x] **AUTH-01a** 스토어 Supabase(개발 프로젝트) 공개 주소·publishable key를 `.env.local`에 연결, `.env.example`에 안내 추가. 서버 전용 secret key는 복사하지 않음. 운영 키는 배포 때 (2026-11-15)
 - [x] **AUTH-01b** `lib/supabase/server.ts`(createUserClient·currentUser), `lib/auth/*`(config·cookies·input·service·provider), `proxy.ts`(/me·/admin 세션 갱신). yuco-store 코드 기반 (2026-11-15)
-- [x] **AUTH-01c** `/login`(이메일 → 매직링크·인증번호), `/api/auth/[request|verify|logout]`(Origin 검사·크기 제한), `/auth/callback`(PKCE), 확인용 최소 `/me`. 단위 테스트 5개 추가(전체 50개 통과), tsc·eslint 통과, 로컬 서버에서 403/400/404/415·리디렉트, 기존 화면 회귀 200 (2026-11-15). ⚠️ 정정: 오답 400은 Supabase 응답이 아니라 연결 실패였음 — 스토어 .env.local의 Supabase 주소가 DNS에서 조회되지 않음(프로젝트 일시정지·삭제 또는 주소 변경 의심). **Supabase 연결과 실제 로그인은 미확인**
+- [x] **AUTH-01c** `/login`(이메일 → 매직링크·인증번호), `/api/auth/[request|verify|logout]`(Origin 검사·크기 제한), `/auth/callback`(PKCE), 확인용 최소 `/me`. 단위 테스트 5개 추가(전체 50개 통과), tsc·eslint 통과, 로컬 서버에서 403/400/404/415·리디렉트, 기존 화면 회귀 200 (2026-11-15). ⚠️ 정정: 오답 400은 Supabase 응답이 아니라 연결 실패였음 — 스토어 .env.local의 Supabase 주소가 DNS에서 조회되지 않음(프로젝트 일시정지·삭제 또는 주소 변경 의심). → 2026-11-15 원인 확인: `yuco-store-dev` 프로젝트가 무료 플랜 자동 일시정지 상태였음. 사용자 승인 후 재개, 약 2분 뒤 연결 복구. 재개 후 틀린 인증번호에 Supabase가 실제로 거절(400)하는 것 확인(네트워크 오류는 이제 503으로 구분됨). **실제 메일 수신 → 로그인 완료는 미확인**
 - [ ] **AUTH-02** 로그인 후 원래 차시 올리기 화면으로 복귀, 외부 주소 복귀 차단 — 코드(next 파라미터·safeReturnPath·콜백 next)는 AUTH-01c에 포함. 차시 페이지가 생긴 뒤 실제 흐름으로 검증
 - [ ] **AUTH-04a** profiles 테이블·RLS migration (스토어와 공용, 기존 테이블 있으면 확장)
 - [ ] **AUTH-03** 첫 로그인 닉네임 설정 화면
