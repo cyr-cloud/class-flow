@@ -243,10 +243,10 @@ PPTX에는 업로드한 원본 내용이 유지된다. 수업 중 추가한 이�
 - [ ] **AUTH-05** 소셜 로그인(1단계로 앞당김) — **구글·네이버 필수**(2026-11-15 사용자 결정). 코드 완료: `/api/auth/oauth/[google|naver]`(Origin 검사·PKCE), 로그인 화면 버튼, 콜백 취소·오류 안내, 네트워크 오류를 "번호 틀림"과 구분, 네이버 userinfo 변환 Edge Function(`supabase/functions/naver-userinfo`, 2026-11-16부터 email_verified=true → 같은 메일 계정과 연결). 테스트 54개·tsc·eslint 통과, 버튼 화면 확인. **남은 일(사용자)**: ① Supabase 프로젝트 접속 복구(현재 주소 DNS 조회 실패) ② 구글 Cloud OAuth 클라이언트 발급 → Supabase Google 공급자 켜기 ③ 네이버 개발자센터 앱 등록(이메일 필수 동의) → Supabase 사용자 지정 공급자 `custom:naver` 등록 + `naver-userinfo` 배포 ④ 각 공급자 켠 뒤 `AUTH_GOOGLE_ENABLED`/`AUTH_NAVER_ENABLED`=1 ⑤ 실제 로그인 확인. 카카오는 나중(Supabase 기본 지원)
 
 ### 1-2 강의 · 차시
-- [ ] **COURSE-01a** courses·lessons 테이블·RLS migration (공개 강의는 누구나 읽기, 쓰기는 admin)
-- [ ] **COURSE-01b** /admin/courses 강의 만들기·수정 화면
-- [ ] **COURSE-02** 차시 추가·순서 변경·실습 안내 마크다운 편집·미리보기
-- [ ] **COURSE-검증** 샘플 강의 1개(예: 도파민 Python) + 차시 3개 등록
+- [x] **COURSE-01a** courses·lessons 테이블·RLS migration (공개 강의는 누구나 읽기, 쓰기는 admin) — `yuco-store/server/supabase/migrations/202611160003_courses_lessons.sql`, 순서 바꾸기 함수, 스토어 DB 테스트 39개, 실제 DB 적용·비회원 차단 확인 (2026-11-16)
+- [x] **COURSE-01b** /admin/courses 강의 만들기·수정 화면 — 목록·새 강의·수정·삭제(확인창), 서버 액션(관리자 확인+RLS) (2026-11-16)
+- [x] **COURSE-02** 차시 추가·순서 변경·실습 안내 마크다운 편집·미리보기 — ↑↓ 맞바꾸기, 짧은 코드·예시 이미지 주소, 실시간 미리보기 (2026-11-16). 이미지 올리기는 GAL-01b와 함께
+- [x] **COURSE-검증** 샘플 강의 1개(예: 도파민 Python) + 차시 3개 등록 — 관리자 화면에서 실제 등록(준비 중), 순서 변경·1차시 안내 저장 확인 (2026-11-16)
 
 ### 1-3 공개 페이지
 - [ ] **HOME-02** /courses/[강의] 강의 소개 · 차시 목록
