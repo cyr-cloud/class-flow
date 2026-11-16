@@ -3,7 +3,8 @@
 
 export const CHANNELS = { youtube: '유튜브', inflearn: '인프런', live: '실시간 수업', other: '기타' } as const;
 export type Channel = keyof typeof CHANNELS;
-export const VISIBILITIES = { draft: '준비 중 (관리자만 보기)', public: '공개' } as const;
+// unlisted: 목록·검색에는 안 나오고, 열쇠가 든 링크를 받은 사람만 본다(기업교육·국비과정용). 202611160005
+export const VISIBILITIES = { draft: '준비 중 (관리자·강의 주인만)', unlisted: '링크 있는 사람만', public: '공개' } as const;
 export type Visibility = keyof typeof VISIBILITIES;
 
 export interface Course {
@@ -15,7 +16,8 @@ export interface Course {
   channel: Channel;
   external_url: string | null;
   visibility: Visibility;
-  owner_id: string | null; // 강의 주인(만든 사람). 강사별 권한은 나중 — 202611160004
+  owner_id: string | null; // 강의 주인(만든 사람). 관리자 또는 주인(강사)이 관리 — 202611160004·0005
+  access_key: string; // 링크 공개용 열쇠
   created_at: string;
   updated_at: string;
 }
@@ -109,4 +111,17 @@ export function neighborLesson<T extends { id: string; number: number }>(lessons
 
 export function nextLessonNumber(lessons: { number: number }[]): number {
   return lessons.reduce((max, l) => Math.max(max, l.number), 0) + 1;
+}
+
+// 학생에게 보낼 강의 링크. 링크 공개(unlisted)면 열쇠를 붙인다. 준비 중이면 null(아직 보낼 수 없음).
+export function courseShareUrl(siteUrl: string, course: Pick<Course, 'slug' | 'visibility' | 'access_key'>): string | null {
+  if (course.visibility === 'draft') return null;
+  const url = new URL('/courses/' + course.slug, siteUrl);
+  if (course.visibility === 'unlisted') url.searchParams.set('key', course.access_key);
+  return url.href;
+}
+
+// 링크 열쇠 형식(16~32자 영문 소문자·숫자). 주소창에서 온 값을 함수에 넘기기 전에 거른다.
+export function cleanAccessKey(value: unknown): string | null {
+  return typeof value === 'string' && /^[a-z0-9]{16,32}$/.test(value) ? value : null;
 }

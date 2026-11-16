@@ -3,7 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Course, CourseInput, Lesson, LessonInput } from './model';
 import { nextLessonNumber } from './model';
 
-const COURSE_COLUMNS = 'id, slug, title, description, cover_url, channel, external_url, visibility, owner_id, created_at, updated_at';
+const COURSE_COLUMNS = 'id, slug, title, description, cover_url, channel, external_url, visibility, owner_id, access_key, created_at, updated_at';
 const LESSON_COLUMNS = 'id, course_id, number, title, guide_md, example_image_url, short_code, updated_at';
 
 export type WriteResult = { ok: true; id: string } | { ok: false; message: string; field?: string };
@@ -77,4 +77,22 @@ export async function deleteLesson(client: SupabaseClient, id: string): Promise<
 export async function swapLessons(client: SupabaseClient, firstId: string, secondId: string): Promise<boolean> {
   const { error } = await client.rpc('swap_lesson_numbers', { first_id: firstId, second_id: secondId });
   return !error;
+}
+
+// 링크 열쇠를 새로 만든다. 이전에 보낸 링크는 더 이상 열리지 않는다.
+export async function rotateAccessKey(client: SupabaseClient, id: string): Promise<boolean> {
+  const key = Array.from(crypto.getRandomValues(new Uint8Array(10)), (b) => b.toString(36).padStart(2, '0')).join('').slice(0, 20);
+  const { data, error } = await client.from('courses').update({ access_key: key }).eq('id', id).select('id');
+  return !error && data.length > 0;
+}
+
+// 학생용 조회: 공개 강의, 열쇠가 맞는 링크 공개 강의, 내가 관리하는 강의만 돌려준다(DB 함수가 판단).
+export async function courseForViewer(client: SupabaseClient, slug: string, key: string | null): Promise<Course | null> {
+  const { data } = await client.rpc('course_for_viewer', { p_slug: slug, p_key: key });
+  return ((data as Course[] | null) ?? [])[0] ?? null;
+}
+
+export async function lessonsForViewer(client: SupabaseClient, slug: string, key: string | null): Promise<Lesson[]> {
+  const { data } = await client.rpc('lessons_for_viewer', { p_slug: slug, p_key: key });
+  return (data as Lesson[] | null) ?? [];
 }

@@ -47,6 +47,13 @@ export async function saveCourse(_prev: FormState, form: FormData): Promise<Form
   return { saved: true, message: '저장했어요.' };
 }
 
+export async function newAccessKey(form: FormData): Promise<void> {
+  const courseId = id(form, 'id');
+  const client = await adminClient();
+  await store.rotateAccessKey(client, courseId);
+  revalidatePath(`/admin/courses/${courseId}`);
+}
+
 export async function removeCourse(form: FormData): Promise<void> {
   const client = await adminClient();
   await store.deleteCourse(client, id(form, 'id'));

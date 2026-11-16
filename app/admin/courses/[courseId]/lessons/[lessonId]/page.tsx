@@ -23,7 +23,7 @@ export default async function EditLesson({ params }: { params: Promise<{ courseI
       <Link href={`/admin/courses/${course.id}`} className="text-sm text-mute hover:text-mocha">← {course.title}</Link>
       <p className="eyebrow mt-3">{lesson.number}차시</p>
       <h1 className="mt-2 text-2xl font-bold text-ink">{lesson.title}</h1>
-      <div className="mt-8"><LessonForm lesson={lesson} /></div>
+      <div className="mt-8"><LessonForm key={lesson.updated_at} lesson={lesson} /></div>
       <section className="mt-14 border-t border-line pt-6">
         <form action={removeLesson}>
           <input type="hidden" name="course_id" value={course.id} />

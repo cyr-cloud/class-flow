@@ -49,3 +49,19 @@ test('neighbor lesson and next number for reordering', () => {
   assert.equal(nextLessonNumber(ls), 6);
   assert.equal(nextLessonNumber([]), 1);
 });
+
+import {courseShareUrl, cleanAccessKey, VISIBILITIES} from '../lib/course/model.ts';
+
+test('share link: none for draft, plain for public, with key for unlisted', () => {
+  const c = {slug: 'py', access_key: 'abcd1234abcd1234'};
+  assert.equal(courseShareUrl('https://class.example', {...c, visibility: 'draft'}), null);
+  assert.equal(courseShareUrl('https://class.example', {...c, visibility: 'public'}), 'https://class.example/courses/py');
+  assert.equal(courseShareUrl('https://class.example', {...c, visibility: 'unlisted'}), 'https://class.example/courses/py?key=abcd1234abcd1234');
+});
+
+test('access key filter and unlisted visibility accepted', () => {
+  assert.equal(cleanAccessKey('abcd1234abcd1234'), 'abcd1234abcd1234');
+  for (const bad of ['short', 'ABCD1234ABCD1234', "x' or '1'='1abcdef", null]) assert.equal(cleanAccessKey(bad), null);
+  assert.ok('unlisted' in VISIBILITIES);
+  assert.equal(parseCourseInput({...base, visibility: 'unlisted'}).ok, true);
+});

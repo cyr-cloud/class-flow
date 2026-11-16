@@ -33,7 +33,7 @@ export default async function AdminCourses() {
                   <p className="mt-0.5 text-xs text-mute">/courses/{c.slug} · {CHANNELS[c.channel]} · 차시 {c.lesson_count}개</p>
                 </div>
                 <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs ${c.visibility === 'public' ? 'bg-mocha-tint text-mocha-deep' : 'bg-gardenia text-ink-soft'}`}>
-                  {c.visibility === 'public' ? '공개' : '준비 중'}
+                  {c.visibility === 'public' ? '공개' : c.visibility === 'unlisted' ? '링크 공개' : '준비 중'}
                 </span>
               </Link>
             </li>

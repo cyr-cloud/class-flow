@@ -20,8 +20,14 @@ function Field({ label, name, error, hint, children }: { label: string; name: st
   );
 }
 
-function Status({ state }: { state: FormState }) {
-  if (!state.message) return null;
+function savedAt(iso?: string) {
+  if (!iso) return '';
+  return new Date(iso).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+// 저장하면 폼이 서버 값으로 다시 그려지므로(key) 성공 메시지 대신 "마지막 저장" 시각을 보여 준다.
+function Status({ state, updatedAt }: { state: FormState; updatedAt?: string }) {
+  if (!state.message) return updatedAt ? <p className="text-xs text-mute">마지막 저장 {savedAt(updatedAt)}</p> : null;
   return <p role="status" className={`text-sm ${state.saved ? 'text-tendril' : 'text-mocha-deep'}`}>{state.message}</p>;
 }
 
@@ -68,7 +74,7 @@ export function CourseForm({ course }: { course?: Course }) {
       </Field>
       <div className="flex items-center gap-4">
         <button disabled={pending} className={primary}>{pending ? '저장 중…' : course ? '강의 저장' : '강의 만들기'}</button>
-        <Status state={state} />
+        <Status state={state} updatedAt={course?.updated_at} />
       </div>
     </form>
   );
@@ -126,7 +132,7 @@ export function LessonForm({ lesson }: { lesson: Lesson }) {
       </div>
       <div className="flex items-center gap-4">
         <button disabled={pending} className={primary}>{pending ? '저장 중…' : '차시 저장'}</button>
-        <Status state={state} />
+        <Status state={state} updatedAt={lesson.updated_at} />
       </div>
     </form>
   );
@@ -140,5 +146,21 @@ export function ConfirmButton({ label, message, className }: { label: string; me
     >
       {label}
     </button>
+  );
+}
+
+export function CopyLink({ url }: { url: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <input readOnly value={url} aria-label="학생에게 보낼 링크" onFocus={(ev) => ev.target.select()} className={inputClass + ' mt-0 min-w-0 flex-1 font-mono text-xs'} />
+      <button
+        type="button"
+        onClick={async () => { try { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch {} }}
+        className="rounded-full border border-line-strong px-4 py-2 text-sm text-ink-soft hover:border-mocha hover:text-mocha"
+      >
+        {copied ? '복사했어요' : '복사'}
+      </button>
+    </div>
   );
 }
