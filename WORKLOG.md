@@ -21,3 +21,4 @@
 - 캡처: generated/worklog/2026-11-16/NAVER-01 (이메일·UID 가림) → 노션 업로드·되읽기 확인(이미지 4개)
 - 남은 제약: 네이버 앱 "개발 중"(검수 전 본인 계정만), 구글 동의 화면 "테스트 중" → 운영 도메인 후 AUTH-05g-pub·AUTH-05n-pub
 - AUTH-03: 첫 로그인 닉네임(/me/nickname, POST /api/profile/nickname, 로그인 직후 이동). 공용 profiles에 본인 닉네임 쓰기 권한 migration(yuco-store/server/supabase/migrations/202611160001) → 실제 DB 적용·정책/권한 확인. 테스트 63개 + 스토어 DB 28개 통과. 사용자 실제 저장 → /me "리베타님". 캡처 2장 → 노션 같은 날짜 페이지
+- AUTH-04: profiles.roles(student 기본, 사용자 수정 불가) + has_role() migration(yuco-store/.../202611160002) 실제 적용. /admin 보호(레이아웃+page), /api/admin/check 가드, /me 관리자 버튼. 비로그인 307/401, 비관리자 안내/403, 관리자 200 확인. 본인 두 계정 admin 부여. 테스트 67개 + 스토어 DB 33개. 캡처 2장 → 노션

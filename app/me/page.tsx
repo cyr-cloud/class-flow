@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { nicknameSetupPath } from '@/lib/profile/nickname';
+import { checkAdmin } from '@/lib/auth/admin';
 import { readNickname } from '@/lib/profile/store';
 import { createUserClient, currentUser } from '@/lib/supabase/server';
 import LogoutButton from './LogoutButton';
@@ -18,6 +19,7 @@ export default async function MePage() {
   const nickname = await readNickname(await createUserClient({ readOnly: true }), user.id);
   // 닉네임 없이 이미 로그인해 있던 사람도 한 번은 정하게 한다(조회 실패 undefined는 넘어간다).
   if (nickname === null) redirect(nicknameSetupPath('/me'));
+  const isAdmin = (await checkAdmin()).access === 'admin';
   const meta = user.user_metadata ?? {};
   const email = user.email || (typeof meta.email === 'string' ? meta.email : '');
   const providers = ((user.app_metadata?.providers as string[] | undefined) ?? [])
@@ -37,7 +39,12 @@ export default async function MePage() {
         <p className="mt-1 text-sm text-ink-soft">로그인 방법 <span className="text-ink">{providers.join(' · ')}</span></p>
       )}
       <p className="mt-2 text-xs text-mute">내가 올린 결과물은 곧 이곳에 생겨요.</p>
-      <div className="mt-8"><LogoutButton /></div>
+      <div className="mt-8 flex flex-wrap items-center gap-3">
+        {isAdmin && (
+          <Link href="/admin" className="rounded-full bg-ink px-5 py-2.5 text-sm font-medium text-white hover:bg-mocha-deep">관리자 화면</Link>
+        )}
+        <LogoutButton />
+      </div>
     </main>
   );
 }
