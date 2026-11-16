@@ -1,5 +1,6 @@
 // node --test가 바로 읽을 수 있게 확장자를 붙인다 (tsconfig allowImportingTsExtensions).
 import { emailSchema, codeSchema, safeReturnPath } from './input.ts';
+import { nicknameSetupPath } from '../profile/nickname.ts';
 
 type ProviderError = { code?: string; status?: number } | null;
 
@@ -7,6 +8,7 @@ type ProviderError = { code?: string; status?: number } | null;
 export interface AuthProvider {
   send(email: string, next: string): Promise<{ error: ProviderError }>;
   verify(email: string, token: string): Promise<{ error: ProviderError; userId: string | null }>;
+  hasNickname?(userId: string): Promise<boolean>;
   logout(): Promise<{ error: ProviderError }>;
 }
 
@@ -41,5 +43,7 @@ export async function verifyCode(provider: AuthProvider, input: { email?: unknow
       body: { message: limited ? '시도가 많습니다. 잠시 후 다시 시도해주세요.' : '인증번호가 올바르지 않거나 만료됐어요. 새 번호를 받아주세요.' },
     };
   }
-  return { status: 200, body: { message: '로그인했어요.', next: safeReturnPath(input.next) } };
+  const next = safeReturnPath(input.next);
+  const named = provider.hasNickname ? await provider.hasNickname(result.userId) : true;
+  return { status: 200, body: { message: '로그인했어요.', next: named ? next : nicknameSetupPath(next) } };
 }

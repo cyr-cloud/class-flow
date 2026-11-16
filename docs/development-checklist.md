@@ -232,8 +232,8 @@ PPTX에는 업로드한 원본 내용이 유지된다. 수업 중 추가한 이�
 - [x] **AUTH-01b** `lib/supabase/server.ts`(createUserClient·currentUser), `lib/auth/*`(config·cookies·input·service·provider), `proxy.ts`(/me·/admin 세션 갱신). yuco-store 코드 기반 (2026-11-15)
 - [x] **AUTH-01c** `/login`(이메일 → 매직링크·인증번호), `/api/auth/[request|verify|logout]`(Origin 검사·크기 제한), `/auth/callback`(PKCE), 확인용 최소 `/me`. 단위 테스트 5개 추가(전체 50개 통과), tsc·eslint 통과, 로컬 서버에서 403/400/404/415·리디렉트, 기존 화면 회귀 200 (2026-11-15). ⚠️ 정정: 오답 400은 Supabase 응답이 아니라 연결 실패였음 — 스토어 .env.local의 Supabase 주소가 DNS에서 조회되지 않음(프로젝트 일시정지·삭제 또는 주소 변경 의심). → 2026-11-15 원인 확인: `yuco-store-dev` 프로젝트가 무료 플랜 자동 일시정지 상태였음. 사용자 승인 후 재개, 약 2분 뒤 연결 복구. 재개 후 틀린 인증번호에 Supabase가 실제로 거절(400)하는 것 확인(네트워크 오류는 이제 503으로 구분됨). **실제 메일 수신 → 로그인 완료는 미확인**
 - [ ] **AUTH-02** 로그인 후 원래 차시 올리기 화면으로 복귀, 외부 주소 복귀 차단 — 코드(next 파라미터·safeReturnPath·콜백 next)는 AUTH-01c에 포함. 차시 페이지가 생긴 뒤 실제 흐름으로 검증
-- [ ] **AUTH-04a** profiles 테이블·RLS migration (스토어와 공용, 기존 테이블 있으면 확장)
-- [ ] **AUTH-03** 첫 로그인 닉네임 설정 화면
+- [ ] **AUTH-04a** profiles 테이블·RLS migration (스토어와 공용, 기존 테이블 있으면 확장) — 닉네임 본인 쓰기 부분은 완료(2026-11-16, `yuco-store/server/supabase/migrations/202611160001_profiles_nickname.sql`, 실제 DB 적용). roles 열은 AUTH-04b와 함께
+- [x] **AUTH-03** 첫 로그인 닉네임 설정 화면 — 이메일·구글·네이버 모두 닉네임 없으면 `/me/nickname?next=` 거쳐 원래 주소로. 소셜 별명 미리 채움, 규칙(2~20자, 운영자 사칭 금지), `/me`에서 바꾸기. 테스트 63개·스토어 DB 테스트 28개·tsc·eslint 통과, 실제 저장·/me 표시 확인 (2026-11-16)
 - [ ] **AUTH-04b** admin 역할 확인 미들웨어, /admin 보호
 - [ ] **AUTH-검증** 두 계정으로 로그인 · 다른 사람 프로필 수정 차단 확인
 - [x] **AUTH-05g** 구글 로그인 로컬 실제 동작 — Google Cloud `yuniqcoding-auth`(동의 화면 "유니크코딩"·외부), 웹 OAuth 클라이언트(리디렉션 = Supabase 콜백), Supabase Google 공급자 켬, Redirect URLs `http://127.0.0.1:3311/**` 추가, `AUTH_GOOGLE_ENABLED=1`. 사용자 실제 구글 로그인 → /me 표시 확인 (2026-11-15)

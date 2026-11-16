@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { createUserClient } from '@/lib/supabase/server';
 import { authConfig } from '@/lib/auth/config';
 import { safeReturnPath } from '@/lib/auth/input';
+import { nicknameSetupPath } from '@/lib/profile/nickname';
+import { readNickname } from '@/lib/profile/store';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,7 +31,11 @@ export async function GET(request: Request) {
     try {
       const client = await createUserClient();
       const { data, error } = await client.auth.exchangeCodeForSession(code);
-      if (!error && data.user) return privateRedirect(new URL(next, config.NEXT_PUBLIC_SITE_URL));
+      if (!error && data.user) {
+        // 첫 로그인(닉네임 없음)이면 닉네임 화면을 거쳐 원래 가려던 곳으로 간다.
+        const named = (await readNickname(client, data.user.id)) !== null;
+        return privateRedirect(new URL(named ? next : nicknameSetupPath(next), config.NEXT_PUBLIC_SITE_URL));
+      }
     } catch {}
   }
   const fail = new URL('/login', config.NEXT_PUBLIC_SITE_URL);
