@@ -3,7 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Course, CourseInput, Lesson, LessonInput } from './model';
 import { nextLessonNumber } from './model';
 
-const COURSE_COLUMNS = 'id, slug, title, description, cover_url, channel, external_url, visibility, created_at, updated_at';
+const COURSE_COLUMNS = 'id, slug, title, description, cover_url, channel, external_url, visibility, owner_id, created_at, updated_at';
 const LESSON_COLUMNS = 'id, course_id, number, title, guide_md, example_image_url, short_code, updated_at';
 
 export type WriteResult = { ok: true; id: string } | { ok: false; message: string; field?: string };

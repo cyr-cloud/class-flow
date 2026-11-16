@@ -15,6 +15,7 @@ export interface Course {
   channel: Channel;
   external_url: string | null;
   visibility: Visibility;
+  owner_id: string | null; // 강의 주인(만든 사람). 강사별 권한은 나중 — 202611160004
   created_at: string;
   updated_at: string;
 }
