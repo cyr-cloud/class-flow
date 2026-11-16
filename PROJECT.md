@@ -8,6 +8,7 @@
 - 노션 상위 허브: https://www.notion.so/0a4b232864bb467186f1a4086ca3eaac (YuniqCoding)
 - 날짜 페이지
   - 2026-11-15: https://www.notion.so/419abd06af5381f6a785ed349ffda58e
+  - 2026-11-16: https://www.notion.so/41aabd06af5381b9a893e6eb514d35c9
 - 노션 명세: https://www.notion.so/419abd06af5381acb38ec5f2ac476d87
 - 계정: 스토어와 같은 Supabase 프로젝트 `yuco-store-dev` (무료 플랜, 사용이 적으면 일시정지됨)
 

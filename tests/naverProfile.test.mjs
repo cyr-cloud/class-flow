@@ -5,11 +5,12 @@ import {mapNaverProfile} from '../supabase/functions/naver-userinfo/map.ts';
 test('maps a Naver profile to standard userinfo keyed on the Naver id', () => {
   const info = mapNaverProfile({resultcode: '00', message: 'success', response: {
     id: 'naver-123', email: ' Yuco@Naver.com ', name: '유코', nickname: 'yuco', profile_image: 'https://phinf.pstatic.net/a.jpg'}});
-  assert.deepEqual(info, {sub: 'naver-123', email: 'yuco@naver.com', email_verified: false, name: '유코', nickname: 'yuco', picture: 'https://phinf.pstatic.net/a.jpg'});
+  assert.deepEqual(info, {sub: 'naver-123', email: 'yuco@naver.com', email_verified: true, name: '유코', nickname: 'yuco', picture: 'https://phinf.pstatic.net/a.jpg'});
 });
 
-test('never marks the Naver email as verified (no auto-linking to other accounts)', () => {
-  assert.equal(mapNaverProfile({resultcode: '00', response: {id: 'x', email: 'a@b.co'}}).email_verified, false);
+test('marks the Naver email as verified only when an email is present', () => {
+  assert.equal(mapNaverProfile({resultcode: '00', response: {id: 'x', email: 'a@b.co'}}).email_verified, true);
+  assert.equal(mapNaverProfile({resultcode: '00', response: {id: 'x'}}).email_verified, false);
 });
 
 test('falls back to nickname and drops empty or non-https values', () => {

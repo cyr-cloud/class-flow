@@ -4,9 +4,10 @@
 // 네이버 응답: { resultcode: "00", message: "success", response: { id, email, name, nickname, profile_image, ... } }
 // 표준 형태:   { sub, email, email_verified, name, nickname, picture }
 //
-// email_verified는 false로 둔다. 네이버의 email은 회원이 등록한 연락처 메일이라 Supabase가
-// 같은 메일의 다른 계정(구글·이메일 로그인)과 자동으로 합치면 남의 계정에 들어갈 위험이 있다.
-// 계정 식별은 네이버 고유 id(sub)로 한다.
+// email_verified는 메일이 있을 때 true로 넘긴다(2026-11-16 결정).
+// false로 두면 Supabase "Confirm email" 설정 때문에 로그인이 422(Unverified email)로 막힌다.
+// 네이버가 확인한 회원 메일로 보고, 같은 메일의 구글·이메일 계정과는 한 계정으로 합쳐진다.
+// 계정 식별 자체는 네이버 고유 id(sub)로 한다.
 
 export interface NaverMeResponse {
   resultcode?: string;
@@ -35,10 +36,11 @@ export function mapNaverProfile(body: NaverMeResponse): StandardUserInfo | null 
   if (typeof r.id !== 'string' || r.id.length === 0) return null;
   const text = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : undefined);
   const picture = text(r.profile_image);
+  const email = text(r.email)?.toLowerCase();
   return {
     sub: r.id,
-    email: text(r.email)?.toLowerCase(),
-    email_verified: false,
+    email,
+    email_verified: Boolean(email),
     name: text(r.name) ?? text(r.nickname),
     nickname: text(r.nickname),
     picture: picture && /^https:\/\//.test(picture) ? picture : undefined,
