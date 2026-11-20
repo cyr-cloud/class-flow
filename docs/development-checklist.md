@@ -280,7 +280,7 @@ PPTX에는 업로드한 원본 내용이 유지된다. 수업 중 추가한 이�
 - [ ] **ADM-03** 차시별 결과물 수·새 가입자 현황
 
 ### 1-6 출시
-- [ ] **LAUNCH-G1** class.yuniq-coding.shop 연결 (스토어 도메인 결정과 함께)
+- [ ] **LAUNCH-G1** class.yuniq-coding.shop 연결 (스토어 도메인 결정과 함께) — `yuniq-coding.shop`은 이미 보유(사용자 확인 2026-11-20), DNS는 Vercel. 하위 주소라 추가 구매 없음. Vercel ClassFlow 프로젝트에 도메인만 추가하면 됨
 - [ ] **LAUNCH-G2** 개인정보처리방침·이용약관 페이지 (스토어 정책과 같은 사업자 기준) → 아래 LEGAL 항목으로 나눠 진행
 
 ### 1-7 법적 점검 (LEGAL) — 공통 점검표 `~/.claude/skills/project-workflow-log/references/legal-checklist.md` 기준 (2026-11-20 추가)

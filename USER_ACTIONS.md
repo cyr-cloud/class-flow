@@ -5,10 +5,11 @@
 > 순서가 중요해요. **① 도메인 → ② 운영 DB·배포 → ③ 로그인 공개**는 앞 단계가 끝나야 다음이 돼요.
 > **④ 약관 정보**와 **⑤ 확인용 계정**은 언제든 따로 해도 돼요.
 
-## ① 도메인 정하고 사기 (LAUNCH-G1)
-- [ ] **결정**: ClassFlow 주소. 체크리스트에는 `class.yuniq-coding.shop`, 스토어는 `yuco-store.com`(가비아, 구매 보류)로 적혀 있어 서로 달라요.
-  - 추천: 스토어 도메인을 하나 사고 그 아래 **하위 주소**를 써요(예: `class.yuco-store.com`). 도메인 하나로 스토어·ClassFlow·구글 로그인 승인을 같이 처리할 수 있어요.
-- [ ] 가비아에서 직접 구매해요(소유자 정보·이메일 인증·결제는 본인만 할 수 있어요). 산 뒤 알려 주시면 제가 소유 확인을 해요.
+## ① 도메인 (LAUNCH-G1) — 새로 살 필요 없음
+- [x] `yuniq-coding.shop`은 이미 사 둔 상태(사용자 확인, 2026-11-20). 네임서버가 Vercel(ns1·ns2.vercel-dns.com)이고 지금 `www.yuniq-coding.shop`으로 연결돼 있어요.
+- 기록된 결정대로 세 사이트는 **한 도메인의 하위 주소**를 써요. 하위 주소는 따로 사는 게 아니라 무료로 만들어요.
+  - 스토어 `yuniq-coding.shop` · 클래스플로우 `class.yuniq-coding.shop` · 강사풀 `pool.yuniq-coding.shop`
+- 할 일은 ②에서 Vercel의 ClassFlow 프로젝트에 `class.yuniq-coding.shop`을 추가하는 것뿐이에요(DNS가 Vercel에 있어서 가비아에서 고칠 것 없음).
 
 ## ② 운영 DB 만들기 · 배포 (OPS)
 - [ ] **결정**: 지금 DB `yuco-store-dev`는 개발용이에요. 학생에게 공개할 때는 **운영용 Supabase 프로젝트를 따로** 만드는 걸 추천해요(테스트 데이터·관리자 두 계정과 섞이지 않게).
@@ -18,13 +19,13 @@
   - `AUTH_GOOGLE_ENABLED=1`, `AUTH_NAVER_ENABLED=1`
   - `SUPABASE_SERVICE_ROLE_KEY`(Supabase → Project Settings → API Keys의 secret 키, 절대 공개 금지)
   - `CRON_SECRET`(16자 이상 아무 무작위 문자열) — 매일 정리 작업(지운 결과물 30일·안 쓰는 이미지)이 이걸로 돌아요
-- [ ] Vercel → Domains에 운영 주소를 추가하면 나오는 DNS 값을 가비아 DNS 관리에 넣어요. 연결되면 알려 주세요. 제가 HTTPS·화면을 확인해요.
+- [ ] Vercel의 ClassFlow 프로젝트 → Settings → Domains에 `class.yuniq-coding.shop` 추가(네임서버가 Vercel이라 DNS는 자동). 연결되면 알려 주세요. 제가 HTTPS·화면을 확인해요.
 - [ ] Supabase → Authentication → URL Configuration: Site URL = 운영 주소, Redirect URLs에 `https://운영주소/auth/callback` 추가.
 
 ## ③ 로그인 공개 (AUTH-05g-pub · AUTH-05n-pub)
 지금 구글 로그인은 "테스트 중"이라 **등록한 사람만** 로그인돼요. 학생이 로그인하려면 꼭 해야 해요.
 - [ ] **구글**: Google Cloud Console → Google 인증 플랫폼(OAuth 동의 화면)
-  1. 브랜딩: 앱 이름, 지원 이메일, 홈페이지 = 운영 주소, 개인정보처리방침 = `운영주소/privacy`, 서비스 약관 = `운영주소/terms`, 승인된 도메인 = 산 도메인
+  1. 브랜딩: 앱 이름, 지원 이메일, 홈페이지 = `https://class.yuniq-coding.shop`, 개인정보처리방침 = `…/privacy`, 서비스 약관 = `…/terms`, 승인된 도메인 = `yuniq-coding.shop`(도메인 소유 확인은 Google Search Console에서 할 수 있어요)
   2. 데이터 액세스(범위): 이메일·프로필·openid만(추가 범위가 없으면 별도 심사가 거의 필요 없어요. 로고를 넣으면 브랜드 확인이 붙을 수 있어요)
   3. 대상 → **앱 게시** 누르기
 - [ ] **네이버**: 네이버 개발자센터 → 내 애플리케이션 → API 설정의 서비스 URL을 운영 주소로 → **검수 요청**(서비스 화면 캡처·사용 목적을 적어요. 처리방침 주소가 필요할 수 있어요). 검수 전에는 등록한 아이디만 로그인돼요.
