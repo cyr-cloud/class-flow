@@ -97,3 +97,13 @@ test('isPostId and postPath for the detail page', async () => {
   assert.equal(postPath('/courses/a/2', id), `/courses/a/2/posts/${id}`);
   assert.equal(postPath('/courses/a/2?key=k', id), `/courses/a/2/posts/${id}?key=k`);
 });
+
+test('parseComment trims and limits to 300 characters', async () => {
+  const {parseComment} = await import('../lib/gallery/model.ts');
+  assert.deepEqual(parseComment('  멋져요!\r\n최고  '), {ok: true, value: '멋져요!\n최고'});
+  assert.equal(parseComment('   ').ok, false);
+  assert.equal(parseComment(null).ok, false);
+  assert.equal(parseComment('가'.repeat(300)).ok, true);
+  assert.equal(parseComment('가'.repeat(301)).ok, false);
+  assert.equal(parseComment('😀'.repeat(300)).ok, true);
+});

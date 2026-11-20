@@ -76,3 +76,11 @@
 - 검증: 앱 테스트 88개, tsc·eslint. 실제 화면: 누르기(0→1) → 새로고침 유지 → 인기순 맨 위 → 취소(1→0) → 새로고침 유지
 - 남은 것: 로그아웃 상태 로그인 안내는 샘플 강의가 준비 중이라 화면 확인 못 함(코드상 /login?next=상세주소). DB의 post_is_visible은 강의 공개 여부까지는 보지 않음 — 앱은 setLike에서 확인하지만 REST로 직접 넣으면 글 id를 알 때 좋아요가 가능(숫자만 바뀜)
 - 캡처: generated/worklog/GAL-03/ (1장)
+
+## GAL-04 댓글 · 2026-11-20 · 노션: (작성 중)
+
+- 첫 공개에 댓글 포함(사용자 결정). components/gallery/Comments.tsx, addComment·deleteComment, commentsForViewer, parseComment
+- DB 202611200005: 댓글 닉네임 필수(정책), 하루 50개(BEFORE INSERT 트리거 + 사람별 잠금). 스토어 DB 테스트 77개, 실제 DB 적용
+- 검증: 앱 테스트 89개, tsc·eslint. 실제 화면: 쓰기 → 목록·수 반영, 지우기, 301자 버튼 꺼짐, 목록 카드 💬 1, 375px 넘침 없음
+- 샘플 댓글 1개 남김(2차시 구구단 출력기)
+- 캡처: generated/worklog/GAL-04/ (1장)

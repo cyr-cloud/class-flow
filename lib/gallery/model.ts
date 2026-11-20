@@ -127,3 +127,12 @@ export function postPath(lessonPath: string, id: string): string {
   const [path, query] = lessonPath.split('?');
   return `${path}/posts/${id}` + (query ? `?${query}` : '');
 }
+
+// 댓글 (GAL-04): 한 단계, 300자. DB comments.body 규칙(1~300자, 앞뒤 공백 없음)과 같다.
+export const COMMENT_MAX = 300;
+export function parseComment(value: unknown): { ok: true; value: string } | { ok: false; message: string } {
+  const body = typeof value === 'string' ? value.replace(/\r\n/g, '\n').trim() : '';
+  if (!body) return { ok: false, message: '댓글을 적어주세요.' };
+  if ([...body].length > COMMENT_MAX) return { ok: false, message: `댓글은 ${COMMENT_MAX}자까지예요.` };
+  return { ok: true, value: body };
+}

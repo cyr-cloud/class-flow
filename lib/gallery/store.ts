@@ -44,6 +44,14 @@ export async function postForViewer(client: SupabaseClient, slug: string, key: s
   return (data as GalleryPost[] | null)?.[0] ?? null;
 }
 
+export interface GalleryComment { id: string; body: string; created_at: string; author: string; is_mine: boolean }
+
+// 결과물의 댓글(GAL-04). 오래된 것부터, 최대 200개. 볼 수 없는 강의·보이지 않는 글이면 빈 목록.
+export async function commentsForViewer(client: SupabaseClient, slug: string, key: string | null, postId: string): Promise<GalleryComment[]> {
+  const { data } = await client.rpc('comments_for_viewer', { p_slug: slug, p_key: key, p_post: postId });
+  return (data as GalleryComment[] | null) ?? [];
+}
+
 export async function lessonPostCounts(client: SupabaseClient, slug: string, key: string | null): Promise<Map<number, number>> {
   const { data } = await client.rpc('lesson_post_counts', { p_slug: slug, p_key: key });
   return new Map(((data as { lesson_number: number; post_count: number }[] | null) ?? []).map((r) => [r.lesson_number, r.post_count]));

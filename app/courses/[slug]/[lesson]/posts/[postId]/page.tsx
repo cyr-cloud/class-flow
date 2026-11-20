@@ -4,8 +4,11 @@ import { notFound } from 'next/navigation';
 import { cache } from 'react';
 import { coursePath, parseLessonNumber } from '@/lib/course/model';
 import { galleryImageUrl, isPostId, linkLabel, postPath } from '@/lib/gallery/model';
-import { postForViewer } from '@/lib/gallery/store';
+import { commentsForViewer, postForViewer } from '@/lib/gallery/store';
+import Comments from '@/components/gallery/Comments';
 import LikeButton from '@/components/gallery/LikeButton';
+import { nicknameSetupPath } from '@/lib/profile/nickname';
+import { readNickname } from '@/lib/profile/store';
 import { createUserClient, currentUser } from '@/lib/supabase/server';
 import { loadCourse } from '../../../../data';
 import { VisibilityNote } from '../../../../ui';
@@ -42,7 +45,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 
 const dateFormat = new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
 
-// 결과물 상세 (GAL-상세): 이미지 크게 · 링크 · 소개 전문 · 좋아요(GAL-03). 댓글은 GAL-04에서 붙인다.
+// 결과물 상세 (GAL-상세): 이미지 크게 · 링크 · 소개 전문 · 좋아요(GAL-03) · 댓글(GAL-04).
 export default async function PostPage(props: Props) {
   const data = await load(props);
   if (!data) notFound();
@@ -50,8 +53,15 @@ export default async function PostPage(props: Props) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
   const lessonPath = coursePath(course.slug, key, lesson.number);
   const backPath = lessonPath + '#posts';
+  const here = postPath(lessonPath, post.id);
   const user = await currentUser();
-  const loginPath = user ? null : '/login?next=' + encodeURIComponent(postPath(lessonPath, post.id));
+  const loginPath = user ? null : '/login?next=' + encodeURIComponent(here);
+  const client = await createUserClient({ readOnly: true });
+  const [nickname, comments] = await Promise.all([
+    user ? readNickname(client, user.id) : null,
+    post.status === 'visible' ? commentsForViewer(client, course.slug, key, post.id).catch(() => []) : [],
+  ]);
+  const nicknamePath = user && nickname === null ? nicknameSetupPath(here) : null;
 
   return (
     <main className="mx-auto w-full max-w-2xl px-5 py-8 sm:py-14">
@@ -110,6 +120,11 @@ export default async function PostPage(props: Props) {
           <span aria-label={`댓글 ${post.comment_count}개`}>💬 {post.comment_count}</span>
         </div>
       </article>
+
+      {post.status === 'visible' && (
+        <Comments slug={course.slug} accessKey={key} lesson={lesson.number} postId={post.id} loginPath={loginPath} nicknamePath={nicknamePath}
+          comments={comments.map((c) => ({ id: c.id, body: c.body, author: c.author, is_mine: c.is_mine, time: dateFormat.format(new Date(c.created_at)) }))} />
+      )}
 
       <Link href={backPath} className="mt-10 block rounded-2xl border border-line-strong px-6 py-3 text-center text-sm font-medium text-ink hover:border-mocha hover:text-mocha">
         이 차시 결과물 더 보기
