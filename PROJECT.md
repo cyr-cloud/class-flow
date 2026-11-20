@@ -15,6 +15,7 @@
   - GAL-01b (2026-11-20): https://www.notion.so/41eabd06af5381a28b30c38e16600c77
   - GAL-01c·08 (2026-11-20): https://www.notion.so/41eabd06af538121ad5dd93a3a507531
   - GAL-02 (2026-11-20): https://www.notion.so/41eabd06af5381f0925ce2f5fbd92407
+  - GAL-상세 (2026-11-20): https://www.notion.so/41eabd06af53817cbaace3dae62f7213
 - 노션 명세: https://www.notion.so/419abd06af5381acb38ec5f2ac476d87
 - 계정: 스토어와 같은 Supabase 프로젝트 `yuco-store-dev` (무료 플랜, 사용이 적으면 일시정지됨)
 
