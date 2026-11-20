@@ -23,6 +23,7 @@
   - GAL-06 (2026-11-20): https://www.notion.so/41eabd06af53810ca94ce6e6e7e9171a
   - ADM-02 (2026-11-20): https://www.notion.so/41eabd06af5381c4b4f7fa4e1b8ff9dd
   - GAL-검증 (2026-11-20): https://www.notion.so/41eabd06af538198a5a6f47c4046f3c0
+  - LEGAL 태스크 추가 (2026-11-20): https://www.notion.so/41eabd06af538195b93cc42271e897fb
 - 노션 명세: https://www.notion.so/419abd06af5381acb38ec5f2ac476d87
 - 계정: 스토어와 같은 Supabase 프로젝트 `yuco-store-dev` (무료 플랜, 사용이 적으면 일시정지됨)
 
