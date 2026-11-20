@@ -130,7 +130,7 @@
 - ClassFlow docs/development-checklist.md 1-7 LEGAL-01~09, yuco-store TASKS.md LEGAL-03~05, ai-trend-researcher TASKS.md LEGAL-01
 - 공통 규칙: ~/.claude/CLAUDE.md "프로덕트마다 법적 점검(LEGAL) 태스크를 넣는다", project-workflow-log SKILL.md 2-1단계
 
-## LEGAL-04·05 가입 동의 · 만 14세 이상 · 약관·처리방침 초안 · 2026-11-20 · 노션: (작성 중)
+## LEGAL-04·05 가입 동의 · 만 14세 이상 · 약관·처리방침 초안 · 2026-11-20 · 노션: https://www.notion.so/41eabd06af5381f0a484d85145811ca7
 
 - 만 14세 이상만 가입(사용자 결정). 닉네임 화면 필수 체크 3개 + /api/profile/nickname이 지금 판 동의가 없으면 세 가지 모두 받아야 저장
 - DB 202611200010 user_consents·record_consents·has_consented·require_classflow_consent 트리거(P0005), 실제 적용, 스토어 DB 테스트 94개
