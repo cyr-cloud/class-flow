@@ -123,3 +123,9 @@
 - 로그아웃 HTTP 확인: 준비 중 강의 페이지 404, 이미지 올리기 401, 정리 작업 401, /admin/reports는 로그인으로
 - 남은 것: GAL-검증b(공개 강의가 생기면 로그아웃 화면 눈으로 확인)
 - 점검 스크립트: yuco-store/server/supabase/checks/gal_verify.sql
+
+## LEGAL 법적 점검 태스크 추가 · 2026-11-20 · 노션: (작성 중)
+
+- 공통 점검표 ~/.claude/skills/project-workflow-log/references/legal-checklist.md (개인정보·약관·사용자 콘텐츠·판매·외부 자료·기타, 강의 판매 시 환불 안내 필수)
+- ClassFlow docs/development-checklist.md 1-7 LEGAL-01~09, yuco-store TASKS.md LEGAL-03~05, ai-trend-researcher TASKS.md LEGAL-01
+- 공통 규칙: ~/.claude/CLAUDE.md "프로덕트마다 법적 점검(LEGAL) 태스크를 넣는다", project-workflow-log SKILL.md 2-1단계
