@@ -9,7 +9,7 @@ const timeFormat = new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', mo
 
 const SECTIONS = [
   { id: 'COURSE', title: '강의 · 차시', body: '강의 만들기, 차시 추가·순서 변경, 실습 안내 작성', href: '/admin/courses' },
-  { id: 'ADM-02', title: '신고 처리', body: '갤러리 결과물 숨김·복구·삭제, 업로드 정지 (신고 알림은 위에 먼저 보여요)' },
+  { id: 'ADM-02', title: '신고 처리', body: '결과물·댓글 숨김·복구·삭제, 글쓴이 업로드 정지', href: '/admin/reports' },
   { id: 'ADM-03', title: '현황', body: '차시별 결과물 수, 새 가입자, 유입 경로' },
 ];
 
@@ -33,6 +33,9 @@ export default async function AdminHome() {
           {hidden > 0 && <span className="ml-2 text-sm font-normal text-mocha-deep">· 자동으로 숨겨진 것 {hidden}건</span>}
         </h2>
         {alerts.length > 0 && (
+          <Link href="/admin/reports" className="mt-3 inline-block rounded-xl bg-ink px-4 py-2 text-sm font-semibold text-white hover:bg-mocha-deep">신고 처리하러 가기 →</Link>
+        )}
+        {alerts.length > 0 && (
           <ul className="mt-4 grid gap-3">
             {alerts.map((a) => {
               const link = postPath(coursePath(a.course_slug, null, a.lesson_number), a.post_id);
@@ -51,10 +54,8 @@ export default async function AdminHome() {
                     {a.author} · {a.course_title} {a.lesson_number}차시{a.target === 'comment' && ` · 「${a.title}」의 댓글`}
                   </p>
                   {a.target === 'post' && a.excerpt && <p className="mt-1 line-clamp-2 text-xs text-ink-soft break-words">{a.excerpt}</p>}
-                  {a.status === 'visible' || a.target === 'comment' ? (
+                  {(a.status === 'visible' || a.target === 'comment') && (
                     <Link href={link} className="mt-2 inline-block text-xs text-mocha hover:underline">결과물 열어 보기 →</Link>
-                  ) : (
-                    <p className="mt-2 text-xs text-mute">숨겨진 결과물은 ADM-02 신고 처리 화면에서 보고 복구·삭제할 수 있게 돼요.</p>
                   )}
                 </li>
               );

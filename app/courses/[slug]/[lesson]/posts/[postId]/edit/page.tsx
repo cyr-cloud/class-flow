@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { coursePath, parseLessonNumber } from '@/lib/course/model';
 import { galleryImageUrl, isPostId, postPath } from '@/lib/gallery/model';
-import { postForViewer } from '@/lib/gallery/store';
+import { BANNED_MESSAGE, isUploadBanned, postForViewer } from '@/lib/gallery/store';
 import { readNickname } from '@/lib/profile/store';
 import { createUserClient, currentUser } from '@/lib/supabase/server';
 import { loadCourse } from '../../../../../data';
@@ -30,7 +30,7 @@ export default async function EditPostPage({ params, searchParams }: Props) {
   const client = await createUserClient({ readOnly: true });
   const post = await postForViewer(client, course.slug, key, lesson.number, postId).catch(() => null);
   if (!post || !post.is_mine || post.status !== 'visible') notFound();
-  const nickname = await readNickname(client, user.id);
+  const [nickname, banned] = await Promise.all([readNickname(client, user.id), isUploadBanned(client)]);
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
 
   return (
@@ -38,11 +38,15 @@ export default async function EditPostPage({ params, searchParams }: Props) {
       <Link href={detail} className="text-sm text-mute hover:text-mocha">← 고치지 않고 돌아가기</Link>
       <p className="eyebrow mt-4">{course.title} · {lesson.number}차시</p>
       <h1 className="mt-2 text-2xl font-bold text-ink">결과물 고치기</h1>
+      {banned ? (
+        <p role="status" className="mt-8 rounded-2xl border border-line bg-cream px-5 py-6 text-center text-sm leading-relaxed text-ink-soft">{BANNED_MESSAGE}</p>
+      ) : (
       <div className="mt-8">
         <NewPostForm slug={course.slug} accessKey={key} lesson={lesson.number} author={nickname ?? '나'}
           edit={{ postId: post.id, title: post.title, body: post.body, links: post.links,
             images: post.images.map((path) => ({ path, url: galleryImageUrl(supabaseUrl, path) })) }} />
       </div>
+      )}
     </main>
   );
 }

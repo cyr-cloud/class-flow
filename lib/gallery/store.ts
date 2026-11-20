@@ -4,6 +4,8 @@ import { PAGE_SIZE, uniqueById, type PostInput, type PostSort } from './model';
 
 // 결과물 갤러리 읽기·쓰기. 권한 판단은 DB 함수(202611200001)가 한다.
 
+export const BANNED_MESSAGE = '업로드가 정지된 계정이에요. 결과물·댓글을 올릴 수 없어요. 궁금한 점은 강사에게 문의해주세요.';
+
 export interface GalleryPost {
   id: string;
   title: string;
@@ -65,6 +67,7 @@ export async function createPost(client: SupabaseClient, slug: string, key: stri
   });
   if (!error && typeof data === 'string') return { ok: true, id: data };
   switch (error?.code) {
+    case 'P0004': return { ok: false, message: BANNED_MESSAGE };
     case 'P0001': return { ok: false, message: '한 차시에는 하루 3개까지 올릴 수 있어요. 지운 결과물도 세요. 내일(한국 시간 자정 이후) 다시 올려주세요.' };
     case 'P0002': return { ok: false, message: '차시를 찾을 수 없어요. 링크를 다시 확인해주세요.' };
     case '42501': return { ok: false, message: '로그인과 닉네임 설정이 필요해요.' };
@@ -80,6 +83,7 @@ export async function updatePost(client: SupabaseClient, id: string, input: Post
     .eq('id', id).select('id');
   if (!error && data?.length) return { ok: true, id };
   if (error?.code === '23514') return { ok: false, message: '입력을 확인해주세요. 이미지를 다시 올려야 할 수도 있어요.', field: 'images' };
+  if (error?.code === 'P0004') return { ok: false, message: BANNED_MESSAGE };
   return { ok: false, message: '고치지 못했어요. 내 결과물인지, 숨겨지지 않았는지 확인해주세요.' };
 }
 
@@ -98,9 +102,22 @@ export async function myPostsToday(client: SupabaseClient, slug: string, key: st
 // 관리자 신고 알림(GAL-06). 처리 안 한 신고를 결과물·댓글 단위로, 자동 숨김된 것부터. 관리자가 아니면 빈 목록.
 export interface ReportAlert {
   target: 'post' | 'comment'; target_id: string; post_id: string; course_slug: string; course_title: string; lesson_number: number;
-  title: string; excerpt: string; author: string; status: 'visible' | 'hidden'; report_count: number; reasons: string[]; last_reported_at: string;
+  title: string; excerpt: string; author: string; author_id: string; author_banned: boolean; status: 'visible' | 'hidden';
+  report_count: number; reasons: string[]; details: string[]; last_reported_at: string; images: string[]; links: string[];
 }
 export async function adminReportAlerts(client: SupabaseClient, limit = 50): Promise<ReportAlert[]> {
   const { data, error } = await client.rpc('admin_report_alerts', { p_limit: limit });
   return error ? [] : ((data as ReportAlert[] | null) ?? []);
+}
+
+// 업로드 정지(ADM-02). 정지된 사람은 올리기·고치기·댓글·이미지가 DB에서 막힌다. 화면은 미리 안내만 한다.
+export async function isUploadBanned(client: SupabaseClient): Promise<boolean> {
+  const { data, error } = await client.rpc('is_upload_banned');
+  return !error && data === true;
+}
+
+export interface UploadBan { user_id: string; nickname: string; until: string | null; reason: string; created_at: string }
+export async function adminUploadBans(client: SupabaseClient): Promise<UploadBan[]> {
+  const { data, error } = await client.rpc('admin_upload_bans');
+  return error ? [] : ((data as UploadBan[] | null) ?? []);
 }

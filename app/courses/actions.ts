@@ -3,7 +3,7 @@
 import { redirect } from 'next/navigation';
 import { cleanAccessKey, coursePath, parseLessonNumber, SLUG_PATTERN } from '@/lib/course/model';
 import { isPostId, parseComment, parsePostInput, parseReport, postPath } from '@/lib/gallery/model';
-import { createPost, deletePost as deletePostRow, postForViewer, updatePost } from '@/lib/gallery/store';
+import { BANNED_MESSAGE, createPost, deletePost as deletePostRow, postForViewer, updatePost } from '@/lib/gallery/store';
 import { createUserClient } from '@/lib/supabase/server';
 
 export interface PostFormState { message?: string; errors?: Record<string, string> }
@@ -90,6 +90,7 @@ export async function addComment(input: CommentTarget & { body: string }): Promi
   const { error } = await ctx.client.from('comments').insert({ post_id: input.postId, user_id: ctx.user.id, body: parsed.value });
   if (!error) return { ok: true };
   switch (error.code) {
+    case 'P0004': return { ok: false, message: BANNED_MESSAGE };
     case 'P0001': return { ok: false, message: '댓글은 하루 50개까지 쓸 수 있어요. 내일 다시 써주세요.' };
     case '42501': return { ok: false, message: '닉네임을 정한 뒤에 댓글을 쓸 수 있어요.' };
     case '23514': return { ok: false, message: '댓글은 1~300자로 적어주세요.' };

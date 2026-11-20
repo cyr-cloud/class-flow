@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { coursePath, parseLessonNumber } from '@/lib/course/model';
 import { DAILY_POST_LIMIT, postsLeftToday } from '@/lib/gallery/model';
-import { myPostsToday } from '@/lib/gallery/store';
+import { BANNED_MESSAGE, isUploadBanned, myPostsToday } from '@/lib/gallery/store';
 import { nicknameSetupPath } from '@/lib/profile/nickname';
 import { readNickname } from '@/lib/profile/store';
 import { createUserClient, currentUser } from '@/lib/supabase/server';
@@ -30,7 +30,7 @@ export default async function NewPostPage({ params, searchParams }: Props) {
   const client = await createUserClient({ readOnly: true });
   const nickname = await readNickname(client, user.id);
   if (nickname === null) redirect(nicknameSetupPath(here));
-  const posted = await myPostsToday(client, course.slug, key, lesson.number);
+  const [posted, banned] = await Promise.all([myPostsToday(client, course.slug, key, lesson.number), isUploadBanned(client)]);
   const left = posted === null ? null : postsLeftToday(posted);
 
   return (
@@ -41,9 +41,11 @@ export default async function NewPostPage({ params, searchParams }: Props) {
       {/* GAL-07: 남은 개수를 미리 알려 주고, 다 쓰면 폼 대신 안내만 보여 준다 */}
       <p className="mt-2 text-sm text-mute">
         한 차시에 하루 {DAILY_POST_LIMIT}개까지 올릴 수 있어요.
-        {left !== null && left > 0 && <> 오늘 <b className="text-ink">{left}개</b> 더 올릴 수 있어요.</>}
+        {!banned && left !== null && left > 0 && <> 오늘 <b className="text-ink">{left}개</b> 더 올릴 수 있어요.</>}
       </p>
-      {left === 0 ? (
+      {banned ? (
+        <p role="status" className="mt-8 rounded-2xl border border-line bg-cream px-5 py-6 text-center text-sm leading-relaxed text-ink-soft">{BANNED_MESSAGE}</p>
+      ) : left === 0 ? (
         <div role="status" className="mt-8 rounded-2xl border border-line bg-cream px-5 py-6 text-center">
           <p className="font-semibold text-ink">오늘은 이 차시에 {DAILY_POST_LIMIT}개를 모두 올렸어요</p>
           <p className="mt-2 text-sm leading-relaxed text-mute">지운 결과물도 세어져요. 내일(한국 시간 자정 이후) 다시 올릴 수 있어요.<br />이미 올린 결과물은 고칠 수 있어요.</p>

@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { authConfig } from '@/lib/auth/config';
 import { GALLERY_BUCKET, IMAGE_CONTENT_TYPE, MAX_IMAGE_BYTES, detectImageType, galleryImageUrl, isOwnImagePath } from '@/lib/gallery/model';
+import { BANNED_MESSAGE, isUploadBanned } from '@/lib/gallery/store';
 import { createUserClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
@@ -30,6 +31,8 @@ export async function POST(request: Request) {
   try {
     const session = await signedIn();
     if (!session) return Response.json({ message: '로그인이 필요해요.' }, { status: 401 });
+    // 업로드 정지(ADM-02)는 Storage RLS도 막지만, 정확한 안내를 위해 먼저 확인한다.
+    if (await isUploadBanned(session.client)) return Response.json({ message: BANNED_MESSAGE }, { status: 403 });
     const form = await request.formData();
     const file = form.get('file');
     if (!(file instanceof Blob)) return Response.json({ message: '이미지를 골라주세요.' }, { status: 400 });

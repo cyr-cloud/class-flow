@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 import { cache } from 'react';
 import { coursePath, parseLessonNumber } from '@/lib/course/model';
 import { galleryImageUrl, isPostId, linkLabel, postPath } from '@/lib/gallery/model';
-import { commentsForViewer, postForViewer } from '@/lib/gallery/store';
+import { BANNED_MESSAGE, commentsForViewer, isUploadBanned, postForViewer } from '@/lib/gallery/store';
 import Comments from '@/components/gallery/Comments';
 import DeletePostButton from '@/components/gallery/DeletePostButton';
 import ReportButton from '@/components/gallery/ReportButton';
@@ -59,9 +59,10 @@ export default async function PostPage(props: Props) {
   const user = await currentUser();
   const loginPath = user ? null : '/login?next=' + encodeURIComponent(here);
   const client = await createUserClient({ readOnly: true });
-  const [nickname, comments] = await Promise.all([
+  const [nickname, comments, banned] = await Promise.all([
     user ? readNickname(client, user.id) : null,
     post.status === 'visible' ? commentsForViewer(client, course.slug, key, post.id).catch(() => []) : [],
+    user ? isUploadBanned(client) : false,
   ]);
   const nicknamePath = user && nickname === null ? nicknameSetupPath(here) : null;
   const updated = (await props.searchParams).updated === '1';
@@ -140,7 +141,7 @@ export default async function PostPage(props: Props) {
       </article>
 
       {post.status === 'visible' && (
-        <Comments slug={course.slug} accessKey={key} lesson={lesson.number} postId={post.id} loginPath={loginPath} nicknamePath={nicknamePath}
+        <Comments slug={course.slug} accessKey={key} lesson={lesson.number} postId={post.id} loginPath={loginPath} nicknamePath={nicknamePath} bannedMessage={banned ? BANNED_MESSAGE : null}
           comments={comments.map((c) => ({ id: c.id, body: c.body, author: c.author, is_mine: c.is_mine, time: dateFormat.format(new Date(c.created_at)) }))} />
       )}
 

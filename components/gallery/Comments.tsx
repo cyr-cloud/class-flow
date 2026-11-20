@@ -14,9 +14,10 @@ type Props = {
   comments: CommentView[];
   // 쓰기 막힘 사유: 로그인 필요 → 로그인 주소, 닉네임 필요 → 닉네임 설정 주소
   loginPath: string | null; nicknamePath: string | null;
+  bannedMessage?: string | null; // 업로드 정지(ADM-02)면 쓰기 칸 대신 안내
 };
 
-export default function Comments({ slug, accessKey, lesson, postId, comments, loginPath, nicknamePath }: Props) {
+export default function Comments({ slug, accessKey, lesson, postId, comments, loginPath, nicknamePath, bannedMessage }: Props) {
   const router = useRouter();
   const [body, setBody] = useState('');
   const [message, setMessage] = useState('');
@@ -79,6 +80,8 @@ export default function Comments({ slug, accessKey, lesson, postId, comments, lo
         <Link href={loginPath} className="mt-4 block rounded-xl border border-dashed border-line-strong px-4 py-3 text-center text-sm text-mute hover:border-mocha hover:text-mocha">
           로그인하고 댓글 쓰기
         </Link>
+      ) : bannedMessage ? (
+        <p className="mt-4 rounded-xl bg-cream px-4 py-3 text-center text-sm text-mute">{bannedMessage}</p>
       ) : nicknamePath ? (
         <Link href={nicknamePath} className="mt-4 block rounded-xl border border-dashed border-line-strong px-4 py-3 text-center text-sm text-mute hover:border-mocha hover:text-mocha">
           닉네임을 정하고 댓글 쓰기
