@@ -30,7 +30,7 @@ test('parsePostInput tidies text and checks limits', () => {
   assert.equal(r.value.body, '첫 줄\n둘째 줄');
   const bad = parsePostInput({title: '가'.repeat(41), body: '나'.repeat(501), images: []}, uid);
   assert.equal(bad.ok, false);
-  assert.deepEqual(Object.keys(bad.errors).sort(), ['body', 'images', 'title']);
+  assert.deepEqual(Object.keys(bad.errors).sort(), ['body', 'title']);
   assert.equal(parsePostInput({title: 'x', images: [1,2,3,4,5].map((n) => img(n))}, uid).ok, false);
   assert.equal(parsePostInput({title: 'x', images: [img(1), img(1)]}, uid).ok, false);
   assert.equal(parsePostInput({title: 'x', images: [img(1, other)]}, uid).ok, false);
@@ -50,14 +50,41 @@ test('parseLink adds https, refuses http and odd schemes', async () => {
   assert.equal(linkLabel('https://www.github.com/yuco/rpg/'), 'github.com/yuco/rpg');
 });
 
-test('parsePostInput: image or link required, up to 3 links, duplicates merged', async () => {
+test('parsePostInput: text-only needs a body, up to 3 links, duplicates merged', async () => {
   const {parsePostInput} = await import('../lib/gallery/model.ts');
   const ok = parsePostInput({title: '배포했어요', links: ['yuco.vercel.app', 'https://yuco.vercel.app/', '']}, uid);
   assert.equal(ok.ok, true);
   assert.deepEqual(ok.value.links, ['https://yuco.vercel.app/']);
   assert.equal(parsePostInput({title: 'x'}, uid).ok, false);
+  assert.match(parsePostInput({title: 'x', body: '   '}, uid).errors.body, /소개/);
+  const text = parsePostInput({title: '구구단', body: 'for문 두 개로 만들었어요'}, uid);
+  assert.equal(text.ok, true);
+  assert.deepEqual([text.value.images, text.value.links], [[], []]);
   assert.equal(parsePostInput({title: 'x', links: ['a.com', 'b.com', 'c.com', 'd.com']}, uid).ok, false);
   const bad = parsePostInput({title: 'x', links: ['a.com', 'http://b.com']}, uid);
   assert.equal(bad.ok, false);
   assert.match(bad.errors['links.1'], /https/);
+});
+
+test('parseListQuery falls back to newest, first page', async () => {
+  const {parseListQuery} = await import('../lib/gallery/model.ts');
+  assert.deepEqual(parseListQuery(undefined, undefined), {sort: 'new', page: 1});
+  assert.deepEqual(parseListQuery('popular', '3'), {sort: 'popular', page: 3});
+  assert.deepEqual(parseListQuery(['popular', 'new'], ['2']), {sort: 'popular', page: 2});
+  assert.deepEqual(parseListQuery('likes', '0'), {sort: 'new', page: 1});
+  assert.deepEqual(parseListQuery('new', '-1'), {sort: 'new', page: 1});
+  assert.deepEqual(parseListQuery('new', '999'), {sort: 'new', page: 10});
+});
+
+test('postListPath keeps the key and drops default values', async () => {
+  const {postListPath} = await import('../lib/gallery/model.ts');
+  assert.equal(postListPath('/courses/a/2', 'new'), '/courses/a/2');
+  assert.equal(postListPath('/courses/a/2', 'popular'), '/courses/a/2?sort=popular');
+  assert.equal(postListPath('/courses/a/2', 'new', 3), '/courses/a/2?page=3');
+  assert.equal(postListPath('/courses/a/2?key=k', 'popular', 2), '/courses/a/2?key=k&sort=popular&page=2');
+});
+
+test('uniqueById keeps the first copy only', async () => {
+  const {uniqueById} = await import('../lib/gallery/model.ts');
+  assert.deepEqual(uniqueById([{id: 'a', n: 1}, {id: 'b'}, {id: 'a', n: 2}]), [{id: 'a', n: 1}, {id: 'b'}]);
 });

@@ -1,5 +1,5 @@
 'use client';
-// 결과물 올리기 폼: 이미지(GAL-01b) · 링크·미리보기(GAL-01c) · 개인정보 안내(GAL-08)
+// 결과물 올리기 폼: 이미지(GAL-01b) · 링크·미리보기(GAL-01c) · 개인정보 안내(GAL-08). 이미지·링크 없이 글만 올려도 된다.
 import { useActionState, useCallback, useState } from 'react';
 import ImagePicker, { type PickedImage } from '@/components/gallery/ImagePicker';
 import { BODY_MAX, MAX_LINKS, TITLE_MAX, linkLabel, parseLink } from '@/lib/gallery/model';
@@ -20,7 +20,8 @@ export default function NewPostForm({ slug, accessKey, lesson, author }: { slug:
   const checked = links.map((l) => (l.trim() ? parseLink(l) : null));
   const goodLinks = [...new Set(checked.flatMap((c) => (c?.ok ? [c.value] : [])))];
   const linkError = checked.some((c) => c && !c.ok);
-  const ready = title.trim() && (images.length > 0 || goodLinks.length > 0) && !linkError;
+  const textOnly = images.length === 0 && goodLinks.length === 0;
+  const ready = title.trim() && (!textOnly || body.trim()) && !linkError;
 
   return (
     <form action={action} className="grid gap-6">
@@ -41,7 +42,7 @@ export default function NewPostForm({ slug, accessKey, lesson, author }: { slug:
       </aside>
 
       <div>
-        <p className="block text-sm font-medium text-ink">이미지 <span className="text-mute">(0~4장)</span></p>
+        <p className="block text-sm font-medium text-ink">이미지 <span className="text-mute">(선택, 4장까지)</span></p>
         <div className="mt-1.5"><ImagePicker onChange={onImages} error={e.images} /></div>
       </div>
 
@@ -83,7 +84,7 @@ export default function NewPostForm({ slug, accessKey, lesson, author }: { slug:
       </div>
 
       <div>
-        <label htmlFor="body" className="block text-sm font-medium text-ink">소개 <span className="text-mute">(선택)</span></label>
+        <label htmlFor="body" className="block text-sm font-medium text-ink">소개 <span className="text-mute">{textOnly ? '(글만 올릴 땐 꼭 적어 주세요)' : '(선택)'}</span></label>
         <textarea id="body" name="body" rows={4} maxLength={BODY_MAX} value={body} onChange={(ev) => setBody(ev.target.value)}
           placeholder="무엇을 만들었는지, 어디가 재밌었는지 적어 주세요." className={inputClass} />
         <p className={`mt-1 text-xs ${e.body ? 'text-mocha-deep' : 'text-mute'}`}>{e.body ?? `${[...body].length}/${BODY_MAX}자`}</p>
@@ -102,9 +103,7 @@ export default function NewPostForm({ slug, accessKey, lesson, author }: { slug:
             </div>
           ) : goodLinks.length > 0 ? (
             <div className="grid aspect-[4/3] place-items-center bg-cream px-4 text-center text-sm text-mute">🔗 {linkLabel(goodLinks[0])}</div>
-          ) : (
-            <div className="grid aspect-[4/3] place-items-center bg-cream text-sm text-mute">이미지나 링크를 넣으면 여기에 보여요</div>
-          )}
+          ) : null}
           <div className="px-4 py-3">
             <p className="font-medium text-ink">{title.trim() || '제목'}</p>
             <p className="mt-0.5 text-xs text-mute">{author}</p>
@@ -123,7 +122,7 @@ export default function NewPostForm({ slug, accessKey, lesson, author }: { slug:
         className="w-full rounded-2xl bg-ink px-6 py-4 text-base font-semibold text-white transition-colors hover:bg-mocha-deep disabled:opacity-40">
         {pending ? '올리는 중…' : '결과물 올리기'}
       </button>
-      {!ready && !pending && <p className="-mt-3 text-center text-xs text-mute">{linkError ? '빨간 안내가 있는 링크를 고쳐 주세요.' : '제목과 함께 이미지나 링크를 하나 이상 넣어 주세요.'}</p>}
+      {!ready && !pending && <p className="-mt-3 text-center text-xs text-mute">{linkError ? '빨간 안내가 있는 링크를 고쳐 주세요.' : '제목과 함께 이미지·링크·소개 중 하나를 넣어 주세요.'}</p>}
     </form>
   );
 }

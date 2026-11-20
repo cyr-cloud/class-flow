@@ -85,7 +85,33 @@ export function parsePostInput(f: { title?: unknown; body?: unknown; images?: un
     if (!r.ok) { errors[`links.${i}`] = r.message; errors.links ??= r.message; }
     else if (!links.includes(r.value)) links.push(r.value);
   }
-  if (images.length === 0 && rawLinks.length === 0) errors.images = '이미지나 링크 중 하나는 꼭 넣어주세요.';
+  // 이미지·링크 없이 글만 올려도 된다. 그때는 소개가 비어 있으면 안 된다(DB posts_has_content와 같은 규칙).
+  if (images.length === 0 && rawLinks.length === 0 && !body && !errors.body) errors.body = '글만 올릴 때는 소개를 적어주세요.';
   if (Object.keys(errors).length) return { ok: false, errors };
   return { ok: true, value: { title, body, images: images as string[], links } };
+}
+
+// 차시 결과물 목록 (GAL-02): 최신순/인기순 + 더 보기. 주소(?sort=&page=)에 담아 새로고침·공유해도 같은 목록이 보인다.
+export const PAGE_SIZE = 24;
+export const MAX_PAGE = 10; // 한 화면에 240개까지. 그 이상은 "더 보기"를 숨긴다.
+export type PostSort = 'new' | 'popular';
+
+export function parseListQuery(sort: unknown, page: unknown): { sort: PostSort; page: number } {
+  const s = Array.isArray(sort) ? sort[0] : sort;
+  const p = Array.isArray(page) ? page[0] : page;
+  const n = typeof p === 'string' && /^[1-9][0-9]{0,2}$/.test(p) ? Number(p) : 1;
+  return { sort: s === 'popular' ? 'popular' : 'new', page: Math.min(n, MAX_PAGE) };
+}
+
+// 기본값(최신순·1쪽)은 주소에서 뺀다. lessonPath는 coursePath(slug, key, 차시) 결과(열쇠가 있으면 ?key= 포함).
+export function postListPath(lessonPath: string, sort: PostSort, page = 1): string {
+  const params = [sort === 'popular' ? 'sort=popular' : '', page > 1 ? `page=${page}` : ''].filter(Boolean).join('&');
+  if (!params) return lessonPath;
+  return lessonPath + (lessonPath.includes('?') ? '&' : '?') + params;
+}
+
+// 여러 쪽을 이어 붙일 때 그 사이에 새 글이 올라오면 같은 글이 두 번 나올 수 있다 → id로 한 번만.
+export function uniqueById<T extends { id: string }>(items: T[]): T[] {
+  const seen = new Set<string>();
+  return items.filter((x) => (seen.has(x.id) ? false : (seen.add(x.id), true)));
 }

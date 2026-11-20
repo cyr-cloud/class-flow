@@ -1,6 +1,6 @@
 import 'server-only';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { PostInput } from './model';
+import { PAGE_SIZE, uniqueById, type PostInput, type PostSort } from './model';
 
 // 결과물 갤러리 읽기·쓰기. 권한 판단은 DB 함수(202611200001)가 한다.
 
@@ -26,6 +26,16 @@ export async function postsForViewer(client: SupabaseClient, slug: string, key: 
     p_slug: slug, p_key: key, p_lesson: lesson, p_sort: opts.sort ?? 'new', p_limit: opts.limit ?? 24, p_offset: opts.offset ?? 0,
   });
   return (data as GalleryPost[] | null) ?? [];
+}
+
+// 1쪽부터 page쪽까지 한꺼번에 읽는다(GAL-02 더 보기). 마지막 쪽은 한 개 더 읽어서 다음 쪽이 있는지 안다.
+export async function listPosts(client: SupabaseClient, slug: string, key: string | null, lesson: number, sort: PostSort, page: number)
+  : Promise<{ posts: GalleryPost[]; hasMore: boolean }> {
+  const pages = await Promise.all(Array.from({ length: page }, (_, i) =>
+    postsForViewer(client, slug, key, lesson, { sort, offset: i * PAGE_SIZE, limit: i === page - 1 ? PAGE_SIZE + 1 : PAGE_SIZE })));
+  const hasMore = pages[page - 1].length > PAGE_SIZE;
+  if (hasMore) pages[page - 1] = pages[page - 1].slice(0, PAGE_SIZE);
+  return { posts: uniqueById(pages.flat()), hasMore };
 }
 
 export async function lessonPostCounts(client: SupabaseClient, slug: string, key: string | null): Promise<Map<number, number>> {

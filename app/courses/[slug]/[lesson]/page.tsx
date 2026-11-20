@@ -3,15 +3,15 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import { coursePath, parseLessonNumber } from '@/lib/course/model';
-import { galleryImageUrl, linkLabel } from '@/lib/gallery/model';
-import { postsForViewer } from '@/lib/gallery/store';
+import { MAX_PAGE, galleryImageUrl, linkLabel, parseListQuery, postListPath, type PostSort } from '@/lib/gallery/model';
+import { lessonPostCounts, listPosts } from '@/lib/gallery/store';
 import { createUserClient } from '@/lib/supabase/server';
 import { loadCourse } from '../../data';
 import { VisibilityNote } from '../../ui';
 
 export const dynamic = 'force-dynamic';
 
-type Props = { params: Promise<{ slug: string; lesson: string }>; searchParams: Promise<{ key?: string | string[]; posted?: string }> };
+type Props = { params: Promise<{ slug: string; lesson: string }>; searchParams: Promise<{ key?: string | string[]; posted?: string; sort?: string | string[]; page?: string | string[] }> };
 
 async function load({ params, searchParams }: Props) {
   const { slug, lesson } = await params;
@@ -38,10 +38,19 @@ export default async function LessonPage(props: Props) {
   const data = await load(props);
   if (!data) notFound();
   const { course, lessons, lesson, prev, next, key } = data;
-  const posts = await postsForViewer(await createUserClient({ readOnly: true }), course.slug, key, lesson.number).catch(() => []);
+  const query = await props.searchParams;
+  const { sort, page } = parseListQuery(query.sort, query.page);
+  const client = await createUserClient({ readOnly: true });
+  const [{ posts, hasMore }, counts] = await Promise.all([
+    listPosts(client, course.slug, key, lesson.number, sort, page).catch(() => ({ posts: [], hasMore: false })),
+    lessonPostCounts(client, course.slug, key).catch(() => new Map<number, number>()),
+  ]);
+  const total = counts.get(lesson.number) ?? posts.length;
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
-  const newPostPath = coursePath(course.slug, key, lesson.number).replace(/(\?|$)/, '/new$1');
-  const posted = (await props.searchParams).posted === '1';
+  const lessonPath = coursePath(course.slug, key, lesson.number);
+  const newPostPath = lessonPath.replace(/(\?|$)/, '/new$1');
+  const posted = query.posted === '1';
+  const sorts: [PostSort, string][] = [['new', '최신순'], ['popular', '인기순']];
 
   return (
     <main className="mx-auto w-full max-w-2xl px-5 py-8 sm:py-14">
@@ -75,35 +84,64 @@ export default async function LessonPage(props: Props) {
         <Link href={newPostPath} className="block w-full rounded-2xl bg-ink px-6 py-4 text-center text-base font-semibold text-white transition-colors hover:bg-mocha-deep">
           내 결과물 올리기
         </Link>
-        <p className="mt-2 text-center text-xs text-mute">로그인하면 이미지나 링크로 올릴 수 있어요.</p>
+        <p className="mt-2 text-center text-xs text-mute">로그인하면 이미지·링크·글로 올릴 수 있어요.</p>
       </section>
 
-      {/* 카드 목록 기본형. 최신순/인기순·더 보기·상세는 GAL-02·GAL-상세에서 */}
-      <section className="mt-10">
-        <h2 className="text-lg font-semibold text-ink">결과물 {posts.length > 0 ? posts.length : ''}</h2>
+      {/* GAL-02 카드 목록: 최신순/인기순 + 더 보기. 정렬·쪽은 주소에 담는다. 상세는 GAL-상세에서 */}
+      <section id="posts" className="mt-10 scroll-mt-6">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-ink">결과물 {total > 0 ? total : ''}</h2>
+          {total > 0 && (
+            <div role="tablist" aria-label="정렬" className="flex rounded-full border border-line p-0.5 text-sm">
+              {sorts.map(([value, label]) => (
+                <Link key={value} role="tab" aria-selected={sort === value} scroll={false} replace
+                  href={postListPath(lessonPath, value)}
+                  className={`rounded-full px-3 py-1 ${sort === value ? 'bg-ink text-white' : 'text-mute hover:text-mocha'}`}>
+                  {label}
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
         {posts.length === 0 ? (
           <p className="mt-3 rounded-2xl border border-dashed border-line-strong px-4 py-8 text-center text-sm text-mute">아직 올라온 결과물이 없어요. 첫 번째로 올려 보세요!</p>
         ) : (
-          <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {posts.map((p) => (
-              <li key={p.id} className="overflow-hidden rounded-2xl border border-line bg-paper">
-                {p.images[0] ? (
-                  // eslint-disable-next-line @next/next/no-img-element -- Storage 공개 주소
-                  <img src={galleryImageUrl(supabaseUrl, p.images[0])} alt={p.title} loading="lazy" className="aspect-[4/3] w-full bg-cream object-cover" />
-                ) : p.links[0] ? (
-                  <a href={p.links[0]} target="_blank" rel="noopener noreferrer nofollow ugc" className="grid aspect-[4/3] place-items-center bg-cream px-3 text-center text-xs text-mocha-deep hover:bg-mocha-tint">
-                    <span>🔗<br />{linkLabel(p.links[0])}</span>
-                  </a>
-                ) : null}
-                <div className="px-3 py-2.5">
-                  <p className="truncate text-sm font-medium text-ink">{p.title}</p>
-                  <p className="mt-0.5 truncate text-xs text-mute">
-                    {p.author}{p.images.length > 1 && ` · 사진 ${p.images.length}장`}{p.images.length > 0 && p.links.length > 0 && ` · 링크 ${p.links.length}`}{p.status === 'hidden' && ' · 숨김(신고)'}
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ul>
+          <>
+            <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {posts.map((p) => (
+                <li key={p.id} className="flex flex-col overflow-hidden rounded-2xl border border-line bg-paper">
+                  {p.images[0] ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- Storage 공개 주소
+                    <img src={galleryImageUrl(supabaseUrl, p.images[0])} alt={p.title} loading="lazy" className="aspect-[4/3] w-full bg-cream object-cover" />
+                  ) : p.links[0] ? (
+                    <a href={p.links[0]} target="_blank" rel="noopener noreferrer nofollow ugc" className="grid aspect-[4/3] place-items-center bg-cream px-3 text-center text-xs text-mocha-deep hover:bg-mocha-tint">
+                      <span className="min-w-0 break-all">🔗<br />{linkLabel(p.links[0])}</span>
+                    </a>
+                  ) : (
+                    // 글만 올린 결과물: 소개 앞부분을 카드 머리에 보여 준다
+                    <p className="line-clamp-5 aspect-[4/3] overflow-hidden whitespace-pre-line break-words bg-cream px-3 py-3 text-xs leading-relaxed text-ink-soft">{p.body}</p>
+                  )}
+                  <div className="mt-auto px-3 py-2.5">
+                    <p className="truncate text-sm font-medium text-ink">{p.title}</p>
+                    <p className="mt-0.5 truncate text-xs text-mute">
+                      {p.author}{p.images.length > 1 && ` · 사진 ${p.images.length}장`}{p.images.length > 0 && p.links.length > 0 && ` · 링크 ${p.links.length}`}{p.status === 'hidden' && ' · 숨김(신고)'}
+                    </p>
+                    <p className="mt-1 text-xs text-mute">
+                      <span aria-label={`좋아요 ${p.like_count}개`}>♥ {p.like_count}</span>
+                      <span className="ml-2" aria-label={`댓글 ${p.comment_count}개`}>💬 {p.comment_count}</span>
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            {hasMore && page < MAX_PAGE && (
+              <Link href={postListPath(lessonPath, sort, page + 1)} scroll={false} replace
+                className="mt-5 block rounded-2xl border border-line-strong px-6 py-3 text-center text-sm font-medium text-ink hover:border-mocha hover:text-mocha">
+                더 보기
+              </Link>
+            )}
+            {sort === 'popular' && <p className="mt-3 text-center text-xs text-mute">좋아요가 같으면 최근에 올린 것부터 보여요.</p>}
+          </>
         )}
       </section>
 
