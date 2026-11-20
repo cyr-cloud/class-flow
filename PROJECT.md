@@ -4,6 +4,7 @@
 - 경로: `C:\Users\rkdld\Desktop\yuniqcoding\class-flow-merged`
 - 원격: https://github.com/cyr-cloud/class-flow (작업 브랜치 `feature/course-gallery`)
 - 완료 기준: `docs/development-checklist.md` · 요구사항: `docs/functional-spec.md`
+- 사용자 할 일: `USER_ACTIONS.md` (공개까지 순서)
 - 노션 프로젝트: https://www.notion.so/419abd06af53811cab24d024700dbecd
 - 노션 상위 허브: https://www.notion.so/0a4b232864bb467186f1a4086ca3eaac (YuniqCoding)
 - 날짜 페이지
