@@ -77,7 +77,7 @@
 - 남은 것: 로그아웃 상태 로그인 안내는 샘플 강의가 준비 중이라 화면 확인 못 함(코드상 /login?next=상세주소). DB의 post_is_visible은 강의 공개 여부까지는 보지 않음 — 앱은 setLike에서 확인하지만 REST로 직접 넣으면 글 id를 알 때 좋아요가 가능(숫자만 바뀜)
 - 캡처: generated/worklog/GAL-03/ (1장)
 
-## GAL-04 댓글 · 2026-11-20 · 노션: (작성 중)
+## GAL-04 댓글 · 2026-11-20 · 노션: https://www.notion.so/41eabd06af53813199b2e62abe29169e
 
 - 첫 공개에 댓글 포함(사용자 결정). components/gallery/Comments.tsx, addComment·deleteComment, commentsForViewer, parseComment
 - DB 202611200005: 댓글 닉네임 필수(정책), 하루 50개(BEFORE INSERT 트리거 + 사람별 잠금). 스토어 DB 테스트 77개, 실제 DB 적용
