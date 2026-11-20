@@ -139,7 +139,7 @@
 - 검증: 앱 테스트 94개, tsc·eslint. 실제 화면: 동의 없는 관리자 계정이 올리기 → 동의 화면(체크 0, 버튼 꺼짐) → API 직접 호출(동의 없음·일부·문자열 true) 모두 400 → 모두 동의 후 저장 → 올리기 화면으로 복귀 → DB 3줄 기록, 375px 넘침 없음
 - 캡처: generated/worklog/LEGAL-04-05/ (3장)
 
-## LEGAL-07 탈퇴 · 2026-11-20 · 노션: (작성 중)
+## LEGAL-07 탈퇴 · 2026-11-20 · 노션: https://www.notion.so/41eabd06af5381caacece88432f4c280
 
 - DB 202611200011 delete_my_account(구매 기록 없으면 auth.users 삭제 → 연결 데이터 cascade, 있으면 ClassFlow 정보만), 스토어 DB 테스트 99개, 실제 적용
 - /me/delete(설명 + "탈퇴합니다" 입력), /api/profile/delete(Origin·문구·로그인 → 내 이미지 삭제 → 함수 → 로그아웃), 마이페이지 링크, 약관·처리방침 탈퇴 문구
