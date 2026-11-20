@@ -125,3 +125,14 @@ export function courseShareUrl(siteUrl: string, course: Pick<Course, 'slug' | 'v
 export function cleanAccessKey(value: unknown): string | null {
   return typeof value === 'string' && /^[a-z0-9]{16,32}$/.test(value) ? value : null;
 }
+
+// 학생용 페이지 주소. 링크 공개 강의는 열쇠를 다음 페이지로 계속 들고 다녀야 한다(HOME-02·03).
+export function coursePath(slug: string, key: string | null, lessonNumber?: number): string {
+  const path = '/courses/' + encodeURIComponent(slug) + (lessonNumber ? '/' + lessonNumber : '');
+  return key ? `${path}?key=${encodeURIComponent(key)}` : path;
+}
+
+// 주소의 차시 번호(1~999). 숫자가 아니거나 0으로 시작하면 null → 404.
+export function parseLessonNumber(value: string): number | null {
+  return /^[1-9][0-9]{0,2}$/.test(value) ? Number(value) : null;
+}

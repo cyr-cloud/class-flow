@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { requireAdminPage } from '@/lib/auth/admin';
-import { courseShareUrl, nextLessonNumber } from '@/lib/course/model';
+import { coursePath, courseShareUrl, nextLessonNumber } from '@/lib/course/model';
 import { getCourse, listLessons } from '@/lib/course/store';
 import { createUserClient } from '@/lib/supabase/server';
 import { moveLesson, newAccessKey, removeCourse } from '../actions';
@@ -27,7 +27,10 @@ export default async function EditCourse({ params }: { params: Promise<{ courseI
       <h1 className="mt-2 text-2xl font-bold text-ink">{course.title}</h1>
 
       <section className="mt-6 rounded-2xl border border-line bg-cream px-5 py-4">
-        <p className="text-sm font-medium text-ink">학생에게 보낼 링크</p>
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-sm font-medium text-ink">학생에게 보낼 링크</p>
+          <Link href={coursePath(course.slug, course.visibility === 'unlisted' ? course.access_key : null)} target="_blank" className="text-xs text-mocha underline-offset-4 hover:underline">학생 화면 미리보기 ↗</Link>
+        </div>
         {shareUrl ? (
           <div className="mt-2 grid gap-2">
             <CopyLink url={shareUrl} />

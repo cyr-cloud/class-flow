@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { authConfig } from '@/lib/auth/config';
 import { authCookieOptions } from '@/lib/auth/cookies';
 
-// 로그인이 필요한 화면에서만 Supabase 세션을 갱신한다. 실시간 수업 화면(/teacher, /student)은 건드리지 않는다.
+// 로그인이 필요한 화면과 강의 페이지(관리자 미리보기·만료 토큰 방지)에서만 Supabase 세션을 갱신한다. 실시간 수업 화면(/teacher, /student)은 건드리지 않는다.
 export async function proxy(request: NextRequest) {
   const config = authConfig();
   if (!config) return NextResponse.next();
@@ -24,4 +24,4 @@ export async function proxy(request: NextRequest) {
   return response;
 }
 
-export const config = { matcher: ['/me/:path*', '/admin/:path*', '/api/admin/:path*'] };
+export const config = { matcher: ['/me/:path*', '/admin/:path*', '/api/admin/:path*', '/courses/:path*'] };

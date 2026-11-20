@@ -65,3 +65,17 @@ test('access key filter and unlisted visibility accepted', () => {
   assert.ok('unlisted' in VISIBILITIES);
   assert.equal(parseCourseInput({...base, visibility: 'unlisted'}).ok, true);
 });
+
+test('coursePath keeps the access key on every student link', async () => {
+  const {coursePath} = await import('../lib/course/model.ts');
+  assert.equal(coursePath('dopamine-python', null), '/courses/dopamine-python');
+  assert.equal(coursePath('dopamine-python', null, 2), '/courses/dopamine-python/2');
+  assert.equal(coursePath('dopamine-python', 'abc123abc123abc1', 3), '/courses/dopamine-python/3?key=abc123abc123abc1');
+});
+
+test('parseLessonNumber accepts only plain lesson numbers', async () => {
+  const {parseLessonNumber} = await import('../lib/course/model.ts');
+  assert.equal(parseLessonNumber('1'), 1);
+  assert.equal(parseLessonNumber('12'), 12);
+  for (const bad of ['0', '01', '-1', '1.5', 'abc', '1000', '']) assert.equal(parseLessonNumber(bad), null, bad);
+});

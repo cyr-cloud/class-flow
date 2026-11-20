@@ -25,3 +25,12 @@
 - COURSE-01a/01b/02/검증: courses·lessons migration(yuco-store/.../202611160003, 스토어 DB 39개) 실제 적용. /admin/courses 목록·새 강의·수정·삭제, 차시 추가·↑↓·실습 안내 마크다운 미리보기. 샘플 "도파민 Python"(준비 중)+차시 3개 등록. 테스트 74개·tsc·eslint. 캡처 3장 → 노션. 남은 것: 공개 페이지 HOME-02/03, 이미지 업로드, 비로그인 /admin/courses → 로그인 후 /admin으로 돌아옴
 - COURSE-OWNER: courses.owner_id(기본 auth.uid(), on delete set null) migration 202611160004 실제 적용, 샘플 강의 주인 = 리베타 계정. 스토어 DB 41개·테스트 74개·tsc 통과
 - COURSE-ACCESS: 관리자 또는 강의 주인(강사) 권한 + 링크 공개(열쇠) migration 202611160005 실제 적용, 열쇠 검증·새 링크 만들기 확인 후 샘플 강의는 준비 중으로 되돌림. FIX-FORM-RESET: 저장 후 폼이 옛 값으로 돌아가던 버그 수정. 테스트 76개·스토어 DB 48개
+
+## HOME-02·03 강의·차시 공개 페이지 · 2026-11-20 · 노션: https://www.notion.so/41eabd06af5381b4ae5af38243612495
+
+- (2026-11-20부터 노션 기록은 날짜 페이지 대신 기능 단위 페이지 + 처리 날짜로 남김 — 사용자 요청)
+- /courses/[slug] 강의 소개·차시 목록, /courses/[slug]/[번호] 실습 안내 → 올리기(자리만) → 결과물(자리만) → 이전·다음
+- 조회는 course_for_viewer·lessons_for_viewer, 볼 수 없으면 404. 링크 공개 열쇠를 차시 링크까지 유지, 공개 외 noindex. proxy matcher에 /courses 추가(세션 갱신)
+- 관리 화면에 "학생 화면 미리보기" 링크
+- 검증: 비회원 열쇠 없음/틀림 404·맞음 200, 없는 차시·01 404, 375px 넘침 없음, 관리자 준비 중 미리보기. 테스트 78개·tsc·eslint 통과. 샘플 강의 준비 중으로 복구
+- 캡처: generated/worklog/HOME-02-03/ (3장, 노션 업로드)
