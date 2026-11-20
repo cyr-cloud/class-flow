@@ -85,7 +85,7 @@
 - 샘플 댓글 1개 남김(2차시 구구단 출력기)
 - 캡처: generated/worklog/GAL-04/ (1장)
 
-## GAL-05 본인 수정·삭제 + 정리 작업 · 2026-11-20 · 노션: (작성 중)
+## GAL-05 본인 수정·삭제 + 정리 작업 · 2026-11-20 · 노션: https://www.notion.so/41eabd06af5381058020f73eb6916097
 
 - 고치기: app/courses/[slug]/[lesson]/posts/[postId]/edit, NewPostForm edit 모드, ImagePicker initial(기존 이미지는 빼도 바로 안 지움), lib/gallery/store updatePost
 - 지우기: DeletePostButton → deletePost(delete_post RPC) → 차시 페이지 deleted=1 안내
