@@ -101,7 +101,7 @@
 - 함께 처리(GAL-05 보완): 다른 계정 소유 테스트 결과물을 실제 DB에 넣고 관리자 화면에서 고치기·결과물 지우기 버튼 없음, 고치기 주소 404 확인 후 그 결과물 삭제
 - 캡처: generated/worklog/GAL-07/ (1장), generated/worklog/GAL-05/02-other-user-post.jpg
 
-## GAL-06 신고 → 자동 숨김 → 관리자 알림 · 2026-11-20 · 노션: (작성 중)
+## GAL-06 신고 → 자동 숨김 → 관리자 알림 · 2026-11-20 · 노션: https://www.notion.so/41eabd06af53810ca94ce6e6e7e9171a
 
 - components/gallery/ReportButton.tsx(결과물·댓글), reportContent, parseReport·REPORT_REASONS, 관리자 첫 화면 신고 알림 패널(adminReportAlerts)
 - DB 202611200008 admin_report_alerts(관리자 전용, 실제 적용, 스토어 DB 테스트 83개)
