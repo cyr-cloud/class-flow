@@ -129,7 +129,7 @@ export default async function LessonPage(props: Props) {
                       {p.author}{p.images.length > 1 && ` · 사진 ${p.images.length}장`}{p.images.length > 0 && p.links.length > 0 && ` · 링크 ${p.links.length}`}{p.status === 'hidden' && ' · 숨김(신고)'}
                     </span>
                     <span className="mt-1 block text-xs text-mute">
-                      <span aria-label={`좋아요 ${p.like_count}개`}>♥ {p.like_count}</span>
+                      <span aria-label={`좋아요 ${p.like_count}개${p.liked ? ", 내가 누름" : ""}`} className={p.liked ? "text-mocha-deep" : undefined}>{p.liked ? "♥" : "♡"} {p.like_count}</span>
                       <span className="ml-2" aria-label={`댓글 ${p.comment_count}개`}>💬 {p.comment_count}</span>
                     </span>
                   </span>

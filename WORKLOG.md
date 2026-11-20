@@ -69,3 +69,10 @@
 - 목록 카드 전체를 상세 링크로(링크만 있는 카드의 바깥 링크는 상세에서 열기)
 - 검증: 앱 테스트 88개, tsc·eslint. 이미지·링크·글만 결과물 상세 화면 확인, 다른 차시·잘못된 id·대문자 id·없는 글·없는 강의 404, 375px 넘침 없음
 - 캡처: generated/worklog/GAL-detail/ (3장)
+
+## GAL-03 좋아요 · 2026-11-20 · 노션: (작성 중)
+
+- app/courses/actions.ts setLike, components/gallery/LikeButton.tsx, 상세 페이지 연결, 목록 카드 ♥/♡ 표시
+- 검증: 앱 테스트 88개, tsc·eslint. 실제 화면: 누르기(0→1) → 새로고침 유지 → 인기순 맨 위 → 취소(1→0) → 새로고침 유지
+- 남은 것: 로그아웃 상태 로그인 안내는 샘플 강의가 준비 중이라 화면 확인 못 함(코드상 /login?next=상세주소). DB의 post_is_visible은 강의 공개 여부까지는 보지 않음 — 앱은 setLike에서 확인하지만 REST로 직접 넣으면 글 id를 알 때 좋아요가 가능(숫자만 바뀜)
+- 캡처: generated/worklog/GAL-03/ (1장)
