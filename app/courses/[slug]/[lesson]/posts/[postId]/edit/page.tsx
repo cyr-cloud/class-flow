@@ -4,7 +4,8 @@ import { notFound, redirect } from 'next/navigation';
 import { coursePath, parseLessonNumber } from '@/lib/course/model';
 import { galleryImageUrl, isPostId, postPath } from '@/lib/gallery/model';
 import { BANNED_MESSAGE, isUploadBanned, postForViewer } from '@/lib/gallery/store';
-import { readNickname } from '@/lib/profile/store';
+import { nicknameSetupPath } from '@/lib/profile/nickname';
+import { signupState } from '@/lib/profile/setup';
 import { createUserClient, currentUser } from '@/lib/supabase/server';
 import { loadCourse } from '../../../../../data';
 import NewPostForm from '../../../new/NewPostForm';
@@ -30,7 +31,9 @@ export default async function EditPostPage({ params, searchParams }: Props) {
   const client = await createUserClient({ readOnly: true });
   const post = await postForViewer(client, course.slug, key, lesson.number, postId).catch(() => null);
   if (!post || !post.is_mine || post.status !== 'visible') notFound();
-  const [nickname, banned] = await Promise.all([readNickname(client, user.id), isUploadBanned(client)]);
+  const [signup, banned] = await Promise.all([signupState(client, user.id), isUploadBanned(client)]);
+  if (!signup.complete) redirect(nicknameSetupPath(here));
+  const nickname = signup.nickname;
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
 
   return (

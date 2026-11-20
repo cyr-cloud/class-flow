@@ -129,3 +129,12 @@
 - 공통 점검표 ~/.claude/skills/project-workflow-log/references/legal-checklist.md (개인정보·약관·사용자 콘텐츠·판매·외부 자료·기타, 강의 판매 시 환불 안내 필수)
 - ClassFlow docs/development-checklist.md 1-7 LEGAL-01~09, yuco-store TASKS.md LEGAL-03~05, ai-trend-researcher TASKS.md LEGAL-01
 - 공통 규칙: ~/.claude/CLAUDE.md "프로덕트마다 법적 점검(LEGAL) 태스크를 넣는다", project-workflow-log SKILL.md 2-1단계
+
+## LEGAL-04·05 가입 동의 · 만 14세 이상 · 약관·처리방침 초안 · 2026-11-20 · 노션: (작성 중)
+
+- 만 14세 이상만 가입(사용자 결정). 닉네임 화면 필수 체크 3개 + /api/profile/nickname이 지금 판 동의가 없으면 세 가지 모두 받아야 저장
+- DB 202611200010 user_consents·record_consents·has_consented·require_classflow_consent 트리거(P0005), 실제 적용, 스토어 DB 테스트 94개
+- /terms·/privacy 초안(초안 표시, [확인 필요] 부분 남김), 푸터 링크, lib/legal/documents.ts 판 번호
+- 가입 확인 게이트: 로그인 콜백·올리기·고치기·댓글 → signupState(닉네임+지금 판 동의)
+- 검증: 앱 테스트 94개, tsc·eslint. 실제 화면: 동의 없는 관리자 계정이 올리기 → 동의 화면(체크 0, 버튼 꺼짐) → API 직접 호출(동의 없음·일부·문자열 true) 모두 400 → 모두 동의 후 저장 → 올리기 화면으로 복귀 → DB 3줄 기록, 375px 넘침 없음
+- 캡처: generated/worklog/LEGAL-04-05/ (3장)

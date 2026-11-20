@@ -51,6 +51,8 @@ export default function RootLayout({
         <div className="flex-1">{children}</div>
         <footer className="mt-12 border-t border-line px-6 py-6 text-center text-xs text-mute">
           © {new Date().getFullYear()} YuniqCoding
+          <span className="mx-2">·</span><a href="/terms" className="hover:text-mocha">이용약관</a>
+          <span className="mx-2">·</span><a href="/privacy" className="hover:text-mocha">개인정보처리방침</a>
         </footer>
       </body>
     </html>

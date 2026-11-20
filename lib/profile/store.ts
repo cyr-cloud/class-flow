@@ -22,3 +22,14 @@ export async function saveNickname(client: SupabaseClient, userId: string, nickn
   const retry = await client.from('profiles').update({ display_name: nickname }).eq('id', userId);
   return !retry.error;
 }
+
+// 가입 마무리 상태(LEGAL-04): 닉네임 + 지금 판 약관·처리방침·만 14세 동의. 하나라도 없으면 /me/nickname을 거친다.
+export async function readConsentRows(client: SupabaseClient, userId: string): Promise<{ kind: string; version: string }[] | undefined> {
+  const { data, error } = await client.from('user_consents').select('kind, version').eq('user_id', userId).eq('product', 'classflow');
+  return error ? undefined : (data ?? []);
+}
+
+export async function recordConsents(client: SupabaseClient, termsVersion: string, privacyVersion: string): Promise<boolean> {
+  const { data, error } = await client.rpc('record_consents', { p_product: 'classflow', p_terms_version: termsVersion, p_privacy_version: privacyVersion });
+  return !error && data === true;
+}

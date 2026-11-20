@@ -5,7 +5,7 @@ import { coursePath, parseLessonNumber } from '@/lib/course/model';
 import { DAILY_POST_LIMIT, postsLeftToday } from '@/lib/gallery/model';
 import { BANNED_MESSAGE, isUploadBanned, myPostsToday } from '@/lib/gallery/store';
 import { nicknameSetupPath } from '@/lib/profile/nickname';
-import { readNickname } from '@/lib/profile/store';
+import { signupState } from '@/lib/profile/setup';
 import { createUserClient, currentUser } from '@/lib/supabase/server';
 import { loadCourse } from '../../../data';
 import NewPostForm from './NewPostForm';
@@ -28,8 +28,9 @@ export default async function NewPostPage({ params, searchParams }: Props) {
   const user = await currentUser();
   if (!user) redirect('/login?next=' + encodeURIComponent(here));
   const client = await createUserClient({ readOnly: true });
-  const nickname = await readNickname(client, user.id);
-  if (nickname === null) redirect(nicknameSetupPath(here));
+  const signup = await signupState(client, user.id);
+  if (!signup.complete) redirect(nicknameSetupPath(here)); // 닉네임·약관 동의·만 14세 확인을 먼저
+  const nickname = signup.nickname;
   const [posted, banned] = await Promise.all([myPostsToday(client, course.slug, key, lesson.number), isUploadBanned(client)]);
   const left = posted === null ? null : postsLeftToday(posted);
 

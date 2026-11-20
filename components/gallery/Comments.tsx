@@ -84,7 +84,7 @@ export default function Comments({ slug, accessKey, lesson, postId, comments, lo
         <p className="mt-4 rounded-xl bg-cream px-4 py-3 text-center text-sm text-mute">{bannedMessage}</p>
       ) : nicknamePath ? (
         <Link href={nicknamePath} className="mt-4 block rounded-xl border border-dashed border-line-strong px-4 py-3 text-center text-sm text-mute hover:border-mocha hover:text-mocha">
-          닉네임을 정하고 댓글 쓰기
+          닉네임·가입 확인하고 댓글 쓰기
         </Link>
       ) : (
         <form onSubmit={submit} className="mt-4">

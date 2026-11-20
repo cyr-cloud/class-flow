@@ -4,6 +4,7 @@ import { PAGE_SIZE, uniqueById, type PostInput, type PostSort } from './model';
 
 // 결과물 갤러리 읽기·쓰기. 권한 판단은 DB 함수(202611200001)가 한다.
 
+export const CONSENT_MESSAGE = '이용약관·개인정보처리방침 동의와 만 14세 이상 확인이 필요해요. 마이페이지 > 닉네임 화면에서 확인해 주세요.';
 export const BANNED_MESSAGE = '업로드가 정지된 계정이에요. 결과물·댓글을 올릴 수 없어요. 궁금한 점은 강사에게 문의해주세요.';
 
 export interface GalleryPost {
@@ -68,6 +69,7 @@ export async function createPost(client: SupabaseClient, slug: string, key: stri
   if (!error && typeof data === 'string') return { ok: true, id: data };
   switch (error?.code) {
     case 'P0004': return { ok: false, message: BANNED_MESSAGE };
+    case 'P0005': return { ok: false, message: CONSENT_MESSAGE };
     case 'P0001': return { ok: false, message: '한 차시에는 하루 3개까지 올릴 수 있어요. 지운 결과물도 세요. 내일(한국 시간 자정 이후) 다시 올려주세요.' };
     case 'P0002': return { ok: false, message: '차시를 찾을 수 없어요. 링크를 다시 확인해주세요.' };
     case '42501': return { ok: false, message: '로그인과 닉네임 설정이 필요해요.' };

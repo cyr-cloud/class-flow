@@ -10,7 +10,7 @@ import DeletePostButton from '@/components/gallery/DeletePostButton';
 import ReportButton from '@/components/gallery/ReportButton';
 import LikeButton from '@/components/gallery/LikeButton';
 import { nicknameSetupPath } from '@/lib/profile/nickname';
-import { readNickname } from '@/lib/profile/store';
+import { signupState } from '@/lib/profile/setup';
 import { createUserClient, currentUser } from '@/lib/supabase/server';
 import { loadCourse } from '../../../../data';
 import { VisibilityNote } from '../../../../ui';
@@ -59,12 +59,12 @@ export default async function PostPage(props: Props) {
   const user = await currentUser();
   const loginPath = user ? null : '/login?next=' + encodeURIComponent(here);
   const client = await createUserClient({ readOnly: true });
-  const [nickname, comments, banned] = await Promise.all([
-    user ? readNickname(client, user.id) : null,
+  const [signup, comments, banned] = await Promise.all([
+    user ? signupState(client, user.id) : null,
     post.status === 'visible' ? commentsForViewer(client, course.slug, key, post.id).catch(() => []) : [],
     user ? isUploadBanned(client) : false,
   ]);
-  const nicknamePath = user && nickname === null ? nicknameSetupPath(here) : null;
+  const nicknamePath = user && signup && !signup.complete ? nicknameSetupPath(here) : null; // 닉네임·약관 동의가 없으면 그 화면으로
   const updated = (await props.searchParams).updated === '1';
 
   return (

@@ -3,7 +3,7 @@ import { createUserClient } from '@/lib/supabase/server';
 import { authConfig } from '@/lib/auth/config';
 import { safeReturnPath } from '@/lib/auth/input';
 import { nicknameSetupPath } from '@/lib/profile/nickname';
-import { readNickname } from '@/lib/profile/store';
+import { signupState } from '@/lib/profile/setup';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,8 +32,8 @@ export async function GET(request: Request) {
       const client = await createUserClient();
       const { data, error } = await client.auth.exchangeCodeForSession(code);
       if (!error && data.user) {
-        // 첫 로그인(닉네임 없음)이면 닉네임 화면을 거쳐 원래 가려던 곳으로 간다.
-        const named = (await readNickname(client, data.user.id)) !== null;
+        // 첫 로그인(닉네임 없음)이거나 지금 판 약관 동의·만 14세 확인이 없으면 닉네임 화면을 거쳐 원래 가려던 곳으로 간다.
+        const named = (await signupState(client, data.user.id)).complete;
         return privateRedirect(new URL(named ? next : nicknameSetupPath(next), config.NEXT_PUBLIC_SITE_URL));
       }
     } catch {}
