@@ -94,7 +94,7 @@
 - 남은 것: SUPABASE_SERVICE_ROLE_KEY·CRON_SECRET이 아직 없어서 정리 작업 실제 실행은 못 함. Vercel 환경 변수 등록 후 1회 실행 확인 필요
 - 캡처: generated/worklog/GAL-05/ (1장)
 
-## GAL-07 한 차시 하루 3개 제한 · 2026-11-20 · 노션: (작성 중)
+## GAL-07 한 차시 하루 3개 제한 · 2026-11-20 · 노션: https://www.notion.so/41eabd06af538176bab6f06f5e865eb7
 
 - DB 202611200007 my_posts_today(실제 적용, 스토어 DB 테스트 81개). 앱: DAILY_POST_LIMIT·postsLeftToday, myPostsToday, 올리기 화면 남은 개수·다 쓰면 안내, 막혔을 때 메시지에 "지운 결과물도 세요"
 - 검증: 앱 테스트 91개, tsc·eslint. 실제 화면: 2차시 "오늘 1개 더" → 3개째 올림 → 폼 대신 안내 → 테스트 결과물 지워도 계속 막힘
