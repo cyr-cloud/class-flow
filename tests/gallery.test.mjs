@@ -88,3 +88,12 @@ test('uniqueById keeps the first copy only', async () => {
   const {uniqueById} = await import('../lib/gallery/model.ts');
   assert.deepEqual(uniqueById([{id: 'a', n: 1}, {id: 'b'}, {id: 'a', n: 2}]), [{id: 'a', n: 1}, {id: 'b'}]);
 });
+
+test('isPostId and postPath for the detail page', async () => {
+  const {isPostId, postPath} = await import('../lib/gallery/model.ts');
+  const id = '0b9a4c1e-1111-4222-8333-000000000001';
+  assert.equal(isPostId(id), true);
+  for (const bad of ['', 'new', id.toUpperCase(), id + 'x', '../' + id]) assert.equal(isPostId(bad), false, bad);
+  assert.equal(postPath('/courses/a/2', id), `/courses/a/2/posts/${id}`);
+  assert.equal(postPath('/courses/a/2?key=k', id), `/courses/a/2/posts/${id}?key=k`);
+});

@@ -38,6 +38,12 @@ export async function listPosts(client: SupabaseClient, slug: string, key: strin
   return { posts: uniqueById(pages.flat()), hasMore };
 }
 
+// 결과물 하나(GAL-상세). 볼 수 없는 강의·지운 글·남의 숨긴 글이면 null → 404.
+export async function postForViewer(client: SupabaseClient, slug: string, key: string | null, lesson: number, id: string): Promise<GalleryPost | null> {
+  const { data } = await client.rpc('posts_for_viewer', { p_slug: slug, p_key: key, p_lesson: lesson, p_sort: 'new', p_limit: 1, p_offset: 0, p_post: id });
+  return (data as GalleryPost[] | null)?.[0] ?? null;
+}
+
 export async function lessonPostCounts(client: SupabaseClient, slug: string, key: string | null): Promise<Map<number, number>> {
   const { data } = await client.rpc('lesson_post_counts', { p_slug: slug, p_key: key });
   return new Map(((data as { lesson_number: number; post_count: number }[] | null) ?? []).map((r) => [r.lesson_number, r.post_count]));

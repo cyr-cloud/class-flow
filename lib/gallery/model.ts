@@ -115,3 +115,15 @@ export function uniqueById<T extends { id: string }>(items: T[]): T[] {
   const seen = new Set<string>();
   return items.filter((x) => (seen.has(x.id) ? false : (seen.add(x.id), true)));
 }
+
+// 결과물 상세 (GAL-상세): /courses/[강의]/[차시]/posts/[id]. /p/는 SHARE-01 짧은 링크용으로 비워 둔다.
+const POST_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+export function isPostId(value: string): boolean {
+  return POST_ID.test(value);
+}
+
+// lessonPath(열쇠 포함 가능) 뒤에 /posts/id를 붙인다. 열쇠(?key=)는 그대로 뒤에 둔다.
+export function postPath(lessonPath: string, id: string): string {
+  const [path, query] = lessonPath.split('?');
+  return `${path}/posts/${id}` + (query ? `?${query}` : '');
+}

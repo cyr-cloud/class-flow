@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import { coursePath, parseLessonNumber } from '@/lib/course/model';
-import { MAX_PAGE, galleryImageUrl, linkLabel, parseListQuery, postListPath, type PostSort } from '@/lib/gallery/model';
+import { MAX_PAGE, galleryImageUrl, linkLabel, parseListQuery, postListPath, postPath, type PostSort } from '@/lib/gallery/model';
 import { lessonPostCounts, listPosts } from '@/lib/gallery/store';
 import { createUserClient } from '@/lib/supabase/server';
 import { loadCourse } from '../../data';
@@ -109,28 +109,31 @@ export default async function LessonPage(props: Props) {
           <>
             <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
               {posts.map((p) => (
-                <li key={p.id} className="flex flex-col overflow-hidden rounded-2xl border border-line bg-paper">
+                <li key={p.id}>
+                  {/* 카드 전체가 상세로 가는 링크. 바깥 링크는 상세에서 연다(링크 안에 링크를 둘 수 없다) */}
+                  <Link href={postPath(lessonPath, p.id)} className="flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-paper hover:border-mocha">
                   {p.images[0] ? (
                     // eslint-disable-next-line @next/next/no-img-element -- Storage 공개 주소
-                    <img src={galleryImageUrl(supabaseUrl, p.images[0])} alt={p.title} loading="lazy" className="aspect-[4/3] w-full bg-cream object-cover" />
+                    <img src={galleryImageUrl(supabaseUrl, p.images[0])} alt="" loading="lazy" className="aspect-[4/3] w-full bg-cream object-cover" />
                   ) : p.links[0] ? (
-                    <a href={p.links[0]} target="_blank" rel="noopener noreferrer nofollow ugc" className="grid aspect-[4/3] place-items-center bg-cream px-3 text-center text-xs text-mocha-deep hover:bg-mocha-tint">
+                    <span className="grid aspect-[4/3] place-items-center bg-cream px-3 text-center text-xs text-mocha-deep">
                       <span className="min-w-0 break-all">🔗<br />{linkLabel(p.links[0])}</span>
-                    </a>
+                    </span>
                   ) : (
                     // 글만 올린 결과물: 소개 앞부분을 카드 머리에 보여 준다
-                    <p className="line-clamp-5 aspect-[4/3] overflow-hidden whitespace-pre-line break-words bg-cream px-3 py-3 text-xs leading-relaxed text-ink-soft">{p.body}</p>
+                    <span className="line-clamp-5 block aspect-[4/3] overflow-hidden whitespace-pre-line break-words bg-cream px-3 py-3 text-xs leading-relaxed text-ink-soft">{p.body}</span>
                   )}
-                  <div className="mt-auto px-3 py-2.5">
-                    <p className="truncate text-sm font-medium text-ink">{p.title}</p>
-                    <p className="mt-0.5 truncate text-xs text-mute">
+                  <span className="mt-auto block px-3 py-2.5">
+                    <span className="block truncate text-sm font-medium text-ink">{p.title}</span>
+                    <span className="mt-0.5 block truncate text-xs text-mute">
                       {p.author}{p.images.length > 1 && ` · 사진 ${p.images.length}장`}{p.images.length > 0 && p.links.length > 0 && ` · 링크 ${p.links.length}`}{p.status === 'hidden' && ' · 숨김(신고)'}
-                    </p>
-                    <p className="mt-1 text-xs text-mute">
+                    </span>
+                    <span className="mt-1 block text-xs text-mute">
                       <span aria-label={`좋아요 ${p.like_count}개`}>♥ {p.like_count}</span>
                       <span className="ml-2" aria-label={`댓글 ${p.comment_count}개`}>💬 {p.comment_count}</span>
-                    </p>
-                  </div>
+                    </span>
+                  </span>
+                  </Link>
                 </li>
               ))}
             </ul>
