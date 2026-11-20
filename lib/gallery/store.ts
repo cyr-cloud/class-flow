@@ -94,3 +94,13 @@ export async function myPostsToday(client: SupabaseClient, slug: string, key: st
   const { data, error } = await client.rpc('my_posts_today', { p_slug: slug, p_key: key, p_lesson: lesson });
   return error || typeof data !== 'number' ? null : data;
 }
+
+// 관리자 신고 알림(GAL-06). 처리 안 한 신고를 결과물·댓글 단위로, 자동 숨김된 것부터. 관리자가 아니면 빈 목록.
+export interface ReportAlert {
+  target: 'post' | 'comment'; target_id: string; post_id: string; course_slug: string; course_title: string; lesson_number: number;
+  title: string; excerpt: string; author: string; status: 'visible' | 'hidden'; report_count: number; reasons: string[]; last_reported_at: string;
+}
+export async function adminReportAlerts(client: SupabaseClient, limit = 50): Promise<ReportAlert[]> {
+  const { data, error } = await client.rpc('admin_report_alerts', { p_limit: limit });
+  return error ? [] : ((data as ReportAlert[] | null) ?? []);
+}

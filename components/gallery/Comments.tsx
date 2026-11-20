@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { addComment, deleteComment } from '@/app/courses/actions';
+import ReportButton from '@/components/gallery/ReportButton';
 import { COMMENT_MAX } from '@/lib/gallery/model';
 
 export interface CommentView { id: string; body: string; author: string; is_mine: boolean; time: string }
@@ -54,14 +55,20 @@ export default function Comments({ slug, accessKey, lesson, postId, comments, lo
         <ul className="mt-3 grid gap-3">
           {comments.map((c) => (
             <li key={c.id} className="rounded-xl bg-cream px-4 py-3">
-              <p className="flex items-center gap-2 text-xs text-mute">
+              <div className="flex flex-wrap items-center gap-2 text-xs text-mute">
                 <span className="font-medium text-ink-soft">{c.author}{c.is_mine && ' (나)'}</span>
                 <span>{c.time}</span>
                 {c.is_mine && (
                   <button type="button" onClick={() => remove(c.id)} disabled={pending}
                     className="ml-auto text-mute underline-offset-2 hover:text-mocha hover:underline disabled:opacity-50">지우기</button>
                 )}
-              </p>
+                {!c.is_mine && (
+                  <>
+                    <span className="ml-auto" />
+                    <ReportButton slug={slug} accessKey={accessKey} lesson={lesson} postId={postId} target="comment" targetId={c.id} loginPath={loginPath} />
+                  </>
+                )}
+              </div>
               <p className="mt-1 whitespace-pre-line break-words text-sm leading-relaxed text-ink">{c.body}</p>
             </li>
           ))}

@@ -123,3 +123,15 @@ test('postsLeftToday never goes below zero', async () => {
   assert.equal(DAILY_POST_LIMIT, 3);
   assert.deepEqual([0, 1, 2, 3, 5, -1].map(postsLeftToday), [3, 2, 1, 0, 0, 3]);
 });
+
+test('parseReport checks target, reason and detail', async () => {
+  const {parseReport, reportReasonLabel} = await import('../lib/gallery/model.ts');
+  assert.deepEqual(parseReport({target: 'post', reason: 'spam'}), {ok: true, value: {target: 'post', reason: 'spam', detail: ''}});
+  assert.deepEqual(parseReport({target: 'comment', reason: 'privacy', detail: '  전화번호  '}).value, {target: 'comment', reason: 'privacy', detail: '전화번호'});
+  assert.equal(parseReport({target: 'user', reason: 'spam'}).ok, false);
+  assert.equal(parseReport({target: 'post', reason: 'hate'}).ok, false);
+  assert.equal(parseReport({target: 'post', reason: 'other'}).ok, false);
+  assert.equal(parseReport({target: 'post', reason: 'other', detail: '이상해요'}).ok, true);
+  assert.equal(parseReport({target: 'post', reason: 'abuse', detail: '가'.repeat(301)}).ok, false);
+  assert.equal(reportReasonLabel('privacy'), '개인정보 노출');
+});

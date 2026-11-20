@@ -2,7 +2,7 @@
 // 결과물 올리기 (GAL-01). Next가 Origin을 검사하고, DB 함수 create_post가 강의 접근·닉네임·하루 3개를 확인한다.
 import { redirect } from 'next/navigation';
 import { cleanAccessKey, coursePath, parseLessonNumber, SLUG_PATTERN } from '@/lib/course/model';
-import { isPostId, parseComment, parsePostInput, postPath } from '@/lib/gallery/model';
+import { isPostId, parseComment, parsePostInput, parseReport, postPath } from '@/lib/gallery/model';
 import { createPost, deletePost as deletePostRow, postForViewer, updatePost } from '@/lib/gallery/store';
 import { createUserClient } from '@/lib/supabase/server';
 
@@ -117,4 +117,22 @@ export async function deletePost(input: { slug: string; key: string | null; less
   if (!data.user) return { ok: false, message: '로그인이 끝났어요. 다시 로그인해주세요.' };
   if (!(await deletePostRow(client, input.postId))) return { ok: false, message: '결과물을 지우지 못했어요.' };
   redirect(coursePath(input.slug, key, lesson) + (key ? '&' : '?') + 'deleted=1');
+}
+
+// 신고 (GAL-06). 같은 사람 중복 신고는 한 번만 세고, 서로 다른 3명이면 DB가 자동으로 숨긴다(report_content).
+export async function reportContent(input: CommentTarget & { target: string; targetId: string; reason: string; detail?: string }): Promise<CommentResult> {
+  const ctx = await commentContext(input);
+  if (!ctx || !isPostId(input.targetId)) return { ok: false, message: '잘못된 요청입니다.' };
+  if (!ctx.user) return { ok: false, message: '로그인하면 신고할 수 있어요.' };
+  const parsed = parseReport(input);
+  if (!parsed.ok) return parsed;
+  if (parsed.value.target === 'post' && input.targetId !== input.postId) return { ok: false, message: '잘못된 요청입니다.' };
+  const post = await postForViewer(ctx.client, input.slug, ctx.key, ctx.lesson, input.postId);
+  if (!post || post.status !== 'visible') return { ok: false, message: '결과물을 찾을 수 없어요.' };
+  const { data, error } = await ctx.client.rpc('report_content', {
+    p_target: parsed.value.target, p_id: input.targetId, p_reason: parsed.value.reason, p_detail: parsed.value.detail,
+  });
+  if (error) return { ok: false, message: '신고하지 못했어요. 잠시 후 다시 시도해주세요.' };
+  if (data !== true) return { ok: false, message: '내 글이거나 이미 숨겨진 글은 신고할 수 없어요.' };
+  return { ok: true };
 }

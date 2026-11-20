@@ -142,3 +142,30 @@ export const DAILY_POST_LIMIT = 3;
 export function postsLeftToday(postedToday: number): number {
   return Math.max(DAILY_POST_LIMIT - Math.max(postedToday, 0), 0);
 }
+
+// 신고 (GAL-06): 사유는 DB reports.reason과 같은 다섯 가지. 서로 다른 3명이 신고하면 자동 숨김.
+export const REPORT_REASONS = [
+  { value: 'spam', label: '스팸·광고' },
+  { value: 'abuse', label: '욕설·괴롭힘' },
+  { value: 'privacy', label: '개인정보 노출' },
+  { value: 'copyright', label: '저작권 침해' },
+  { value: 'other', label: '기타' },
+] as const;
+export type ReportReason = (typeof REPORT_REASONS)[number]['value'];
+export const REPORT_DETAIL_MAX = 300;
+export const REPORT_HIDE_AT = 3;
+
+export function reportReasonLabel(value: string): string {
+  return REPORT_REASONS.find((r) => r.value === value)?.label ?? value;
+}
+
+export function parseReport(input: { target: unknown; reason: unknown; detail?: unknown }):
+  { ok: true; value: { target: 'post' | 'comment'; reason: ReportReason; detail: string } } | { ok: false; message: string } {
+  if (input.target !== 'post' && input.target !== 'comment') return { ok: false, message: '잘못된 요청입니다.' };
+  const reason = REPORT_REASONS.find((r) => r.value === input.reason)?.value;
+  if (!reason) return { ok: false, message: '신고 사유를 골라주세요.' };
+  const detail = typeof input.detail === 'string' ? input.detail.replace(/\r\n/g, '\n').trim() : '';
+  if ([...detail].length > REPORT_DETAIL_MAX) return { ok: false, message: `자세한 내용은 ${REPORT_DETAIL_MAX}자까지예요.` };
+  if (reason === 'other' && !detail) return { ok: false, message: '기타를 골랐다면 무엇이 문제인지 적어주세요.' };
+  return { ok: true, value: { target: input.target, reason, detail } };
+}

@@ -7,6 +7,7 @@ import { galleryImageUrl, isPostId, linkLabel, postPath } from '@/lib/gallery/mo
 import { commentsForViewer, postForViewer } from '@/lib/gallery/store';
 import Comments from '@/components/gallery/Comments';
 import DeletePostButton from '@/components/gallery/DeletePostButton';
+import ReportButton from '@/components/gallery/ReportButton';
 import LikeButton from '@/components/gallery/LikeButton';
 import { nicknameSetupPath } from '@/lib/profile/nickname';
 import { readNickname } from '@/lib/profile/store';
@@ -113,7 +114,7 @@ export default async function PostPage(props: Props) {
           </section>
         )}
 
-        <div className="mt-6 flex items-center gap-3 border-t border-line pt-4 text-sm text-mute">
+        <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-line pt-4 text-sm text-mute">
           {post.status === 'visible' ? (
             <LikeButton key={post.id} slug={course.slug} accessKey={key} lesson={lesson.number} postId={post.id}
               liked={post.liked} count={post.like_count} loginPath={loginPath} />
@@ -128,6 +129,12 @@ export default async function PostPage(props: Props) {
               )}
               <DeletePostButton slug={course.slug} accessKey={key} lesson={lesson.number} postId={post.id} />
             </span>
+          )}
+          {!post.is_mine && post.status === 'visible' && (
+            <>
+              <span className="ml-auto" />
+              <ReportButton slug={course.slug} accessKey={key} lesson={lesson.number} postId={post.id} target="post" targetId={post.id} loginPath={loginPath} />
+            </>
           )}
         </div>
       </article>

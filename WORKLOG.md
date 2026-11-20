@@ -100,3 +100,11 @@
 - 검증: 앱 테스트 91개, tsc·eslint. 실제 화면: 2차시 "오늘 1개 더" → 3개째 올림 → 폼 대신 안내 → 테스트 결과물 지워도 계속 막힘
 - 함께 처리(GAL-05 보완): 다른 계정 소유 테스트 결과물을 실제 DB에 넣고 관리자 화면에서 고치기·결과물 지우기 버튼 없음, 고치기 주소 404 확인 후 그 결과물 삭제
 - 캡처: generated/worklog/GAL-07/ (1장), generated/worklog/GAL-05/02-other-user-post.jpg
+
+## GAL-06 신고 → 자동 숨김 → 관리자 알림 · 2026-11-20 · 노션: (작성 중)
+
+- components/gallery/ReportButton.tsx(결과물·댓글), reportContent, parseReport·REPORT_REASONS, 관리자 첫 화면 신고 알림 패널(adminReportAlerts)
+- DB 202611200008 admin_report_alerts(관리자 전용, 실제 적용, 스토어 DB 테스트 83개)
+- 검증: 앱 테스트 92개, tsc·eslint. 실제 화면: 다른 계정 소유 테스트 결과물·댓글을 넣고 신고(개인정보 노출+내용, 스팸) → 접수 안내 → 관리자 패널 2건(1/3) → 결과물을 숨김 상태로 바꿔 "자동 숨김" 표시·맨 위 정렬 확인 → 테스트 데이터(신고 2·댓글 1·결과물 1) 삭제
+- 3명 자동 숨김 자체는 계정이 2개뿐이라 DB 테스트로 확인
+- 캡처: generated/worklog/GAL-06/ (2장)
