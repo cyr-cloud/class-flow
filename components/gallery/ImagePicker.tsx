@@ -5,14 +5,15 @@ import { compressImage } from '@/lib/board/image';
 import { MAX_IMAGES, MAX_IMAGE_BYTES, MAX_ORIGINAL_BYTES } from '@/lib/gallery/model';
 
 export interface PickedImage { path: string; url: string }
-type Slot = { id: string; status: 'uploading' } | ({ id: string; status: 'done' } & PickedImage);
+// saved: 이미 결과물에 들어 있던 이미지(수정 화면). 빼도 파일은 바로 지우지 않는다 — 수정을 취소할 수 있으므로. 정리 작업이 나중에 지운다.
+type Slot = { id: string; status: 'uploading' } | ({ id: string; status: 'done'; saved?: boolean } & PickedImage);
 
-export default function ImagePicker({ onChange, error }: { onChange: (images: PickedImage[]) => void; error?: string }) {
-  const [slots, setSlots] = useState<Slot[]>([]);
+export default function ImagePicker({ onChange, error, initial = [] }: { onChange: (images: PickedImage[]) => void; error?: string; initial?: PickedImage[] }) {
+  const [slots, setSlots] = useState<Slot[]>(() => initial.map((img) => ({ id: img.path, status: 'done', saved: true, ...img })));
   const [message, setMessage] = useState('');
   const [dragging, setDragging] = useState(false);
   const input = useRef<HTMLInputElement>(null);
-  const count = useRef(0); // 올리는 중인 것까지 센 장 수(동시에 여러 장 넣을 때 4장 넘지 않게)
+  const count = useRef(initial.length); // 올리는 중인 것까지 센 장 수(동시에 여러 장 넣을 때 4장 넘지 않게)
 
   useEffect(() => {
     onChange(slots.flatMap((s) => (s.status === 'done' ? [{ path: s.path, url: s.url }] : [])));
@@ -64,6 +65,7 @@ export default function ImagePicker({ onChange, error }: { onChange: (images: Pi
     if (slot.status !== 'done') return;
     count.current -= 1;
     setSlots((s) => s.filter((x) => x.id !== slot.id));
+    if (slot.saved) return;
     void fetch('/api/gallery/images', { method: 'DELETE', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ path: slot.path }) }).catch(() => {});
   };
 

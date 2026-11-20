@@ -6,6 +6,7 @@ import { coursePath, parseLessonNumber } from '@/lib/course/model';
 import { galleryImageUrl, isPostId, linkLabel, postPath } from '@/lib/gallery/model';
 import { commentsForViewer, postForViewer } from '@/lib/gallery/store';
 import Comments from '@/components/gallery/Comments';
+import DeletePostButton from '@/components/gallery/DeletePostButton';
 import LikeButton from '@/components/gallery/LikeButton';
 import { nicknameSetupPath } from '@/lib/profile/nickname';
 import { readNickname } from '@/lib/profile/store';
@@ -15,7 +16,7 @@ import { VisibilityNote } from '../../../../ui';
 
 export const dynamic = 'force-dynamic';
 
-type Props = { params: Promise<{ slug: string; lesson: string; postId: string }>; searchParams: Promise<{ key?: string | string[] }> };
+type Props = { params: Promise<{ slug: string; lesson: string; postId: string }>; searchParams: Promise<{ key?: string | string[]; updated?: string }> };
 
 // generateMetadata와 화면이 같은 요청에서 한 번만 읽도록 cache
 const loadPost = cache(async (slug: string, rawLesson: string, postId: string, rawKey: string | string[] | undefined) => {
@@ -62,12 +63,14 @@ export default async function PostPage(props: Props) {
     post.status === 'visible' ? commentsForViewer(client, course.slug, key, post.id).catch(() => []) : [],
   ]);
   const nicknamePath = user && nickname === null ? nicknameSetupPath(here) : null;
+  const updated = (await props.searchParams).updated === '1';
 
   return (
     <main className="mx-auto w-full max-w-2xl px-5 py-8 sm:py-14">
       <VisibilityNote course={course} />
       <Link href={backPath} className="mt-4 inline-block text-sm text-mute hover:text-mocha">← {lesson.number}차시 {lesson.title}</Link>
 
+      {updated && <p role="status" className="mt-4 rounded-xl bg-mocha-tint px-4 py-3 text-sm text-mocha-deep">고친 내용을 저장했어요.</p>}
       {post.status === 'hidden' && (
         <p role="status" className="mt-4 rounded-xl bg-mocha-tint px-4 py-3 text-sm text-mocha-deep">
           신고가 쌓여 다른 사람에게는 숨겨진 결과물이에요. 지금은 나만 볼 수 있어요.
@@ -118,6 +121,14 @@ export default async function PostPage(props: Props) {
             <span aria-label={`좋아요 ${post.like_count}개`}>♥ {post.like_count}</span>
           )}
           <span aria-label={`댓글 ${post.comment_count}개`}>💬 {post.comment_count}</span>
+          {post.is_mine && (
+            <span className="ml-auto flex items-start gap-2">
+              {post.status === 'visible' && (
+                <Link href={here.replace(/(\?|$)/, '/edit$1')} className="rounded-full border border-line-strong px-4 py-2 text-sm text-ink-soft hover:border-mocha hover:text-mocha">고치기</Link>
+              )}
+              <DeletePostButton slug={course.slug} accessKey={key} lesson={lesson.number} postId={post.id} />
+            </span>
+          )}
         </div>
       </article>
 

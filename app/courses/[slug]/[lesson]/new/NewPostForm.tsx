@@ -7,12 +7,15 @@ import { submitPost } from '../../../actions';
 
 const inputClass = 'mt-1.5 w-full rounded-xl border border-line-strong bg-paper px-3.5 py-2.5 text-[15px] text-ink outline-none focus:border-mocha';
 
-export default function NewPostForm({ slug, accessKey, lesson, author }: { slug: string; accessKey: string | null; lesson: number; author: string }) {
+// 수정(GAL-05)할 때는 edit에 원래 값을 넣는다. 같은 폼·같은 검사를 쓴다.
+export interface PostDraft { postId: string; title: string; body: string; images: PickedImage[]; links: string[] }
+
+export default function NewPostForm({ slug, accessKey, lesson, author, edit }: { slug: string; accessKey: string | null; lesson: number; author: string; edit?: PostDraft }) {
   const [state, action, pending] = useActionState(submitPost, {});
-  const [images, setImages] = useState<PickedImage[]>([]);
-  const [links, setLinks] = useState<string[]>(['']);
-  const [title, setTitle] = useState('');
-  const [body, setBody] = useState('');
+  const [images, setImages] = useState<PickedImage[]>(edit?.images ?? []);
+  const [links, setLinks] = useState<string[]>(edit?.links.length ? edit.links : ['']);
+  const [title, setTitle] = useState(edit?.title ?? '');
+  const [body, setBody] = useState(edit?.body ?? '');
   const onImages = useCallback((picked: PickedImage[]) => setImages(picked), []);
   const e = state.errors ?? {};
 
@@ -28,6 +31,7 @@ export default function NewPostForm({ slug, accessKey, lesson, author }: { slug:
       <input type="hidden" name="slug" value={slug} />
       {accessKey && <input type="hidden" name="key" value={accessKey} />}
       <input type="hidden" name="lesson" value={lesson} />
+      {edit && <input type="hidden" name="postId" value={edit.postId} />}
       <input type="hidden" name="images" value={JSON.stringify(images.map((i) => i.path))} />
 
       {/* GAL-08 개인정보 안내: 이미지 고르기 바로 위, 눈에 띄게 */}
@@ -43,7 +47,7 @@ export default function NewPostForm({ slug, accessKey, lesson, author }: { slug:
 
       <div>
         <p className="block text-sm font-medium text-ink">이미지 <span className="text-mute">(선택, 4장까지)</span></p>
-        <div className="mt-1.5"><ImagePicker onChange={onImages} error={e.images} /></div>
+        <div className="mt-1.5"><ImagePicker onChange={onImages} error={e.images} initial={edit?.images} /></div>
       </div>
 
       <div>
@@ -120,7 +124,7 @@ export default function NewPostForm({ slug, accessKey, lesson, author }: { slug:
       {state.message && <p role="alert" className="rounded-xl bg-mocha-tint px-4 py-3 text-sm text-mocha-deep">{state.message}</p>}
       <button disabled={pending || !ready}
         className="w-full rounded-2xl bg-ink px-6 py-4 text-base font-semibold text-white transition-colors hover:bg-mocha-deep disabled:opacity-40">
-        {pending ? '올리는 중…' : '결과물 올리기'}
+        {pending ? (edit ? '고치는 중…' : '올리는 중…') : (edit ? '고친 내용 저장' : '결과물 올리기')}
       </button>
       {!ready && !pending && <p className="-mt-3 text-center text-xs text-mute">{linkError ? '빨간 안내가 있는 링크를 고쳐 주세요.' : '제목과 함께 이미지·링크·소개 중 하나를 넣어 주세요.'}</p>}
     </form>

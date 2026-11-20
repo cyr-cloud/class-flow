@@ -72,3 +72,19 @@ export async function createPost(client: SupabaseClient, slug: string, key: stri
     default: return { ok: false, message: '올리지 못했어요. 잠시 후 다시 시도해주세요.' };
   }
 }
+
+// 고치기(GAL-05). 표 규칙상 본인 것·보이는 것만 바뀐다 → 바뀐 줄이 없으면 실패.
+export async function updatePost(client: SupabaseClient, id: string, input: PostInput): Promise<CreateResult> {
+  const { data, error } = await client.from('posts')
+    .update({ title: input.title, body: input.body, images: input.images, links: input.links })
+    .eq('id', id).select('id');
+  if (!error && data?.length) return { ok: true, id };
+  if (error?.code === '23514') return { ok: false, message: '입력을 확인해주세요. 이미지를 다시 올려야 할 수도 있어요.', field: 'images' };
+  return { ok: false, message: '고치지 못했어요. 내 결과물인지, 숨겨지지 않았는지 확인해주세요.' };
+}
+
+// 지우기(GAL-05): 상태만 deleted로 바꾼다. 본인 또는 강의 관리자만.
+export async function deletePost(client: SupabaseClient, id: string): Promise<boolean> {
+  const { data, error } = await client.rpc('delete_post', { p_id: id });
+  return !error && data === true;
+}

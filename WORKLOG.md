@@ -84,3 +84,12 @@
 - 검증: 앱 테스트 89개, tsc·eslint. 실제 화면: 쓰기 → 목록·수 반영, 지우기, 301자 버튼 꺼짐, 목록 카드 💬 1, 375px 넘침 없음
 - 샘플 댓글 1개 남김(2차시 구구단 출력기)
 - 캡처: generated/worklog/GAL-04/ (1장)
+
+## GAL-05 본인 수정·삭제 + 정리 작업 · 2026-11-20 · 노션: (작성 중)
+
+- 고치기: app/courses/[slug]/[lesson]/posts/[postId]/edit, NewPostForm edit 모드, ImagePicker initial(기존 이미지는 빼도 바로 안 지움), lib/gallery/store updatePost
+- 지우기: DeletePostButton → deletePost(delete_post RPC) → 차시 페이지 deleted=1 안내
+- 정리 작업: lib/gallery/cleanup.ts, lib/gallery/cron.ts, app/api/cron/gallery-cleanup, vercel.json(매일 18:00 UTC), DB 202611200006(gallery_orphan_images, images GIN 색인) 실제 적용, 스토어 DB 테스트 79개
+- 검증: 앱 테스트 90개, tsc·eslint. 실제 화면: 고치기(제목·링크 추가 저장) → 저장 안내, 테스트 결과물 올리고 지우기 → 안내·목록에서 사라짐, 지운 글 상세·고치기 404, 수정 중 이미지 빼고 취소해도 파일 그대로(200), 정리 주소 비밀값 없거나 틀리면 401
+- 남은 것: SUPABASE_SERVICE_ROLE_KEY·CRON_SECRET이 아직 없어서 정리 작업 실제 실행은 못 함. Vercel 환경 변수 등록 후 1회 실행 확인 필요
+- 캡처: generated/worklog/GAL-05/ (1장)

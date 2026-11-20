@@ -107,3 +107,13 @@ test('parseComment trims and limits to 300 characters', async () => {
   assert.equal(parseComment('가'.repeat(301)).ok, false);
   assert.equal(parseComment('😀'.repeat(300)).ok, true);
 });
+
+test('cronAuthorized needs the exact long secret', async () => {
+  const {cronAuthorized} = await import('../lib/gallery/cron.ts');
+  const secret = 'a'.repeat(32);
+  assert.equal(cronAuthorized(`Bearer ${secret}`, secret), true);
+  assert.equal(cronAuthorized(`Bearer ${secret}x`, secret), false);
+  assert.equal(cronAuthorized(null, secret), false);
+  assert.equal(cronAuthorized('Bearer short', 'short'), false);
+  assert.equal(cronAuthorized('Bearer ', undefined), false);
+});

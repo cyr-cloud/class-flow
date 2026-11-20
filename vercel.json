@@ -1,0 +1,3 @@
+{
+  "crons": [{ "path": "/api/cron/gallery-cleanup", "schedule": "0 18 * * *" }]
+}

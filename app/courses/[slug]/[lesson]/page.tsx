@@ -11,7 +11,7 @@ import { VisibilityNote } from '../../ui';
 
 export const dynamic = 'force-dynamic';
 
-type Props = { params: Promise<{ slug: string; lesson: string }>; searchParams: Promise<{ key?: string | string[]; posted?: string; sort?: string | string[]; page?: string | string[] }> };
+type Props = { params: Promise<{ slug: string; lesson: string }>; searchParams: Promise<{ key?: string | string[]; posted?: string; deleted?: string; sort?: string | string[]; page?: string | string[] }> };
 
 async function load({ params, searchParams }: Props) {
   const { slug, lesson } = await params;
@@ -50,6 +50,7 @@ export default async function LessonPage(props: Props) {
   const lessonPath = coursePath(course.slug, key, lesson.number);
   const newPostPath = lessonPath.replace(/(\?|$)/, '/new$1');
   const posted = query.posted === '1';
+  const deleted = query.deleted === '1';
   const sorts: [PostSort, string][] = [['new', '최신순'], ['popular', '인기순']];
 
   return (
@@ -80,6 +81,7 @@ export default async function LessonPage(props: Props) {
       </section>
 
       <section className="mt-6">
+        {deleted && <p role="status" className="mb-3 rounded-xl bg-mocha-tint px-4 py-3 text-sm text-mocha-deep">결과물을 지웠어요. 30일 뒤 완전히 지워져요.</p>}
         {posted && <p role="status" className="mb-3 rounded-xl bg-mocha-tint px-4 py-3 text-sm text-mocha-deep">결과물을 올렸어요! 🎉</p>}
         <Link href={newPostPath} className="block w-full rounded-2xl bg-ink px-6 py-4 text-center text-base font-semibold text-white transition-colors hover:bg-mocha-deep">
           내 결과물 올리기
