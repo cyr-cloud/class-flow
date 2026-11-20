@@ -136,3 +136,9 @@ export function parseComment(value: unknown): { ok: true; value: string } | { ok
   if ([...body].length > COMMENT_MAX) return { ok: false, message: `댓글은 ${COMMENT_MAX}자까지예요.` };
   return { ok: true, value: body };
 }
+
+// 도배 방지 (GAL-07): 한 사람이 한 차시에 하루(한국 시간 자정 기준) 3개까지. 지운 것도 센다. DB create_post가 같은 수로 막는다.
+export const DAILY_POST_LIMIT = 3;
+export function postsLeftToday(postedToday: number): number {
+  return Math.max(DAILY_POST_LIMIT - Math.max(postedToday, 0), 0);
+}

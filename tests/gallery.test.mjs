@@ -117,3 +117,9 @@ test('cronAuthorized needs the exact long secret', async () => {
   assert.equal(cronAuthorized('Bearer short', 'short'), false);
   assert.equal(cronAuthorized('Bearer ', undefined), false);
 });
+
+test('postsLeftToday never goes below zero', async () => {
+  const {postsLeftToday, DAILY_POST_LIMIT} = await import('../lib/gallery/model.ts');
+  assert.equal(DAILY_POST_LIMIT, 3);
+  assert.deepEqual([0, 1, 2, 3, 5, -1].map(postsLeftToday), [3, 2, 1, 0, 0, 3]);
+});

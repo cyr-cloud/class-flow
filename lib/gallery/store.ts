@@ -65,7 +65,7 @@ export async function createPost(client: SupabaseClient, slug: string, key: stri
   });
   if (!error && typeof data === 'string') return { ok: true, id: data };
   switch (error?.code) {
-    case 'P0001': return { ok: false, message: '한 차시에는 하루 3개까지 올릴 수 있어요. 내일 다시 올려주세요.' };
+    case 'P0001': return { ok: false, message: '한 차시에는 하루 3개까지 올릴 수 있어요. 지운 결과물도 세요. 내일(한국 시간 자정 이후) 다시 올려주세요.' };
     case 'P0002': return { ok: false, message: '차시를 찾을 수 없어요. 링크를 다시 확인해주세요.' };
     case '42501': return { ok: false, message: '로그인과 닉네임 설정이 필요해요.' };
     case '23514': return { ok: false, message: '입력을 확인해주세요. 이미지를 다시 올려야 할 수도 있어요.', field: 'images' };
@@ -87,4 +87,10 @@ export async function updatePost(client: SupabaseClient, id: string, input: Post
 export async function deletePost(client: SupabaseClient, id: string): Promise<boolean> {
   const { data, error } = await client.rpc('delete_post', { p_id: id });
   return !error && data === true;
+}
+
+// 오늘 이 차시에 올린 내 결과물 수(GAL-07). 읽지 못하면 null — 화면은 안내만 빼고 DB가 막는다.
+export async function myPostsToday(client: SupabaseClient, slug: string, key: string | null, lesson: number): Promise<number | null> {
+  const { data, error } = await client.rpc('my_posts_today', { p_slug: slug, p_key: key, p_lesson: lesson });
+  return error || typeof data !== 'number' ? null : data;
 }
