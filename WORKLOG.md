@@ -70,7 +70,7 @@
 - 검증: 앱 테스트 88개, tsc·eslint. 이미지·링크·글만 결과물 상세 화면 확인, 다른 차시·잘못된 id·대문자 id·없는 글·없는 강의 404, 375px 넘침 없음
 - 캡처: generated/worklog/GAL-detail/ (3장)
 
-## GAL-03 좋아요 · 2026-11-20 · 노션: (작성 중)
+## GAL-03 좋아요 · 2026-11-20 · 노션: https://www.notion.so/41eabd06af5381f1b00dd77ee78e84a3
 
 - app/courses/actions.ts setLike, components/gallery/LikeButton.tsx, 상세 페이지 연결, 목록 카드 ♥/♡ 표시
 - 검증: 앱 테스트 88개, tsc·eslint. 실제 화면: 누르기(0→1) → 새로고침 유지 → 인기순 맨 위 → 취소(1→0) → 새로고침 유지
