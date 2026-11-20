@@ -34,3 +34,10 @@
 - 관리 화면에 "학생 화면 미리보기" 링크
 - 검증: 비회원 열쇠 없음/틀림 404·맞음 200, 없는 차시·01 404, 375px 넘침 없음, 관리자 준비 중 미리보기. 테스트 78개·tsc·eslint 통과. 샘플 강의 준비 중으로 복구
 - 캡처: generated/worklog/HOME-02-03/ (3장, 노션 업로드)
+
+## GAL-01a 결과물 갤러리 테이블·권한 · 2026-11-20 · 노션: https://www.notion.so/41eabd06af53819f9e12f6d8043b0aad
+
+- migration 202611200001_gallery.sql: posts·post_likes·comments·reports + RLS + 함수(create_post·delete_post·set_post_status·report_content·posts_for_viewer·comments_for_viewer·lesson_post_counts·purge_deleted_posts)
+- 첫 테스트에서 좋아요 정책이 남의 글을 못 찾음(posts RLS) → post_is_visible 함수로 확인하도록 수정
+- 스토어 DB 테스트 67개 통과, 실제 DB 적용. 비회원 REST: posts 표 42501, create_post 42501, purge 42501, 준비 중 강의 목록 []
+

@@ -258,7 +258,7 @@ PPTX에는 업로드한 원본 내용이 유지된다. 수업 중 추가한 이�
 - [ ] **HOME-01** 메인(/)을 공개 강의 카드 + 최근 결과물 + "수업 코드로 입장" 버튼으로 변경. 기존 실시간 입장 경로가 그대로 동작하는지 회귀 확인
 
 ### 1-4 갤러리
-- [ ] **GAL-01a** posts·post_likes·comments·reports 테이블·RLS migration
+- [x] **GAL-01a** posts·post_likes·comments·reports 테이블·RLS migration — `yuco-store/server/supabase/migrations/202611200001_gallery.sql`. 읽기는 강의 규칙과 같게 `posts_for_viewer`·`comments_for_viewer`·`lesson_post_counts`(공개·열쇠·관리자/주인), 올리기는 `create_post`(닉네임 필수·한 차시 하루 3개 = GAL-07 DB 부분), 본인 수정은 제목·소개·이미지·링크 칸만, 삭제는 `delete_post`(숨김) → `purge_deleted_posts`(30일, 서버 전용), 신고 `report_content`(서로 다른 3명 → 자동 숨김 = GAL-06 DB 부분), 숨김·복구 `set_post_status`. 스토어 DB 테스트 67개, 실제 DB 적용·비회원 차단 확인 (2026-11-20). 화면·Storage 버킷은 GAL-01b부터
 - [ ] **GAL-01b** 이미지 업로드(1~4장, 5MB, 자동 축소) + Ctrl+V 첨부
 - [ ] **GAL-01c** 링크 입력(0~3개, 형식 검사), 제목·소개 글자 수 제한, 미리보기
 - [ ] **GAL-08** 올리기 화면 개인정보 안내 문구
