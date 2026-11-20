@@ -109,7 +109,7 @@
 - 3명 자동 숨김 자체는 계정이 2개뿐이라 DB 테스트로 확인
 - 캡처: generated/worklog/GAL-06/ (2장)
 
-## ADM-02 신고 처리 · 업로드 정지 · 2026-11-20 · 노션: (작성 중)
+## ADM-02 신고 처리 · 업로드 정지 · 2026-11-20 · 노션: https://www.notion.so/41eabd06af5381c4b4f7fa4e1b8ff9dd
 
 - /admin/reports(app/admin/reports/page.tsx·ui.tsx·actions.ts), 관리자 첫 화면 "신고 처리하러 가기", 학생 화면 정지 안내(올리기·고치기·댓글), 이미지 올리기 403
 - DB 202611200009 실제 적용, 스토어 DB 테스트 90개
