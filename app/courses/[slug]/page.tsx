@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { CHANNELS, coursePath } from '@/lib/course/model';
+import { lessonPostCounts } from '@/lib/gallery/store';
+import { createUserClient } from '@/lib/supabase/server';
 import { loadCourse } from '../data';
 import { VisibilityNote } from '../ui';
 
@@ -28,6 +30,7 @@ export default async function CoursePage({ params, searchParams }: Props) {
   const data = await loadCourse((await params).slug, (await searchParams).key);
   if (!data) notFound();
   const { course, lessons, key } = data;
+  const counts = await lessonPostCounts(await createUserClient({ readOnly: true }), course.slug, key).catch(() => new Map<number, number>());
 
   return (
     <main className="mx-auto w-full max-w-2xl px-5 py-10 sm:py-16">
@@ -59,6 +62,7 @@ export default async function CoursePage({ params, searchParams }: Props) {
                 <Link href={coursePath(course.slug, key, l.number)} className="flex items-center gap-3 px-4 py-4 hover:bg-cream">
                   <span className="w-12 shrink-0 text-sm text-mute">{l.number}차시</span>
                   <span className="min-w-0 flex-1 truncate text-ink">{l.title}</span>
+                  {(counts.get(l.number) ?? 0) > 0 && <span className="shrink-0 text-xs text-mute">결과물 {counts.get(l.number)}</span>}
                   <span aria-hidden className="text-mute">›</span>
                 </Link>
               </li>

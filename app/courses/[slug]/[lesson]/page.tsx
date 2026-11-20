@@ -3,12 +3,15 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import { coursePath, parseLessonNumber } from '@/lib/course/model';
+import { galleryImageUrl } from '@/lib/gallery/model';
+import { postsForViewer } from '@/lib/gallery/store';
+import { createUserClient } from '@/lib/supabase/server';
 import { loadCourse } from '../../data';
 import { VisibilityNote } from '../../ui';
 
 export const dynamic = 'force-dynamic';
 
-type Props = { params: Promise<{ slug: string; lesson: string }>; searchParams: Promise<{ key?: string | string[] }> };
+type Props = { params: Promise<{ slug: string; lesson: string }>; searchParams: Promise<{ key?: string | string[]; posted?: string }> };
 
 async function load({ params, searchParams }: Props) {
   const { slug, lesson } = await params;
@@ -35,6 +38,10 @@ export default async function LessonPage(props: Props) {
   const data = await load(props);
   if (!data) notFound();
   const { course, lessons, lesson, prev, next, key } = data;
+  const posts = await postsForViewer(await createUserClient({ readOnly: true }), course.slug, key, lesson.number).catch(() => []);
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
+  const newPostPath = coursePath(course.slug, key, lesson.number).replace(/(\?|$)/, '/new$1');
+  const posted = (await props.searchParams).posted === '1';
 
   return (
     <main className="mx-auto w-full max-w-2xl px-5 py-8 sm:py-14">
@@ -63,17 +70,37 @@ export default async function LessonPage(props: Props) {
         )}
       </section>
 
-      {/* 결과물 올리기·목록은 갤러리(GAL) 작업에서 붙인다 */}
       <section className="mt-6">
-        <button disabled className="w-full rounded-2xl bg-ink px-6 py-4 text-base font-semibold text-white disabled:opacity-40">
+        {posted && <p role="status" className="mb-3 rounded-xl bg-mocha-tint px-4 py-3 text-sm text-mocha-deep">결과물을 올렸어요! 🎉</p>}
+        <Link href={newPostPath} className="block w-full rounded-2xl bg-ink px-6 py-4 text-center text-base font-semibold text-white transition-colors hover:bg-mocha-deep">
           내 결과물 올리기
-        </button>
-        <p className="mt-2 text-center text-xs text-mute">결과물 올리기는 곧 열려요.</p>
+        </Link>
+        <p className="mt-2 text-center text-xs text-mute">로그인하면 이미지 1~4장으로 올릴 수 있어요.</p>
       </section>
 
+      {/* 카드 목록 기본형. 최신순/인기순·더 보기·상세는 GAL-02·GAL-상세에서 */}
       <section className="mt-10">
-        <h2 className="text-lg font-semibold text-ink">다른 사람 결과물</h2>
-        <p className="mt-3 rounded-2xl border border-dashed border-line-strong px-4 py-8 text-center text-sm text-mute">아직 올라온 결과물이 없어요.</p>
+        <h2 className="text-lg font-semibold text-ink">결과물 {posts.length > 0 ? posts.length : ''}</h2>
+        {posts.length === 0 ? (
+          <p className="mt-3 rounded-2xl border border-dashed border-line-strong px-4 py-8 text-center text-sm text-mute">아직 올라온 결과물이 없어요. 첫 번째로 올려 보세요!</p>
+        ) : (
+          <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {posts.map((p) => (
+              <li key={p.id} className="overflow-hidden rounded-2xl border border-line bg-paper">
+                {p.images[0] && (
+                  // eslint-disable-next-line @next/next/no-img-element -- Storage 공개 주소
+                  <img src={galleryImageUrl(supabaseUrl, p.images[0])} alt={p.title} loading="lazy" className="aspect-[4/3] w-full bg-cream object-cover" />
+                )}
+                <div className="px-3 py-2.5">
+                  <p className="truncate text-sm font-medium text-ink">{p.title}</p>
+                  <p className="mt-0.5 truncate text-xs text-mute">
+                    {p.author}{p.images.length > 1 && ` · 사진 ${p.images.length}장`}{p.status === 'hidden' && ' · 숨김(신고)'}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <nav aria-label="차시 이동" className="mt-12 grid grid-cols-2 gap-3 border-t border-line pt-6">

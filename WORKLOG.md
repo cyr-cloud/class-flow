@@ -41,3 +41,10 @@
 - 첫 테스트에서 좋아요 정책이 남의 글을 못 찾음(posts RLS) → post_is_visible 함수로 확인하도록 수정
 - 스토어 DB 테스트 67개 통과, 실제 DB 적용. 비회원 REST: posts 표 42501, create_post 42501, purge 42501, 준비 중 강의 목록 []
 
+## GAL-01b 결과물 이미지 올리기 · 2026-11-20 · 노션: https://www.notion.so/41eabd06af5381a28b30c38e16600c77
+
+- 버킷 gallery(202611200002) + 자기 폴더 읽기 정책(202611200003: 빼 버린 이미지가 안 지워지던 문제 수정)
+- /api/gallery/images POST·DELETE, ImagePicker(Ctrl+V), /courses/[slug]/[n]/new, 차시 카드 기본형, 차시별 결과물 수
+- 검증: 스토어 DB 73개, 앱 테스트 82개, tsc·eslint. 실제 업로드·차단(415·413·400·401·403) 확인. 샘플 결과물 1개 남김
+- 캡처: generated/worklog/GAL-01b/ (3장, 노션 업로드)
+
