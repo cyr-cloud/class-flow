@@ -45,6 +45,9 @@ export default async function MePage() {
         )}
         <LogoutButton />
       </div>
+      <p className="mt-12 border-t border-line pt-4 text-xs text-mute">
+        <Link href="/me/delete" className="hover:text-mocha hover:underline">탈퇴하기</Link>
+      </p>
     </main>
   );
 }

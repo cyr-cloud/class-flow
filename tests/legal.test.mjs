@@ -18,3 +18,11 @@ test('hasCurrentConsent compares with the current versions', () => {
   assert.equal(hasCurrentConsent(now.map((r) => ({...r, version: 'old'}))), false);
   assert.equal(hasCurrentConsent([]), false);
 });
+
+test('withdraw phrase must be typed exactly', async () => {
+  const {checkWithdrawPhrase, WITHDRAW_PHRASE} = await import('../lib/profile/withdraw.ts');
+  assert.equal(checkWithdrawPhrase(WITHDRAW_PHRASE), true);
+  assert.equal(checkWithdrawPhrase(`  ${WITHDRAW_PHRASE} `), true);
+  assert.equal(checkWithdrawPhrase('탈퇴'), false);
+  assert.equal(checkWithdrawPhrase(null), false);
+});

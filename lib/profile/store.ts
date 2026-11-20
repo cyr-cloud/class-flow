@@ -33,3 +33,9 @@ export async function recordConsents(client: SupabaseClient, termsVersion: strin
   const { data, error } = await client.rpc('record_consents', { p_product: 'classflow', p_terms_version: termsVersion, p_privacy_version: privacyVersion });
   return !error && data === true;
 }
+
+// 탈퇴(LEGAL-07). 'deleted' = 로그인 계정까지 지움, 'classflow_only' = 스토어 구매 기록 때문에 계정은 남기고 클래스플로우 정보만 지움.
+export async function deleteMyAccount(client: SupabaseClient): Promise<'deleted' | 'classflow_only' | null> {
+  const { data, error } = await client.rpc('delete_my_account');
+  return !error && (data === 'deleted' || data === 'classflow_only') ? data : null;
+}
