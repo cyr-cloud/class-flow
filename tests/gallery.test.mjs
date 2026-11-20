@@ -39,3 +39,25 @@ test('parsePostInput tidies text and checks limits', () => {
 test('galleryImageUrl builds the public storage address', () => {
   assert.equal(galleryImageUrl('https://abc.supabase.co/', `${uid}/a.webp`), `https://abc.supabase.co/storage/v1/object/public/gallery/${uid}/a.webp`);
 });
+
+test('parseLink adds https, refuses http and odd schemes', async () => {
+  const {parseLink, linkLabel} = await import('../lib/gallery/model.ts');
+  assert.deepEqual(parseLink('github.com/yuco/rpg'), {ok: true, value: 'https://github.com/yuco/rpg'});
+  assert.deepEqual(parseLink(' https://yuco-demo.vercel.app '), {ok: true, value: 'https://yuco-demo.vercel.app/'});
+  for (const bad of ['http://a.com', 'javascript:alert(1)', 'data:text/html,x', 'localhost:3000', 'https://user:pw@a.com', '그냥 글자', '', 'https://a.com/' + 'x'.repeat(500)]) {
+    assert.equal(parseLink(bad).ok, false, bad);
+  }
+  assert.equal(linkLabel('https://www.github.com/yuco/rpg/'), 'github.com/yuco/rpg');
+});
+
+test('parsePostInput: image or link required, up to 3 links, duplicates merged', async () => {
+  const {parsePostInput} = await import('../lib/gallery/model.ts');
+  const ok = parsePostInput({title: '배포했어요', links: ['yuco.vercel.app', 'https://yuco.vercel.app/', '']}, uid);
+  assert.equal(ok.ok, true);
+  assert.deepEqual(ok.value.links, ['https://yuco.vercel.app/']);
+  assert.equal(parsePostInput({title: 'x'}, uid).ok, false);
+  assert.equal(parsePostInput({title: 'x', links: ['a.com', 'b.com', 'c.com', 'd.com']}, uid).ok, false);
+  const bad = parsePostInput({title: 'x', links: ['a.com', 'http://b.com']}, uid);
+  assert.equal(bad.ok, false);
+  assert.match(bad.errors['links.1'], /https/);
+});

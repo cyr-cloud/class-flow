@@ -16,12 +16,13 @@ export async function submitPost(_prev: PostFormState, form: FormData): Promise<
 
   let images: unknown = [];
   try { images = JSON.parse(String(form.get('images') ?? '[]')); } catch { /* 아래 검사에서 걸린다 */ }
+  const links = form.getAll('link').slice(0, 10);
 
   const client = await createUserClient();
   const { data } = await client.auth.getUser();
   if (!data.user) return { message: '로그인이 끝났어요. 다시 로그인해주세요.' };
 
-  const parsed = parsePostInput({ title: form.get('title'), body: form.get('body'), images }, data.user.id);
+  const parsed = parsePostInput({ title: form.get('title'), body: form.get('body'), images, links }, data.user.id);
   if (!parsed.ok) return { errors: parsed.errors, message: '입력을 확인해주세요.' };
 
   const result = await createPost(client, slug, key, lesson, parsed.value);

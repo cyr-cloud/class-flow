@@ -7,7 +7,7 @@ import { MAX_IMAGES, MAX_IMAGE_BYTES, MAX_ORIGINAL_BYTES } from '@/lib/gallery/m
 export interface PickedImage { path: string; url: string }
 type Slot = { id: string; status: 'uploading' } | ({ id: string; status: 'done' } & PickedImage);
 
-export default function ImagePicker({ onChange, error }: { onChange: (paths: string[]) => void; error?: string }) {
+export default function ImagePicker({ onChange, error }: { onChange: (images: PickedImage[]) => void; error?: string }) {
   const [slots, setSlots] = useState<Slot[]>([]);
   const [message, setMessage] = useState('');
   const [dragging, setDragging] = useState(false);
@@ -15,7 +15,7 @@ export default function ImagePicker({ onChange, error }: { onChange: (paths: str
   const count = useRef(0); // 올리는 중인 것까지 센 장 수(동시에 여러 장 넣을 때 4장 넘지 않게)
 
   useEffect(() => {
-    onChange(slots.flatMap((s) => (s.status === 'done' ? [s.path] : [])));
+    onChange(slots.flatMap((s) => (s.status === 'done' ? [{ path: s.path, url: s.url }] : [])));
   }, [slots, onChange]);
 
   const addFiles = useCallback(async (files: File[]) => {

@@ -25,7 +25,8 @@ export default async function NewPostPage({ params, searchParams }: Props) {
   const here = coursePath(course.slug, key, lesson.number).replace(/(\?|$)/, '/new$1');
   const user = await currentUser();
   if (!user) redirect('/login?next=' + encodeURIComponent(here));
-  if ((await readNickname(await createUserClient({ readOnly: true }), user.id)) === null) redirect(nicknameSetupPath(here));
+  const nickname = await readNickname(await createUserClient({ readOnly: true }), user.id);
+  if (nickname === null) redirect(nicknameSetupPath(here));
 
   return (
     <main className="mx-auto w-full max-w-2xl px-5 py-8 sm:py-14">
@@ -33,7 +34,7 @@ export default async function NewPostPage({ params, searchParams }: Props) {
       <p className="eyebrow mt-4">{course.title}</p>
       <h1 className="mt-2 text-2xl font-bold text-ink">내 결과물 올리기</h1>
       <p className="mt-2 text-sm text-mute">한 차시에 하루 3개까지 올릴 수 있어요.</p>
-      <div className="mt-8"><NewPostForm slug={course.slug} accessKey={key} lesson={lesson.number} /></div>
+      <div className="mt-8"><NewPostForm slug={course.slug} accessKey={key} lesson={lesson.number} author={nickname ?? '나'} /></div>
     </main>
   );
 }

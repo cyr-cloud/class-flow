@@ -37,7 +37,7 @@ export type CreateResult = { ok: true; id: string } | { ok: false; message: stri
 
 export async function createPost(client: SupabaseClient, slug: string, key: string | null, lesson: number, input: PostInput): Promise<CreateResult> {
   const { data, error } = await client.rpc('create_post', {
-    p_slug: slug, p_key: key, p_lesson: lesson, p_title: input.title, p_body: input.body, p_images: input.images, p_links: [],
+    p_slug: slug, p_key: key, p_lesson: lesson, p_title: input.title, p_body: input.body, p_images: input.images, p_links: input.links,
   });
   if (!error && typeof data === 'string') return { ok: true, id: data };
   switch (error?.code) {

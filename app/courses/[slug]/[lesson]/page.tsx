@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import { coursePath, parseLessonNumber } from '@/lib/course/model';
-import { galleryImageUrl } from '@/lib/gallery/model';
+import { galleryImageUrl, linkLabel } from '@/lib/gallery/model';
 import { postsForViewer } from '@/lib/gallery/store';
 import { createUserClient } from '@/lib/supabase/server';
 import { loadCourse } from '../../data';
@@ -75,7 +75,7 @@ export default async function LessonPage(props: Props) {
         <Link href={newPostPath} className="block w-full rounded-2xl bg-ink px-6 py-4 text-center text-base font-semibold text-white transition-colors hover:bg-mocha-deep">
           내 결과물 올리기
         </Link>
-        <p className="mt-2 text-center text-xs text-mute">로그인하면 이미지 1~4장으로 올릴 수 있어요.</p>
+        <p className="mt-2 text-center text-xs text-mute">로그인하면 이미지나 링크로 올릴 수 있어요.</p>
       </section>
 
       {/* 카드 목록 기본형. 최신순/인기순·더 보기·상세는 GAL-02·GAL-상세에서 */}
@@ -87,14 +87,18 @@ export default async function LessonPage(props: Props) {
           <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
             {posts.map((p) => (
               <li key={p.id} className="overflow-hidden rounded-2xl border border-line bg-paper">
-                {p.images[0] && (
+                {p.images[0] ? (
                   // eslint-disable-next-line @next/next/no-img-element -- Storage 공개 주소
                   <img src={galleryImageUrl(supabaseUrl, p.images[0])} alt={p.title} loading="lazy" className="aspect-[4/3] w-full bg-cream object-cover" />
-                )}
+                ) : p.links[0] ? (
+                  <a href={p.links[0]} target="_blank" rel="noopener noreferrer nofollow ugc" className="grid aspect-[4/3] place-items-center bg-cream px-3 text-center text-xs text-mocha-deep hover:bg-mocha-tint">
+                    <span>🔗<br />{linkLabel(p.links[0])}</span>
+                  </a>
+                ) : null}
                 <div className="px-3 py-2.5">
                   <p className="truncate text-sm font-medium text-ink">{p.title}</p>
                   <p className="mt-0.5 truncate text-xs text-mute">
-                    {p.author}{p.images.length > 1 && ` · 사진 ${p.images.length}장`}{p.status === 'hidden' && ' · 숨김(신고)'}
+                    {p.author}{p.images.length > 1 && ` · 사진 ${p.images.length}장`}{p.images.length > 0 && p.links.length > 0 && ` · 링크 ${p.links.length}`}{p.status === 'hidden' && ' · 숨김(신고)'}
                   </p>
                 </div>
               </li>

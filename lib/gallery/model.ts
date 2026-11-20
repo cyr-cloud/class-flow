@@ -30,21 +30,62 @@ export function galleryImageUrl(supabaseUrl: string, path: string): string {
   return `${supabaseUrl.replace(/\/+$/, '')}/storage/v1/object/public/${GALLERY_BUCKET}/${path}`;
 }
 
-export interface PostInput { title: string; body: string; images: string[] }
+export const MAX_LINKS = 3;
+export const LINK_MAX = 500;
 
-// 올리기 입력 검사. 링크 입력은 GAL-01c에서 붙인다.
-export function parsePostInput(f: { title?: unknown; body?: unknown; images?: unknown }, userId: string):
+// 결과물 링크 한 개 검사 (GAL-01c). "github.com/..."처럼 주소만 적으면 https://를 붙여 준다.
+// http://는 받지 않는다(DB도 https만). 결과는 브라우저가 정리한 주소(URL.href).
+export function parseLink(raw: unknown): { ok: true; value: string } | { ok: false; message: string } {
+  let v = typeof raw === 'string' ? raw.trim() : '';
+  if (!v) return { ok: false, message: '링크를 적어주세요.' };
+  if (/^http:\/\//i.test(v)) return { ok: false, message: 'https://로 시작하는 주소만 넣을 수 있어요.' };
+  if (!/^[a-z][a-z0-9+.-]*:/i.test(v)) v = 'https://' + v;
+  try {
+    const url = new URL(v);
+    if (url.protocol !== 'https:' || !url.hostname.includes('.') || url.username || url.password) throw new Error();
+    if (url.href.length > LINK_MAX) return { ok: false, message: `링크는 ${LINK_MAX}자까지예요.` };
+    if (/\s/.test(url.href)) throw new Error();
+    return { ok: true, value: url.href };
+  } catch {
+    return { ok: false, message: '주소 모양이 아니에요. 예: https://github.com/내아이디/프로젝트' };
+  }
+}
+
+// 링크 미리보기에 보여 줄 짧은 이름: 도메인 + 경로 앞부분
+export function linkLabel(href: string): string {
+  try {
+    const u = new URL(href);
+    const path = u.pathname === '/' ? '' : u.pathname.replace(/\/$/, '');
+    const text = u.hostname.replace(/^www\./, '') + path;
+    return text.length > 48 ? text.slice(0, 47) + '…' : text;
+  } catch {
+    return href;
+  }
+}
+
+export interface PostInput { title: string; body: string; images: string[]; links: string[] }
+
+// 올리기 입력 검사. 이미지(0~4)·링크(0~3) 중 하나는 꼭 있어야 한다.
+export function parsePostInput(f: { title?: unknown; body?: unknown; images?: unknown; links?: unknown }, userId: string):
   { ok: true; value: PostInput } | { ok: false; errors: Record<string, string> } {
   const errors: Record<string, string> = {};
   const title = typeof f.title === 'string' ? f.title.replace(/\s+/g, ' ').trim() : '';
   const body = typeof f.body === 'string' ? f.body.replace(/\r\n/g, '\n').trim() : '';
   const images = Array.isArray(f.images) ? f.images : [];
+  const rawLinks = (Array.isArray(f.links) ? f.links : []).filter((l) => !(typeof l === 'string' && !l.trim()));
   if (!title) errors.title = '제목을 적어주세요.';
   else if ([...title].length > TITLE_MAX) errors.title = `제목은 ${TITLE_MAX}자까지예요.`;
   if ([...body].length > BODY_MAX) errors.body = `소개는 ${BODY_MAX}자까지예요.`;
-  if (images.length === 0) errors.images = '이미지를 1장 이상 올려주세요.';
-  else if (images.length > MAX_IMAGES) errors.images = `이미지는 ${MAX_IMAGES}장까지예요.`;
+  if (images.length > MAX_IMAGES) errors.images = `이미지는 ${MAX_IMAGES}장까지예요.`;
   else if (new Set(images).size !== images.length || !images.every((p) => isOwnImagePath(p, userId))) errors.images = '이미지를 다시 올려주세요.';
+  const links: string[] = [];
+  if (rawLinks.length > MAX_LINKS) errors.links = `링크는 ${MAX_LINKS}개까지예요.`;
+  else for (const [i, raw] of rawLinks.entries()) {
+    const r = parseLink(raw);
+    if (!r.ok) { errors[`links.${i}`] = r.message; errors.links ??= r.message; }
+    else if (!links.includes(r.value)) links.push(r.value);
+  }
+  if (images.length === 0 && rawLinks.length === 0) errors.images = '이미지나 링크 중 하나는 꼭 넣어주세요.';
   if (Object.keys(errors).length) return { ok: false, errors };
-  return { ok: true, value: { title, body, images: images as string[] } };
+  return { ok: true, value: { title, body, images: images as string[], links } };
 }
