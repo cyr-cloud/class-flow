@@ -30,7 +30,7 @@ export default function PrivacyPage() {
       </Section>
       <Section title="3. 맡기는 곳(처리 위탁·국외 이전)">
         <ul className="list-disc pl-5">
-          <li>Supabase — 회원·결과물 데이터베이스와 이미지 저장 <Todo>저장 지역(리전)과 국외 이전 항목</Todo></li>
+          <li>Supabase(미국 회사) — 회원·결과물 데이터베이스와 이미지 저장. 저장 위치는 서울(ap-northeast-2) <Todo>운영용 프로젝트도 서울로 만들 것, 회사 쪽 접근에 따른 국외 이전 표기 여부</Todo></li>
           <li>Vercel — 웹사이트 운영(접속 기록) <Todo>서버 위치와 국외 이전 항목</Todo></li>
           <li>Google·네이버 — 로그인(각 회사의 처리방침을 따름)</li>
         </ul>
