@@ -4,7 +4,8 @@ import { notFound } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import { coursePath, parseLessonNumber } from '@/lib/course/model';
 import { MAX_PAGE, galleryImageUrl, linkLabel, parseListQuery, postListPath, postPath, type PostSort } from '@/lib/gallery/model';
-import { lessonPostCounts, listPosts } from '@/lib/gallery/store';
+import { lessonPostCounts, listPosts, postsForViewer } from '@/lib/gallery/store';
+import { pickShareImage, plainSummary, shareMetadata } from '@/lib/share/meta';
 import { createUserClient } from '@/lib/supabase/server';
 import { loadCourse } from '../../data';
 import { VisibilityNote } from '../../ui';
@@ -27,10 +28,26 @@ async function load({ params, searchParams }: Props) {
 export async function generateMetadata(props: Props): Promise<Metadata> {
   const data = await load(props);
   if (!data) return { title: '차시를 찾을 수 없어요 — ClassFlow', robots: { index: false } };
-  return {
-    title: `${data.lesson.number}차시 ${data.lesson.title} · ${data.course.title} — ClassFlow`,
-    robots: data.course.visibility === 'public' ? undefined : { index: false, follow: false },
-  };
+  const { course, lesson, key } = data;
+  // 대표 이미지: 좋아요 많은 결과물 중 이미지가 있는 첫 글 → 차시 예시 이미지 → 강의 표지 → 기본 이미지
+  const client = await createUserClient({ readOnly: true });
+  const [top, counts] = await Promise.all([
+    postsForViewer(client, course.slug, key, lesson.number, { sort: 'popular', limit: 12 }).catch(() => []),
+    lessonPostCounts(client, course.slug, key).catch(() => new Map<number, number>()),
+  ]);
+  const featured = top.find((p) => p.status === 'visible' && p.images.length > 0);
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
+  const total = counts.get(lesson.number) ?? 0;
+  const guide = plainSummary(lesson.guide_md, 80);
+  return shareMetadata({
+    title: `${lesson.number}차시 ${lesson.title} · ${course.title} — ClassFlow`,
+    shareTitle: `${lesson.number}차시 ${lesson.title}`,
+    description: [course.title, total > 0 ? `결과물 ${total}개` : '첫 결과물을 올려 보세요', guide].filter(Boolean).join(' · '),
+    path: coursePath(course.slug, key, lesson.number),
+    image: pickShareImage(featured && supabaseUrl ? galleryImageUrl(supabaseUrl, featured.images[0]) : null, lesson.example_image_url, course.cover_url),
+    imageAlt: featured ? `${lesson.number}차시 결과물: ${featured.title}` : `${lesson.number}차시 ${lesson.title}`,
+    index: course.visibility === 'public',
+  });
 }
 
 // 차시 페이지 (HOME-03): 실습 안내 → 내 결과물 올리기 → 다른 결과물 → 이전·다음 차시. 모바일 우선.

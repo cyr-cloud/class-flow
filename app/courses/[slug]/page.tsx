@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { CHANNELS, coursePath } from '@/lib/course/model';
 import { lessonPostCounts } from '@/lib/gallery/store';
+import { pickShareImage, plainSummary, shareMetadata } from '@/lib/share/meta';
 import { createUserClient } from '@/lib/supabase/server';
 import { loadCourse } from '../data';
 import { VisibilityNote } from '../ui';
@@ -16,13 +17,17 @@ const WATCH_LABEL: Record<string, string> = { youtube: '유튜브에서 강의 �
 export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const data = await loadCourse((await params).slug, (await searchParams).key);
   if (!data) return { title: '강의를 찾을 수 없어요 — ClassFlow', robots: { index: false } };
-  const { course } = data;
-  return {
+  const { course, lessons, key } = data;
+  // 링크 공개·준비 중 강의는 검색에 나오면 안 된다. 공유 미리보기(SHARE-03)는 링크를 받은 사람용이라 그대로 둔다.
+  return shareMetadata({
     title: `${course.title} — ClassFlow`,
-    description: course.description.slice(0, 120) || undefined,
-    // 링크 공개·준비 중 강의는 검색에 나오면 안 된다.
-    robots: course.visibility === 'public' ? undefined : { index: false, follow: false },
-  };
+    shareTitle: course.title,
+    description: plainSummary(course.description) || `${lessons.length}개 차시 실습과 결과물 갤러리`,
+    path: coursePath(course.slug, key),
+    image: pickShareImage(course.cover_url),
+    imageAlt: course.title,
+    index: course.visibility === 'public',
+  });
 }
 
 // 강의 소개 + 차시 목록 (HOME-02). 모바일 우선.

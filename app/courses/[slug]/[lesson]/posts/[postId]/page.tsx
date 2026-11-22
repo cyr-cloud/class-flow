@@ -11,6 +11,7 @@ import ReportButton from '@/components/gallery/ReportButton';
 import LikeButton from '@/components/gallery/LikeButton';
 import { nicknameSetupPath } from '@/lib/profile/nickname';
 import { signupState } from '@/lib/profile/setup';
+import { pickShareImage, plainSummary, shareMetadata } from '@/lib/share/meta';
 import { createUserClient, currentUser } from '@/lib/supabase/server';
 import { loadCourse } from '../../../../data';
 import { VisibilityNote } from '../../../../ui';
@@ -38,11 +39,22 @@ async function load({ params, searchParams }: Props) {
 export async function generateMetadata(props: Props): Promise<Metadata> {
   const data = await load(props);
   if (!data) return { title: '결과물을 찾을 수 없어요 — ClassFlow', robots: { index: false } };
-  const open = data.course.visibility === 'public' && data.post.status === 'visible';
-  return {
-    title: `${data.post.title} · ${data.lesson.number}차시 ${data.course.title} — ClassFlow`,
-    robots: open ? undefined : { index: false, follow: false },
-  };
+  const { course, lesson, post, key } = data;
+  const open = course.visibility === 'public' && post.status === 'visible';
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
+  // 숨긴 글(본인만 봄)은 미리보기에 내용을 싣지 않는다.
+  const visible = post.status === 'visible';
+  return shareMetadata({
+    title: `${post.title} · ${lesson.number}차시 ${course.title} — ClassFlow`,
+    shareTitle: visible ? `${post.title} — ${post.author}` : `${lesson.number}차시 결과물`,
+    description: visible
+      ? [plainSummary(post.body, 80), `${course.title} ${lesson.number}차시 · ♥ ${post.like_count}`].filter(Boolean).join(' · ')
+      : `${course.title} ${lesson.number}차시`,
+    path: postPath(coursePath(course.slug, key, lesson.number), post.id),
+    image: pickShareImage(visible && post.images[0] && supabaseUrl ? galleryImageUrl(supabaseUrl, post.images[0]) : null, lesson.example_image_url, course.cover_url),
+    imageAlt: visible ? post.title : `${lesson.number}차시 결과물`,
+    index: open,
+  });
 }
 
 const dateFormat = new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });

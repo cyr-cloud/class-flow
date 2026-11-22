@@ -154,3 +154,11 @@
 - 검증: 앱 테스트 97개, tsc·eslint. 화면: 앞글자 dp로 dp01~03 생성, /p/DP02 → 2차시 이동, 375px 넘침 없음. 로그아웃 /p/nope99·/p/BAD!!·/p/ab 404
 - 못 한 것: 샘플 강의가 준비 중이라 QR 이미지·PNG 내려받기는 화면으로 못 봄(SHARE-02b)
 - 캡처: generated/worklog/SHARE-01-02/ (3장)
+
+## SHARE-03 공유 미리보기 OG 메타 · 2026-11-22 · 노션: https://www.notion.so/420abd06af5381048a6dee46b9884c0b
+
+- lib/share/meta.ts(shareMetadata·plainSummary·pickShareImage·siteBase), 강의·차시·결과물 generateMetadata, 루트 metadataBase를 NEXT_PUBLIC_SITE_URL로
+- 대표 이미지: 차시는 인기 결과물 첫 이미지 → 예시 이미지 → 표지 → 기본. 숨긴 글은 내용 안 실음. og:url에 ?key= 유지, 비공개는 noindex 유지
+- 검증: 앱 테스트 101개(tests/share.test.mjs), tsc·eslint. 개발 서버 HTML에서 강의·1~3차시·결과물 og 메타 확인
+- 못 한 것: 카카오 실제 미리보기(배포 필요, SHARE-03b). 결과물 이미지가 webp라 카카오 표시 여부 확인 필요
+- 캡처: generated/worklog/SHARE-03/

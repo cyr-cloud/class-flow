@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist_Mono, Noto_Sans_KR } from "next/font/google";
 import AppHeader from "@/components/AppHeader";
+import { siteBase } from "@/lib/share/meta";
 import "./globals.css";
 
 // 한글이 본문의 대부분이라 한글 자체가 좋은 산세리프를 본문 서체로 쓴다.
@@ -16,7 +17,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://class-flow-fawn.vercel.app"),
+  metadataBase: siteBase(process.env.NEXT_PUBLIC_SITE_URL),
   title: "ClassFlow — 보여주는 수업에서, 함께하는 수업으로",
   description: "AI 퀴즈, 실시간 참여, 실습 공유까지. 강사와 학생이 같은 슬라이드에서 함께하는 수업을 시작하세요.",
   openGraph: {

@@ -29,6 +29,7 @@
   - LEGAL-07 (2026-11-20): https://www.notion.so/41eabd06af5381caacece88432f4c280
   - 사용자 할 일 정리 (2026-11-20): https://www.notion.so/41eabd06af538106a482e123983d3976
   - SHARE-01·02 (2026-11-22): https://www.notion.so/420abd06af5381c6a9b0f5939c9171da
+  - SHARE-03 (2026-11-22): https://www.notion.so/420abd06af5381048a6dee46b9884c0b
 - 노션 명세: https://www.notion.so/419abd06af5381acb38ec5f2ac476d87
 - 계정: 스토어와 같은 Supabase 프로젝트 `yuco-store-dev` (무료 플랜, 사용이 적으면 일시정지됨)
 
