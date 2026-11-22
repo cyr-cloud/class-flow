@@ -168,5 +168,6 @@
 - DB 202611220002 admin_lesson_stats·admin_signup_stats·admin_signup_totals(관리자만, 42501), 실제 적용, 스토어 DB 테스트 106개
 - 앱: lib/admin/stats.ts(groupByCourse·sumRecent·barPercent), adminStats(), /admin/stats, 관리자 첫 화면 ADM-03 카드 연결
 - 검증: 앱 테스트 105개(tests/admin-stats.test.mjs), tsc·eslint. 화면 숫자 = DB 원본(지운 결과물 2개 제외), 375px 넘침 없음, 로그아웃 307 → 로그인
-- 못 한 것: 유입 경로(SHARE-04). 375px 캡처는 브라우저 캡처 시간 초과로 숫자만
+- 못 한 것: 유입 경로(SHARE-04)
+- 375px 다시 확인(같은 날): 처음 캡처 실패는 크롬 창이 가려져 화면을 안 그리던 탓. 보이는 창에서 375px iframe으로 3장 캡처. 표 머리글이 "결과/물"처럼 끊겨서 whitespace-nowrap·차시 칸 min-w-[11rem]으로 고침
 - 캡처: generated/worklog/ADM-03/

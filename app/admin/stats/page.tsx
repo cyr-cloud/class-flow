@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 const dayFormat = new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', month: 'numeric', day: 'numeric', weekday: 'short' });
 const timeFormat = new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
 const CHART_DAYS = 14;
-const cell = 'px-3 py-2 text-right tabular-nums';
+const cell = 'whitespace-nowrap px-3 py-2 text-right tabular-nums';
 
 // 현황 (ADM-03): 새 가입자와 차시별 결과물 수. 숫자만 보여 주고 개인 정보는 보여 주지 않는다.
 export default async function AdminStatsPage() {
@@ -103,7 +103,7 @@ export default async function AdminStatsPage() {
                   <tbody>
                     {c.lessons.map((l) => (
                       <tr key={l.lesson_id} className="border-t border-line">
-                        <th scope="row" className="px-3 py-2 text-left font-normal">
+                        <th scope="row" className="min-w-[11rem] px-3 py-2 text-left font-normal">
                           <Link href={coursePath(c.slug, null, l.lesson_number)} className="text-ink hover:text-mocha">
                             <span className="text-mute">{l.lesson_number}차시</span> {l.lesson_title}
                           </Link>
