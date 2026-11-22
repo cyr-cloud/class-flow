@@ -79,3 +79,20 @@ test('parseLessonNumber accepts only plain lesson numbers', async () => {
   assert.equal(parseLessonNumber('12'), 12);
   for (const bad of ['0', '01', '-1', '1.5', 'abc', '1000', '']) assert.equal(parseLessonNumber(bad), null, bad);
 });
+
+test('short links carry the key only for unlisted courses', async () => {
+  const {shortLinkPath, shortLinkUrl} = await import('../lib/course/model.ts');
+  assert.equal(shortLinkPath('py03', null), '/p/py03');
+  assert.equal(shortLinkPath('py03', 'abc'), '/p/py03?key=abc');
+  assert.equal(shortLinkUrl('https://class.yuniq-coding.shop/', 'py03', {visibility: 'public', access_key: 'k'}), 'https://class.yuniq-coding.shop/p/py03');
+  assert.equal(shortLinkUrl('https://class.yuniq-coding.shop', 'py03', {visibility: 'unlisted', access_key: 'k'}), 'https://class.yuniq-coding.shop/p/py03?key=k');
+  assert.equal(shortLinkUrl('https://class.yuniq-coding.shop', 'py03', {visibility: 'draft', access_key: 'k'}), null);
+});
+
+test('suggestShortCodes fills only lessons without a code', async () => {
+  const {suggestShortCodes} = await import('../lib/course/model.ts');
+  const lessons = [{id: 'a', number: 1, short_code: null}, {id: 'b', number: 2, short_code: 'mine'}, {id: 'c', number: 12, short_code: null}];
+  assert.deepEqual(suggestShortCodes('py', lessons), [{id: 'a', code: 'py01'}, {id: 'c', code: 'py12'}]);
+  assert.deepEqual(suggestShortCodes('P', lessons), []);
+  assert.deepEqual(suggestShortCodes('py3', lessons), []);
+});

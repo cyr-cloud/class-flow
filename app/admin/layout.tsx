@@ -1,14 +1,16 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { requireAdminPage } from '@/lib/auth/admin';
+import { checkAdmin } from '@/lib/auth/admin';
 
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = { title: '관리자 — ClassFlow', robots: { index: false, follow: false } };
 
 // /admin 아래 모든 화면은 admin 역할만 (ADM-01). 수업 진행용 teacherToken과는 별개다.
+// 로그인 안 한 사람은 각 page의 requireAdminPage(자기 주소)가 로그인 화면으로 보낸다 → 로그인 뒤 그 화면으로 돌아온다.
+// (여기서 보내면 어느 화면이든 /admin으로만 돌아와서 page에 맡긴다. 모든 admin page가 requireAdminPage를 부른다.)
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const check = await requireAdminPage();
-  if (check.access !== 'admin') {
+  const check = await checkAdmin();
+  if (check.access === 'forbidden') {
     return (
       <main className="mx-auto w-full max-w-md px-6 py-20">
         <p className="eyebrow">ADMIN</p>

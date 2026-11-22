@@ -136,3 +136,22 @@ export function coursePath(slug: string, key: string | null, lessonNumber?: numb
 export function parseLessonNumber(value: string): number | null {
   return /^[1-9][0-9]{0,2}$/.test(value) ? Number(value) : null;
 }
+
+// 차시 짧은 링크 (SHARE-01·02): /p/py03. 링크 공개 강의는 열쇠를 붙여야 열린다.
+export const SHORT_PREFIX_PATTERN = /^[a-z]{2,12}$/;
+
+export function shortLinkPath(code: string, key: string | null): string {
+  return '/p/' + encodeURIComponent(code) + (key ? `?key=${encodeURIComponent(key)}` : '');
+}
+
+// 공유용 전체 주소. 준비 중 강의는 학생이 못 여니 null.
+export function shortLinkUrl(siteUrl: string, code: string, course: Pick<Course, 'visibility' | 'access_key'>): string | null {
+  if (course.visibility === 'draft') return null;
+  return siteUrl.replace(/\/$/, '') + shortLinkPath(code, course.visibility === 'unlisted' ? course.access_key : null);
+}
+
+// 짧은 코드 한 번에 만들기: 접두어 + 두 자리 차시 번호(py01, py02 …). 이미 코드가 있는 차시는 건드리지 않는다.
+export function suggestShortCodes(prefix: string, lessons: { id: string; number: number; short_code: string | null }[]): { id: string; code: string }[] {
+  if (!SHORT_PREFIX_PATTERN.test(prefix)) return [];
+  return lessons.filter((l) => !l.short_code).map((l) => ({ id: l.id, code: prefix + String(l.number).padStart(2, '0') }));
+}
