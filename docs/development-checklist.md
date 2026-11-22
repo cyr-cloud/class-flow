@@ -279,7 +279,7 @@ PPTX에는 업로드한 원본 내용이 유지된다. 수업 중 추가한 이�
 - [x] **SHARE-03** 차시·결과물 OG 메타 — `lib/share/meta.ts`(og·twitter 전부 채움, 마크다운 걷은 설명, 이미지 고르기). 강의: 표지 → 기본 이미지. 차시: 제목·결과물 수·안내 요약, 대표 이미지는 인기 결과물 첫 이미지 → 예시 이미지 → 표지 → 기본. 결과물: 제목—작성자·소개·좋아요, 첫 이미지(숨긴 글은 내용 안 실음). og:url에 ?key= 유지, 공개 강의가 아니면 noindex 그대로. metadataBase는 NEXT_PUBLIC_SITE_URL. 개발 서버 HTML에서 세 종류 확인 (2026-11-22)
 - [ ] **SHARE-03b** 배포 뒤 카카오 공유 디버거(developers.kakao.com → 도구 → 공유 디버거)로 실제 미리보기 확인. 결과물 이미지가 webp라 카카오에서 안 보이면 공유용 jpg/png 변환 추가
 - [x] **ADM-02** /admin/reports 신고 처리 — 결과물·댓글 숨기기·다시 보이기·지우기·문제없음(신고 닫기), 글쓴이 업로드 정지(7일·30일·풀 때까지·풀기, 사유), 정지된 사용자 목록. DB `202611200009`(set_comment_status, dismiss_reports, upload_bans·is_upload_banned·admin_set_upload_ban, 정지 시 결과물 올리기·고치기·댓글 트리거와 Storage 정책으로 막음, 처리하면 신고 닫힘). 정지된 학생 화면 안내·이미지 403. 실제 화면에서 네 가지 처리·정지·해제 확인 (2026-11-20)
-- [ ] **ADM-03** 차시별 결과물 수·새 가입자 현황
+- [x] **ADM-03** 차시별 결과물 수·새 가입자 현황 — `/admin/stats`. DB `202611220002`(admin_lesson_stats·admin_signup_stats·admin_signup_totals, 관리자만, 숫자만). 가입자 = 클래스플로우 약관 첫 동의일(한국 시간), 지운 결과물 제외. 카드(오늘·7일·30일·전체·올린 사람)·14일 막대·강의별 차시 표. DB 원본과 숫자 대조, 375px 넘침 없음. 유입 경로는 SHARE-04 (2026-11-22)
 
 ### 1-6 출시
 - [ ] **LAUNCH-G1** class.yuniq-coding.shop 연결 (스토어 도메인 결정과 함께) — `yuniq-coding.shop`은 이미 보유(사용자 확인 2026-11-20), DNS는 Vercel. 하위 주소라 추가 구매 없음. Vercel ClassFlow 프로젝트에 도메인만 추가하면 됨

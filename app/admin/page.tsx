@@ -11,7 +11,7 @@ const SECTIONS = [
   { id: 'COURSE', title: '강의 · 차시', body: '강의 만들기, 차시 추가·순서 변경, 실습 안내 작성', href: '/admin/courses' },
   { id: 'ADM-02', title: '신고 처리', body: '결과물·댓글 숨김·복구·삭제, 글쓴이 업로드 정지', href: '/admin/reports' },
   { id: 'SHARE', title: '링크 · QR 공유', body: '차시 짧은 링크(/p/코드)와 QR 이미지 내려받기', href: '/admin/share' },
-  { id: 'ADM-03', title: '현황', body: '차시별 결과물 수, 새 가입자, 유입 경로' },
+  { id: 'ADM-03', title: '현황', body: '새 가입자(날짜별)와 차시별 결과물 수', href: '/admin/stats' },
 ];
 
 // 관리자 첫 화면. 실제 기능은 갤러리(GAL)가 생긴 뒤 ADM-02·03에서 채운다.

@@ -162,3 +162,11 @@
 - 검증: 앱 테스트 101개(tests/share.test.mjs), tsc·eslint. 개발 서버 HTML에서 강의·1~3차시·결과물 og 메타 확인
 - 못 한 것: 카카오 실제 미리보기(배포 필요, SHARE-03b). 결과물 이미지가 webp라 카카오 표시 여부 확인 필요
 - 캡처: generated/worklog/SHARE-03/
+
+## ADM-03 현황(가입자·차시별 결과물) · 2026-11-22 · 노션: https://www.notion.so/420abd06af5381e097fbca5e9dab709b
+
+- DB 202611220002 admin_lesson_stats·admin_signup_stats·admin_signup_totals(관리자만, 42501), 실제 적용, 스토어 DB 테스트 106개
+- 앱: lib/admin/stats.ts(groupByCourse·sumRecent·barPercent), adminStats(), /admin/stats, 관리자 첫 화면 ADM-03 카드 연결
+- 검증: 앱 테스트 105개(tests/admin-stats.test.mjs), tsc·eslint. 화면 숫자 = DB 원본(지운 결과물 2개 제외), 375px 넘침 없음, 로그아웃 307 → 로그인
+- 못 한 것: 유입 경로(SHARE-04). 375px 캡처는 브라우저 캡처 시간 초과로 숫자만
+- 캡처: generated/worklog/ADM-03/
