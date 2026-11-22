@@ -32,6 +32,7 @@
   - SHARE-03 (2026-11-22): https://www.notion.so/420abd06af5381048a6dee46b9884c0b
   - ADM-03 (2026-11-22): https://www.notion.so/420abd06af5381e097fbca5e9dab709b
   - SHARE-04 (2026-11-22): https://www.notion.so/420abd06af53818b826ccfa8fbb70522
+  - HOME-01 (2026-11-22~23): https://www.notion.so/420abd06af53811e9cf0f1d8888b0e2f
 - 노션 명세: https://www.notion.so/419abd06af5381acb38ec5f2ac476d87
 - 계정: 스토어와 같은 Supabase 프로젝트 `yuco-store-dev` (무료 플랜, 사용이 적으면 일시정지됨)
 

@@ -179,3 +179,11 @@
 - 검증: 앱 테스트 109개, tsc·eslint. 관리자 /p/dp01?from=yt → 이동·기록 0건, 비회원 404. 확인용 기록 16개로 현황 숫자·375px 확인 후 삭제(0개)
 - 못 한 것: 공개 강의가 없어 출처별 복사 버튼·실제 학생 방문은 못 봄(SHARE-04b)
 - 캡처: generated/worklog/SHARE-04/
+
+## HOME-01 메인 공개 강의·최근 결과물 · 2026-11-22~23 · 노션: https://www.notion.so/420abd06af53811e9cf0f1d8888b0e2f
+
+- DB 202611220004 home_courses·home_recent_posts(공개 강의만, 보이는 결과물만), 실제 적용, 스토어 DB 테스트 118개
+- 앱: 기존 메인 → components/home/HomeEntry.tsx, lib/home/store.ts(homeFeed), 새 app/page.tsx
+- 검증: 앱 테스트 109개, tsc·eslint. 참여 코드 abc123 → /student/abc123, 공개 강의 없음 안내, 375px 넘침 없음
+- 못 한 것: 공개 강의가 없어 카드가 채워진 화면 못 봄(HOME-01b). 레퍼런스 바로가기는 REF 이후
+- 캡처: generated/worklog/HOME-01/
