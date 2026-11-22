@@ -39,3 +39,14 @@ test('barPercent scales to max with a visible minimum', () => {
   assert.equal(barPercent(1, 100), 4);
   assert.equal(barPercent(3, 0), 0);
 });
+
+test('visits group by course and lesson with per-source totals', async () => {
+  const {groupVisits, sourceTotals} = await import('../lib/admin/stats.ts');
+  const v = (lesson, n, source, visits) => ({course_id: 'c', course_title: 'C', lesson_id: lesson, lesson_number: n, lesson_title: `차시 ${n}`, source, visits});
+  const rows = [v('l1', 1, 'youtube', 3), v('l1', 1, 'qr', 2), v('l2', 2, 'inflearn', 1), v('l2', 2, 'weird', 9)];
+  assert.deepEqual(sourceTotals(rows), {youtube: 3, inflearn: 1, qr: 2, other: 0});
+  const [c] = groupVisits(rows);
+  assert.equal(c.total, 6);
+  assert.deepEqual(c.lessons.map((l) => [l.number, l.total]), [[1, 5], [2, 1]]);
+  assert.equal(c.lessons[0].bySource.qr, 2);
+});

@@ -5,7 +5,30 @@ import { useRouter } from 'next/navigation';
 import { useRef, useState, useTransition } from 'react';
 import { fillShortCodes } from './actions';
 
-export function ShareQr({ url, fileName, label }: { url: string; fileName: string; label: string }) {
+export type SourceLink = { label: string; hint: string; url: string };
+
+// 유입 경로(SHARE-04): 출처마다 주소 끝이 달라서(?from=yt …) 어디서 들어왔는지 셀 수 있다.
+function SourceLinks({ links }: { links: SourceLink[] }) {
+  const [copied, setCopied] = useState('');
+  const copy = async (l: SourceLink) => {
+    try { await navigator.clipboard.writeText(l.url); setCopied(l.label); setTimeout(() => setCopied(''), 1500); } catch { /* 복사 권한이 없으면 주소를 직접 고른다 */ }
+  };
+  return (
+    <ul className="mt-3 grid gap-1.5 border-t border-line pt-3">
+      {links.map((l) => (
+        <li key={l.label} className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+          <button type="button" onClick={() => void copy(l)} className="shrink-0 rounded-lg border border-line-strong px-2.5 py-1 text-ink-soft hover:border-mocha">
+            {copied === l.label ? '복사했어요' : `${l.label}용 복사`}
+          </button>
+          <span className="min-w-0 break-all font-mono text-mute">{l.url}</span>
+          <span className="text-mute">· {l.hint}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+export function ShareQr({ url, fileName, label, sources = [] }: { url: string; fileName: string; label: string; sources?: SourceLink[] }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const [copied, setCopied] = useState(false);
   const download = () => {
@@ -33,6 +56,7 @@ export function ShareQr({ url, fileName, label }: { url: string; fileName: strin
           </button>
           <a href={url} target="_blank" rel="noopener" className="rounded-lg border border-line-strong px-3 py-1.5 text-xs text-ink-soft hover:border-mocha">열어 보기 ↗</a>
         </div>
+        {sources.length > 0 && <SourceLinks links={sources} />}
       </div>
     </div>
   );

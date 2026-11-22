@@ -171,3 +171,11 @@
 - 못 한 것: 유입 경로(SHARE-04)
 - 375px 다시 확인(같은 날): 처음 캡처 실패는 크롬 창이 가려져 화면을 안 그리던 탓. 보이는 창에서 375px iframe으로 3장 캡처. 표 머리글이 "결과/물"처럼 끊겨서 whitespace-nowrap·차시 칸 min-w-[11rem]으로 고침
 - 캡처: generated/worklog/ADM-03/
+
+## SHARE-04 유입 경로 집계 · 2026-11-22 · 노션: https://www.notion.so/420abd06af53818b826ccfa8fbb70522
+
+- DB 202611220003 link_visits·record_link_visit·admin_link_stats(차시·출처·시각만, 관리자 방문 제외, 1분 120번 제한), 실제 적용, 스토어 DB 테스트 113개
+- 앱: lib/share/source.ts(detectSource·isBotAgent), shortLinkPath/Url에 from, /p/[code]에서 기록 후 이동, 공유 화면 QR from=qr·유튜브용·인프런용 복사, 현황에 유입 경로 칸
+- 검증: 앱 테스트 109개, tsc·eslint. 관리자 /p/dp01?from=yt → 이동·기록 0건, 비회원 404. 확인용 기록 16개로 현황 숫자·375px 확인 후 삭제(0개)
+- 못 한 것: 공개 강의가 없어 출처별 복사 버튼·실제 학생 방문은 못 봄(SHARE-04b)
+- 캡처: generated/worklog/SHARE-04/

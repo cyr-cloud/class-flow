@@ -50,3 +50,33 @@ export function barPercent(value: number, max: number): number {
   if (value <= 0 || max <= 0) return 0;
   return Math.max(4, Math.round((value / max) * 100));
 }
+
+// 유입 경로(SHARE-04). DB admin_link_stats가 차시·출처별로 준 줄.
+export type VisitSource = 'youtube' | 'inflearn' | 'qr' | 'other';
+export interface LinkStatRow { course_id: string; course_title: string; lesson_id: string; lesson_number: number; lesson_title: string; source: VisitSource; visits: number }
+export interface LessonVisits { lessonId: string; number: number; title: string; total: number; bySource: Record<VisitSource, number> }
+export interface CourseVisits { id: string; title: string; total: number; bySource: Record<VisitSource, number>; lessons: LessonVisits[] }
+
+const emptySources = (): Record<VisitSource, number> => ({ youtube: 0, inflearn: 0, qr: 0, other: 0 });
+
+// 출처별 합계(전체).
+export function sourceTotals(rows: LinkStatRow[]): Record<VisitSource, number> {
+  const t = emptySources();
+  for (const r of rows) if (r.source in t) t[r.source] += r.visits;
+  return t;
+}
+
+// 강의 → 차시로 묶는다. DB 순서(최근 강의, 차시 번호)를 그대로 둔다.
+export function groupVisits(rows: LinkStatRow[]): CourseVisits[] {
+  const courses = new Map<string, CourseVisits>();
+  for (const r of rows) {
+    if (!(r.source in emptySources())) continue;
+    let c = courses.get(r.course_id);
+    if (!c) { c = { id: r.course_id, title: r.course_title, total: 0, bySource: emptySources(), lessons: [] }; courses.set(r.course_id, c); }
+    let l = c.lessons.find((x) => x.lessonId === r.lesson_id);
+    if (!l) { l = { lessonId: r.lesson_id, number: r.lesson_number, title: r.lesson_title, total: 0, bySource: emptySources() }; c.lessons.push(l); }
+    l.bySource[r.source] += r.visits; l.total += r.visits;
+    c.bySource[r.source] += r.visits; c.total += r.visits;
+  }
+  return [...courses.values()];
+}

@@ -1,7 +1,7 @@
 import 'server-only';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { PAGE_SIZE, uniqueById, type PostInput, type PostSort } from './model';
-import type { LessonStatRow, SignupDay, SignupTotals } from '@/lib/admin/stats';
+import type { LessonStatRow, LinkStatRow, SignupDay, SignupTotals } from '@/lib/admin/stats';
 
 // 결과물 갤러리 읽기·쓰기. 권한 판단은 DB 함수(202611200001)가 한다.
 
@@ -126,13 +126,15 @@ export async function adminUploadBans(client: SupabaseClient): Promise<UploadBan
 }
 
 // 현황(ADM-03). 관리자가 아니면 DB가 거절하고, 여기서는 빈 값을 돌려준다.
-export async function adminStats(client: SupabaseClient, days = 30): Promise<{ lessons: LessonStatRow[]; signups: SignupDay[]; totals: SignupTotals | null }> {
-  const [lessons, signups, totals] = await Promise.all([
+export async function adminStats(client: SupabaseClient, days = 30): Promise<{ lessons: LessonStatRow[]; signups: SignupDay[]; totals: SignupTotals | null; visits: LinkStatRow[] }> {
+  const [lessons, signups, totals, visits] = await Promise.all([
     client.rpc('admin_lesson_stats'),
     client.rpc('admin_signup_stats', { p_days: days }),
     client.rpc('admin_signup_totals'),
+    client.rpc('admin_link_stats', { p_days: days }),
   ]);
   return {
+    visits: visits.error ? [] : ((visits.data as LinkStatRow[] | null) ?? []),
     lessons: lessons.error ? [] : ((lessons.data as LessonStatRow[] | null) ?? []),
     signups: signups.error ? [] : ((signups.data as SignupDay[] | null) ?? []),
     totals: totals.error ? null : (((totals.data as SignupTotals[] | null) ?? [])[0] ?? null),

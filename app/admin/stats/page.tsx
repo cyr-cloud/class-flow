@@ -1,8 +1,9 @@
 import Link from 'next/link';
-import { barPercent, groupByCourse, sumRecent } from '@/lib/admin/stats';
+import { barPercent, groupByCourse, groupVisits, sourceTotals, sumRecent } from '@/lib/admin/stats';
 import { requireAdminPage } from '@/lib/auth/admin';
 import { coursePath, VISIBILITIES } from '@/lib/course/model';
 import { adminStats } from '@/lib/gallery/store';
+import { LINK_SOURCES, SOURCE_ORDER } from '@/lib/share/source';
 import { createUserClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
@@ -16,10 +17,13 @@ const cell = 'whitespace-nowrap px-3 py-2 text-right tabular-nums';
 export default async function AdminStatsPage() {
   const { access } = await requireAdminPage('/admin/stats');
   if (access !== 'admin') return null;
-  const { lessons, signups, totals } = await adminStats(await createUserClient({ readOnly: true }), 30);
+  const { lessons, signups, totals, visits } = await adminStats(await createUserClient({ readOnly: true }), 30);
   const courses = groupByCourse(lessons);
   const recent = signups.slice(0, CHART_DAYS);
   const maxDay = Math.max(0, ...recent.map((d) => d.classflow));
+  const visitTotals = sourceTotals(visits);
+  const visitAll = SOURCE_ORDER.reduce((n, s) => n + visitTotals[s], 0);
+  const visitCourses = groupVisits(visits);
 
   const cards = [
     { label: '오늘 가입', value: sumRecent(signups, 1) },
@@ -123,7 +127,55 @@ export default async function AdminStatsPage() {
         )}
       </section>
 
-      <p className="mt-10 text-xs text-mute">유입 경로(유튜브·인프런·기타)는 SHARE-04에서 짧은 링크에 출처를 붙인 뒤 여기에 더해요.</p>
+      <section aria-labelledby="sources" className="mt-12">
+        <h2 id="sources" className="font-semibold text-ink">유입 경로 <span className="text-sm font-normal text-mute">· 최근 30일 짧은 링크 방문</span></h2>
+        <p className="mt-1 text-xs leading-relaxed text-mute">
+          짧은 링크(<span className="font-mono">/p/코드</span>)로 들어온 횟수예요. <Link href="/admin/share" className="text-mocha underline">링크 · QR 공유</Link>에서 유튜브용·인프런용 주소를 따로 넣어야 나뉘어요. 미리보기 로봇과 관리자 본인 방문은 세지 않고, 누가 들어왔는지는 남기지 않아요.
+        </p>
+        <dl className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {SOURCE_ORDER.map((s) => (
+            <div key={s} className="rounded-2xl border border-line bg-paper px-4 py-3">
+              <dt className="text-xs text-mute">{LINK_SOURCES[s].label}</dt>
+              <dd className="mt-1 text-2xl font-bold tabular-nums text-ink">{visitTotals[s]}</dd>
+              <dd className="mt-1 h-1.5 rounded-full bg-cream" aria-hidden="true">
+                <span className="block h-1.5 rounded-full bg-mocha" style={{ width: `${barPercent(visitTotals[s], visitAll)}%` }} />
+              </dd>
+            </div>
+          ))}
+        </dl>
+        {visitCourses.length === 0 ? (
+          <p className="mt-4 text-sm text-mute">아직 짧은 링크로 들어온 기록이 없어요.</p>
+        ) : (
+          visitCourses.map((c) => (
+            <div key={c.id} className="mt-5 rounded-2xl border border-line bg-paper">
+              <div className="flex flex-wrap items-baseline gap-x-3 border-b border-line px-4 py-3">
+                <h3 className="font-medium text-ink">{c.title}</h3>
+                <span className="ml-auto text-xs text-ink-soft">방문 {c.total}번</span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[440px] text-sm">
+                  <thead>
+                    <tr className="text-xs text-mute">
+                      <th scope="col" className="px-3 py-2 text-left font-normal">차시</th>
+                      {SOURCE_ORDER.map((s) => <th key={s} scope="col" className={`${cell} font-normal`}>{LINK_SOURCES[s].label}</th>)}
+                      <th scope="col" className={`${cell} font-normal`}>합계</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {c.lessons.map((l) => (
+                      <tr key={l.lessonId} className="border-t border-line">
+                        <th scope="row" className="min-w-[11rem] px-3 py-2 text-left font-normal text-ink"><span className="text-mute">{l.number}차시</span> {l.title}</th>
+                        {SOURCE_ORDER.map((s) => <td key={s} className={`${cell} ${l.bySource[s] ? 'text-ink' : 'text-mute'}`}>{l.bySource[s]}</td>)}
+                        <td className={`${cell} font-semibold text-ink`}>{l.total}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ))
+        )}
+      </section>
     </main>
   );
 }

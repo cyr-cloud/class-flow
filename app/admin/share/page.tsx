@@ -3,6 +3,7 @@ import { requireAdminPage } from '@/lib/auth/admin';
 import { courseShareUrl, shortLinkUrl, VISIBILITIES } from '@/lib/course/model';
 import { listCourses, listLessons } from '@/lib/course/store';
 import { isPostId } from '@/lib/gallery/model';
+import { LINK_SOURCES } from '@/lib/share/source';
 import { createUserClient } from '@/lib/supabase/server';
 import { FillCodes, ShareQr } from './ui';
 
@@ -33,7 +34,7 @@ export default async function AdminSharePage({ searchParams }: { searchParams: P
       <Link href="/admin" className="text-sm text-mute hover:text-mocha">← 관리자</Link>
       <p className="eyebrow mt-4">SHARE-01 · 02</p>
       <h1 className="mt-2 text-2xl font-bold text-ink">링크 · QR 공유</h1>
-      <p className="mt-2 text-sm leading-relaxed text-ink-soft">차시마다 짧은 주소(<span className="font-mono">/p/코드</span>)와 QR 이미지를 내려받아 영상 설명란·인프런 자료·수업 화면에 넣어요.</p>
+      <p className="mt-2 text-sm leading-relaxed text-ink-soft">차시마다 짧은 주소(<span className="font-mono">/p/코드</span>)와 QR 이미지를 내려받아 영상 설명란·인프런 자료·수업 화면에 넣어요. 유튜브·인프런에는 각각의 <b className="text-ink">…용 복사</b> 주소를 넣으면 <Link href="/admin/stats" className="text-mocha underline">현황</Link>에서 어디서 들어왔는지 나눠 볼 수 있어요.</p>
       {devSite && (
         <p role="note" className="mt-4 rounded-xl border border-mocha bg-mocha-tint px-4 py-3 text-sm text-mocha-deep">
           지금 주소가 개발용(<span className="font-mono">{siteUrl}</span>)이에요. 배포해서 <span className="font-mono">class.yuniq-coding.shop</span>이 연결된 뒤에 다시 내려받아야 학생이 열 수 있어요.
@@ -74,12 +75,17 @@ export default async function AdminSharePage({ searchParams }: { searchParams: P
                   <div className="mt-6"><FillCodes courseId={course.id} suggestion={suggestPrefix(course.slug)} /></div>
                   <ul className="mt-4 grid gap-3">
                     {lessons.map((l) => {
-                      const url = l.short_code ? shortLinkUrl(siteUrl, l.short_code, course) : null;
+                      // QR에 넣는 주소는 ?from=qr, 아래 복사 주소는 유튜브·인프런용(SHARE-04 유입 경로)
+                      const url = l.short_code ? shortLinkUrl(siteUrl, l.short_code, course, LINK_SOURCES.qr.param) : null;
+                      const sources = l.short_code ? (['youtube', 'inflearn'] as const).map((s) => ({
+                        label: LINK_SOURCES[s].label, hint: LINK_SOURCES[s].hint,
+                        url: shortLinkUrl(siteUrl, l.short_code!, course, LINK_SOURCES[s].param) ?? '',
+                      })) : [];
                       return (
                         <li key={l.id} className="rounded-2xl border border-line bg-paper px-4 py-4">
                           <p className="mb-3 text-sm font-medium text-ink">{l.number}차시 · {l.title}</p>
                           {url ? (
-                            <ShareQr url={url} fileName={`ClassFlow-${l.short_code}-QR.png`} label={`${l.number}차시`} />
+                            <ShareQr url={url} fileName={`ClassFlow-${l.short_code}-QR.png`} label={`${l.number}차시`} sources={sources} />
                           ) : l.short_code ? (
                             <p className="font-mono text-xs text-ink-soft">/p/{l.short_code} <span className="font-sans text-mute">(공개하면 QR이 생겨요 · 관리자는 지금도 열 수 있어요)</span></p>
                           ) : (
