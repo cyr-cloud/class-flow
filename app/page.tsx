@@ -1,127 +1,85 @@
-"use client";
+import Link from 'next/link';
+import HomeEntry from '@/components/home/HomeEntry';
+import { CHANNELS, coursePath } from '@/lib/course/model';
+import { galleryImageUrl, postPath } from '@/lib/gallery/model';
+import { homeFeed } from '@/lib/home/store';
+import { plainSummary } from '@/lib/share/meta';
 
-// 첫 화면. 강사인지 학생인지부터 고르게 한다 —
-// 둘이 하는 일이 완전히 달라서(자료를 올린다 / 코드로 들어온다) 먼저 갈라주는 게 덜 헤맨다.
+// 공개 강의·결과물이 바뀌면 바로 보이게 매번 새로 읽는다.
+export const dynamic = 'force-dynamic';
 
-import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import PromoVideo from "@/components/PromoVideo";
-
-function newCode() {
-  return Math.random().toString(36).slice(2, 8);
-}
-
-export default function Home() {
-  const router = useRouter();
-  const [code, setCode] = useState("");
-  const [error, setError] = useState("");
-
-  const join = () => {
-    const id = code.trim().toLowerCase();
-    if (!id) {
-      setError("강사님이 알려주신 코드를 입력해 주세요.");
-      return;
-    }
-    if (!/^[a-z0-9_-]{1,64}$/.test(id)) {
-      setError("코드는 영문과 숫자로 되어 있어요. 다시 확인해 주세요.");
-      return;
-    }
-    router.push(`/student/${id}`);
-  };
+// 메인(HOME-01): 위쪽은 원래 첫 화면(강사 수업 열기 · 학생 참여 코드 입장) 그대로,
+// 아래에 공개 강의 카드와 최근 결과물을 붙인다. 공개 강의만 — 링크 공개·준비 중은 나오지 않는다.
+export default async function Home() {
+  const { courses, posts } = await homeFeed();
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
 
   return (
-    <main className="mx-auto w-full max-w-5xl px-6 py-16 sm:py-24">
-      <p className="eyebrow">ClassFlow</p>
-      <h1 className="mt-4 max-w-2xl text-4xl font-bold leading-[1.15] text-ink sm:text-5xl">
-        아직도 수업 때
-        <br />
-        <span className="text-mocha">보여주기만</span> 하시나요?
-      </h1>
-      <p className="mt-5 max-w-xl text-lg font-medium text-ink-soft">
-        학생과 한 화면으로 소통하면서 수업해보세요.
-      </p>
-      <PromoVideo />
+    <main className="pb-20">
+      <HomeEntry />
 
-      <div className="mt-12 grid gap-4 sm:grid-cols-2">
-        {/* 강사 */}
-        <section className="flex flex-col overflow-hidden rounded-2xl border border-line bg-paper">
-          {/* 인물이 판 아래쪽에 서 있게 둬서 카드와 이어져 보이게 한다 */}
-          <div className="flex h-44 items-end justify-center bg-gardenia">
-            <Image
-              src="/illustrations/teacher.webp"
-              alt=""
-              width={615}
-              height={640}
-              priority
-              className="h-[168px] w-auto object-contain object-bottom"
-            />
-          </div>
-          <div className="flex flex-1 flex-col p-7">
-          <span className="w-fit rounded-full bg-ink px-5 py-2 text-lg font-bold text-white sm:text-xl">
-            강사
-          </span>
-          <h2 className="mt-4 text-2xl font-bold text-ink">수업 열기</h2>
-          <p className="mt-2 flex-1 text-sm leading-6 text-ink-soft">
-            PDF 강의자료를 올려 수업을 시작하세요.
-            자료가 없어도 준비된 샘플로 강의·퀴즈·실습을 체험할 수 있어요.
+      <section aria-labelledby="home-courses" className="mx-auto mt-20 w-full max-w-5xl px-6">
+        <p className="eyebrow">COURSES</p>
+        <h2 id="home-courses" className="mt-2 text-2xl font-bold text-ink">공개 강의</h2>
+        <p className="mt-1 text-sm text-ink-soft">차시마다 실습 안내를 보고, 내 결과물을 올리고, 다른 사람 결과물을 구경해요.</p>
+        {courses.length === 0 ? (
+          <p className="mt-6 rounded-2xl border border-dashed border-line-strong px-5 py-8 text-center text-sm text-mute">
+            공개 강의를 준비하고 있어요. 영상이나 수업에서 받은 링크·QR로 들어오면 바로 볼 수 있어요.
           </p>
-          <button
-            onClick={() => router.push(`/teacher/${newCode()}`)}
-            className="mt-7 rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-mocha-deep"
-          >
-            PDF 올리러 가기 →
-          </button>
-          </div>
-        </section>
+        ) : (
+          <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {courses.map((c) => (
+              <li key={c.slug}>
+                <Link href={coursePath(c.slug, null)} className="flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-paper transition-colors hover:border-mocha">
+                  {c.cover_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- 강사가 넣은 외부 주소라 next/image 도메인 설정을 쓰지 않는다
+                    <img src={c.cover_url} alt="" className="aspect-video w-full bg-cream object-cover" />
+                  ) : (
+                    <div aria-hidden="true" className="flex aspect-video w-full items-center justify-center bg-gardenia text-3xl font-bold text-mocha">
+                      {c.title.slice(0, 1)}
+                    </div>
+                  )}
+                  <div className="flex flex-1 flex-col p-5">
+                    <p className="text-xs text-mute">{CHANNELS[c.channel] ?? ''}</p>
+                    <h3 className="mt-1 font-semibold text-ink">{c.title}</h3>
+                    {c.description && <p className="mt-1 line-clamp-2 flex-1 text-sm text-ink-soft">{plainSummary(c.description, 90)}</p>}
+                    <p className="mt-3 text-xs text-ink-soft">차시 {c.lesson_count}개 · 결과물 {c.post_count}개</p>
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
-        {/* 학생 */}
-        <section className="flex flex-col overflow-hidden rounded-2xl border border-line bg-paper">
-          <div className="flex h-44 items-end justify-center bg-mocha-tint">
-            <Image
-              src="/illustrations/student.webp"
-              alt=""
-              width={627}
-              height={640}
-              priority
-              className="h-[168px] w-auto object-contain object-bottom"
-            />
-          </div>
-          <div className="flex flex-1 flex-col p-7">
-          <span className="w-fit rounded-full bg-mocha px-5 py-2 text-lg font-bold text-white sm:text-xl">
-            학생
-          </span>
-          <h2 className="mt-4 text-2xl font-bold text-ink">수업 참여</h2>
-          <p className="mt-2 flex-1 text-sm leading-6 text-ink-soft">
-            강사님에게 받은 참여 코드를 입력하고 ‘입장’을 누르세요. 회원가입이나 앱 설치 없이 수업에 참여할 수 있어요.
-          </p>
-          <div className="mt-7 flex gap-2">
-            <input
-              value={code}
-              onChange={(e) => {
-                setCode(e.target.value);
-                setError("");
-              }}
-              onKeyDown={(e) => e.key === "Enter" && join()}
-              placeholder="참여 코드"
-              aria-label="참여 코드"
-              className="min-w-0 flex-1 rounded-full border border-line-strong bg-cream px-5 py-3 text-sm text-ink outline-none placeholder:text-mute focus:border-mocha"
-            />
-            <button
-              onClick={join}
-              className="shrink-0 rounded-full bg-mocha px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-mocha-deep"
-            >
-              입장
-            </button>
-          </div>
-          {error && (
-            <p role="alert" className="mt-2 text-sm text-rosetan">
-              {error}
-            </p>
-          )}
-          </div>
+      {posts.length > 0 && (
+        <section aria-labelledby="home-posts" className="mx-auto mt-16 w-full max-w-5xl px-6">
+          <p className="eyebrow">GALLERY</p>
+          <h2 id="home-posts" className="mt-2 text-2xl font-bold text-ink">최근 결과물</h2>
+          <ul className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {posts.map((p) => (
+              <li key={p.id}>
+                <Link href={postPath(coursePath(p.course_slug, null, p.lesson_number), p.id)}
+                  className="block h-full overflow-hidden rounded-xl border border-line bg-paper transition-colors hover:border-mocha">
+                  {p.image ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- Storage 공개 주소
+                    <img src={galleryImageUrl(supabaseUrl, p.image)} alt="" loading="lazy" className="aspect-[4/3] w-full bg-cream object-cover" />
+                  ) : (
+                    <div aria-hidden="true" className="flex aspect-[4/3] w-full items-center justify-center bg-cream text-xs text-mute">
+                      {p.has_link ? '🔗 링크' : '글'}
+                    </div>
+                  )}
+                  <div className="p-3">
+                    <p className="line-clamp-1 text-sm font-medium text-ink">{p.title}</p>
+                    <p className="mt-0.5 line-clamp-1 text-xs text-mute">{p.author} · {p.course_title} {p.lesson_number}차시</p>
+                    {p.like_count > 0 && <p className="mt-0.5 text-xs text-mocha-deep">♥ {p.like_count}</p>}
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
         </section>
-      </div>
+      )}
     </main>
   );
 }
