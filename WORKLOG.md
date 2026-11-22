@@ -187,3 +187,12 @@
 - 검증: 앱 테스트 109개, tsc·eslint. 참여 코드 abc123 → /student/abc123, 공개 강의 없음 안내, 375px 넘침 없음
 - 못 한 것: 공개 강의가 없어 카드가 채워진 화면 못 봄(HOME-01b). 레퍼런스 바로가기는 REF 이후
 - 캡처: generated/worklog/HOME-01/
+
+## 공개 강의 확인 HOME-01b·SHARE-04b·GAL-검증b · 2026-11-23 · 노션: https://www.notion.so/420abd06af5381159c2ce56d55e489f4
+
+- 사용자 허락으로 dopamine-python을 잠깐 public → 확인 → draft로 되돌림(비회원 404 재확인)
+- HOME-01b: 메인 강의 카드·최근 결과물 3개, 375px OK
+- SHARE-04b: 로그아웃 방문 3건이 출처별로 기록, 카카오 로봇 제외. 기록 3건은 개발 DB에 남김
+- GAL-검증b: 로그아웃 목록·상세 보기, 올리기·좋아요·신고·댓글 → 로그인
+- 남은 것: SHARE-02b(크롬 관리자 로그인이 풀려 못 봄)
+- 캡처: generated/worklog/PUBLIC-CHECK/
