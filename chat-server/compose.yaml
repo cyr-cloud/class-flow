@@ -5,7 +5,7 @@ services:
     environment:
       DATABASE_URL: postgresql://classflow:${POSTGRES_PASSWORD:?set database password}@db:5432/classflow
       CHAT_TOKEN_SECRET: ${CHAT_TOKEN_SECRET:?set shared signing secret}
-      CHAT_ALLOWED_ORIGINS: https://class-flow-fawn.vercel.app
+      CHAT_ALLOWED_ORIGINS: https://class-flow-fawn.vercel.app,https://class.yuniq-coding.shop
     ports: ["127.0.0.1:3400:3400"]
     mem_limit: 384m
     depends_on:
