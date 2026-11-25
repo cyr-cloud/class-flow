@@ -6,7 +6,7 @@ import { ChatToggle } from "./chat/ChatRoom";
 // 실습 슬라이드에서는 그 실습의 게시판으로 바로 넘어갈 수 있다.
 
 import Link from "next/link";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import SlideStage from "./lecture/SlideStage";
 import SlideActivities from "./lecture/SlideActivities";
 import PresentView from "./lecture/PresentView";
@@ -15,10 +15,21 @@ import { useSync } from "@/lib/sync/useSync";
 import { useCurrentSlide, useDeckState, useLabSlides } from "@/lib/lecture/useDeck";
 import LiveStatus from "./lecture/LiveStatus";
 import OnboardingModal from "./lecture/OnboardingModal";
-import { liveClient } from "@/lib/live/client";
+import { liveClient, responderId } from "@/lib/live/client";
+import { rememberJoinedClass } from "@/lib/live/joined";
 
 export default function StudentView({ sessionId }: { sessionId: string }) {
   const { state } = useSync(sessionId);
+  // 이 브라우저에서 참여한 수업으로 남긴다 — 나중에 로그인하면 내 강의실로 가져오기 위해(서버로 보내지 않음).
+  // 슬라이드가 실제로 올라온 수업만 남긴다(잘못 친 코드는 남기지 않는다).
+  const joinedTitle = state.title || state.pdfName || "";
+  const joinable = state.totalSlides > 0;
+  useEffect(() => {
+    if (!joinable) return;
+    let name = "";
+    try { name = localStorage.getItem(`classflow:chat-name:student:${sessionId}`) ?? ""; } catch { /* 무시 */ }
+    rememberJoinedClass({ code: sessionId, title: joinedTitle, responderId: responderId(), name });
+  }, [sessionId, joinedTitle, joinable]);
   const { responses, posts } = useDeckState(sessionId);
   const slide = useCurrentSlide(sessionId, state.currentSlide);
   const hasLabs = useLabSlides(sessionId).length > 0;
