@@ -8,6 +8,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { rememberSession, useLastSession } from "@/lib/lastSession";
 import { useDeckState } from "@/lib/lecture/useDeck";
+import HeaderAccount from "./HeaderAccount";
 
 function newCode() {
   return Math.random().toString(36).slice(2, 8);
@@ -68,14 +69,17 @@ export default function AppHeader() {
           </div>
         </nav>
 
-        {sessionId && (
-          <div className="ml-auto hidden shrink-0 items-center gap-2 sm:flex">
-            <span className="text-xs text-white/50">세션</span>
-            <span className="rounded-full bg-white/10 px-3 py-1 font-mono text-xs text-white/85">
-              {sessionId}
-            </span>
-          </div>
-        )}
+        <div className="ml-auto flex shrink-0 items-center gap-3">
+          {sessionId && (
+            <div className="hidden items-center gap-2 sm:flex">
+              <span className="text-xs text-white/50">세션</span>
+              <span className="rounded-full bg-white/10 px-3 py-1 font-mono text-xs text-white/85">
+                {sessionId}
+              </span>
+            </div>
+          )}
+          <HeaderAccount />
+        </div>
       </div>
     </header>
   );
