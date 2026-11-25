@@ -13,14 +13,17 @@
 - [ ] Vercel의 ClassFlow 프로젝트 → Settings → Domains에 `class.yuniq-coding.shop` 추가(DNS는 자동). 연결되면 알려 주세요.
 
 ### 운영 DB (OPS)
-- [ ] **결정**: 지금 DB `yuco-store-dev`는 개발용이에요. 운영용 Supabase 프로젝트를 **따로** 만드는 걸 추천해요(테스트 데이터·관리자 계정과 섞이지 않게).
-  - Supabase 대시보드 → New project → 지역 **Seoul (ap-northeast-2)** → 프로젝트 주소(ref)만 알려 주세요. 마이그레이션은 제가 넣어요.
-- [ ] Vercel ClassFlow 프로젝트 환경 변수에 값을 직접 넣어요:
-  - `NEXT_PUBLIC_SITE_URL`(운영 주소), `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+- [x] 운영용 Supabase `classflow-prod`(ref `xytojvrpsksavwjfhwwh`, Seoul) 만듦(2026-11-25). 무료 자리 때문에 `my-service`는 정지(1년 안에 다시 켤 수 있음). 마이그레이션 23개는 제가 넣음
+  - v1.0 공개 전에 Pro 업그레이드 여부 결정(무료는 일주일 접속 없으면 자동 정지될 수 있음)
+- [ ] Vercel `yuco` 팀 → `class-flow` → Settings → Environment Variables에 값을 직접 넣어요(Production·Preview 둘 다):
+  - `NEXT_PUBLIC_SITE_URL` = `https://class.yuniq-coding.shop`, `NEXT_PUBLIC_SUPABASE_URL` = `https://xytojvrpsksavwjfhwwh.supabase.co`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`(classflow-prod → Settings → API Keys의 publishable 키)
   - `AUTH_GOOGLE_ENABLED=1`, `AUTH_NAVER_ENABLED=1`
-  - `SUPABASE_SERVICE_ROLE_KEY`(Supabase → Project Settings → API Keys의 secret 키, 절대 공개 금지)
+  - `SUPABASE_SERVICE_ROLE_KEY`(classflow-prod → Settings → API Keys의 secret 키, 절대 공개 금지)
   - `CRON_SECRET`(16자 이상 아무 무작위 문자열) — 매일 정리 작업이 이걸로 돌아요
-- [ ] 운영 Supabase → Authentication → URL Configuration: Site URL = 운영 주소, Redirect URLs에 `https://운영주소/auth/callback` 추가. 구글·네이버 공급자도 개발 DB와 같이 켜기(제가 순서를 안내해요)
+- [ ] classflow-prod → Authentication → URL Configuration: Site URL = `https://class.yuniq-coding.shop`, Redirect URLs에 `https://class.yuniq-coding.shop/auth/callback` 추가
+- [ ] 구글: Google Cloud `yuniqcoding-auth` → OAuth 클라이언트 → 승인된 리디렉션 URI에 `https://xytojvrpsksavwjfhwwh.supabase.co/auth/v1/callback` 추가 → classflow-prod → Authentication → Sign In / Providers → Google 켜고 같은 클라이언트 ID·secret 넣기
+- [ ] 네이버: 네이버 개발자센터 앱 → Callback URL에 `https://xytojvrpsksavwjfhwwh.supabase.co/auth/v1/callback` 추가 → classflow-prod에 사용자 지정 공급자 `naver`를 개발 DB와 같은 값으로 만들기
+- [ ] Vercel `class-flow` → Settings → Domains에 `class.yuniq-coding.shop` 추가(위 도메인 칸과 같은 일)
 
 ### 배포 뒤
 - [ ] **v0.9 직접 확인 체크리스트**(노션으로 드려요) 확인 → "통과"

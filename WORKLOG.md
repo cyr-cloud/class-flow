@@ -204,3 +204,12 @@
 - 버전마다 유라님이 직접 확인 체크리스트로 확인하고 "통과"해야 다음 버전(사용자 결정)
 - checklist에 "버전 계획" 표, USER_ACTIONS를 버전 순서로 다시 묶음
 - v0.9 준비: master에 새 커밋 없음(그대로 합칠 수 있음), 앱 테스트 109개·tsc·next build 통과
+
+## v0.9 운영 DB 준비 · 2026-11-25
+
+- Supabase 무료 자리 확보: 사용자 허락으로 my-service(wsuhvkipovxagvfbfhgj) 정지
+- 사용자가 classflow-prod(xytojvrpsksavwjfhwwh, Seoul) 생성(이름·지역은 제가 채움, 비밀번호는 사용자)
+- yuco-store/server/supabase/migrations 23개를 순서대로 적용(seed.sql 개발용 상품은 넣지 않음). 0003 한 번 일시 오류 → 재시도 성공
+- 개발과 비교: 표 17·RLS 17·정책 28·버킷 gallery(공개)·paid-content(비공개) 같음. 함수는 개발에만 rls_auto_enable(화면 설정이 만든 것) 1개 차이
+- Vercel 실제 위치: yuco 팀 class-flow (처음에 다른 계정 팀이라고 잘못 안내했다가 바로잡음)
+- 남은 것(사용자): Vercel 환경 변수, 도메인, Supabase URL 설정, 구글·네이버 공급자

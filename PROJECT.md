@@ -47,3 +47,7 @@ $env:CLASSFLOW_LOCAL_ONLY='1'; npx next dev --hostname 127.0.0.1 --port 3311
 ```
 
 검사: `npx tsc --noEmit` · `node --test tests/*.test.mjs` · `npx eslint app components lib`
+
+## 배포
+- Vercel: `yuco` 팀 / 프로젝트 `class-flow` (https://vercel.com/yuco/class-flow), 저장소 cyr-cloud/class-flow, 운영 브랜치 master
+- Supabase 개발: `yuco-store-dev` (mexwazzzxxprsyiqwszp) · 운영: `classflow-prod` (xytojvrpsksavwjfhwwh, Seoul, 2026-11-25 생성, 마이그레이션 23개 적용)
