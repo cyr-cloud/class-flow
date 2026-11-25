@@ -236,3 +236,9 @@
 - `lib/live/joined.ts`(recordJoin·parseJoined, 200개·식별자 20개 제한), `components/StudentView.tsx`에서 슬라이드가 있는 수업만 기록. 서버 전송 없음
 - 검증: 앱 테스트 112개(새 3개)·tsc·eslint·next build 통과. 커밋 a237866 → master 배포 → 운영 학생 화면에서 classflow:joined 저장, 없는 코드 zz1234는 안 남음
 - 상단 로그인 버튼은 범위 정리 뒤로 보류 중
+
+## HEADER-LOGIN 상단 바 로그인 버튼 · 2026-11-25 · 노션: https://www.notion.so/423abd06af5381048853c8a04343e62f
+
+- /api/auth/status + components/HeaderAccount.tsx, AppHeader 오른쪽. /teacher·/student·/login·/auth에선 숨김
+- 테스트 113·tsc·eslint·build 통과, 커밋 14dded9 → 운영. 로그아웃 상태 status 응답·PC·375px(넘침 없음)·학생 화면 숨김 확인. 캡처 generated/worklog/2026-11-25/HEADER-LOGIN/
+- 로그인 뒤 마이페이지·관리자 표시는 사용자 첫 로그인 때 확인
