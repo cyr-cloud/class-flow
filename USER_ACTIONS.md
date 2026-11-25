@@ -22,7 +22,7 @@
   - `CRON_SECRET`(16자 이상 아무 무작위 문자열) — 매일 정리 작업이 이걸로 돌아요
 - [x] (2026-11-25 확인) classflow-prod → Authentication → URL Configuration: Site URL = `https://class.yuniq-coding.shop`, Redirect URLs에 `https://class.yuniq-coding.shop/auth/callback` 추가
 - [x] (2026-11-25) 구글: Google Cloud `yuniqcoding-auth` → OAuth 클라이언트 → 승인된 리디렉션 URI에 `https://xytojvrpsksavwjfhwwh.supabase.co/auth/v1/callback` 추가 → classflow-prod → Authentication → Sign In / Providers → Google 켜고 같은 클라이언트 ID·secret 넣기
-- [ ] 네이버(2026-11-25 진행 중): 운영 DB에 `naver-userinfo` 함수 배포 ✅, classflow-prod 사용자 지정 공급자 `naver` 창에 개발과 같은 값 입력 ✅(제가). 남은 것(사용자) ① 창의 Client Secret에 네이버 앱 secret 붙여 넣고 **Create and enable provider** ② 네이버 개발자센터 → 내 애플리케이션 → API 설정 → Callback URL에 `https://xytojvrpsksavwjfhwwh.supabase.co/auth/v1/callback` 추가(크롬 확장이 developers.naver.com을 못 열어서 직접)
+- [x] 네이버(2026-11-25): 운영 DB `naver-userinfo` 함수 배포, 사용자 지정 공급자 `custom:naver`(Issuer `https://nid.naver.com` 필요) 만듦, 네이버 앱 `ymnZAV9mAO_FmPQsZKr0` Callback URL에 운영 주소 추가(사용자). 다른 앱 `yBZO0nLz82sAlvwbTJat`은 ClassFlow와 무관(그대로 둠)
 - [x] Vercel `class-flow` 도메인 추가(위 도메인 칸과 같은 일)
 
 ### 배포 뒤
