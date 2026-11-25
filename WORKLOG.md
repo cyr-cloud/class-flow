@@ -218,3 +218,13 @@
 - 2026-11-25: 구글 — OAuth 클라이언트(Supabase 공용 로그인)에 리디렉션 URI https://xytojvrpsksavwjfhwwh.supabase.co/auth/v1/callback 추가(개발 주소 유지). classflow-prod Google 켜고 클라이언트 ID 입력(제가), secret은 사용자. 확인: Providers에 Google ENABLED, /auth/v1/authorize?provider=google → 302 accounts.google.com(같은 client_id). secret이 맞는지는 운영 배포 뒤 실제 로그인으로 확인(v0.9 체크리스트)
 - 2026-11-25: 네이버 — `supabase functions deploy naver-userinfo --no-verify-jwt --remote=xytojvrpsksavwjfhwwh`(사용자가 네이버 진행 승인) → 토큰 없음·틀림 401 확인. 개발 DB custom:naver 설정(수동, authorize/token=nid.naver.com, userinfo=함수, jwks, client_id ymnZAV9mAO_FmPQsZKr0, 이메일 없는 사용자 허용 끔)을 읽기만 하고 운영에 같은 값 입력(저장 전). 브라우저 자동 입력이 Client ID·secret에 들어가 있어 지우고 바꿈. secret·만들기·네이버 콜백 추가는 사용자(developers.naver.com은 크롬 확장 안전 규칙으로 차단)
 - 2026-11-25: 네이버 — 네이버 탭이 크롬 확장 안전 규칙에 막혀 사용자가 Callback URL 추가. classflow-prod custom:naver 다시 채움(만들 때는 Issuer URL 필수 → https://nid.naver.com), secret은 사용자, 만들기 클릭. 확인: Providers에 네이버 CUSTOM:NAVER OAUTH2 ENABLED, /auth/v1/authorize?provider=custom:naver → 302 nid.naver.com(client_id ymnZ…, PKCE). 실제 로그인은 운영 배포 뒤 체크리스트에서
+
+## v0.9 운영 배포 · 2026-11-25
+
+- GitHub 권한(YuniqCoding 협업자) 받고 feature/course-gallery 푸시 → 미리보기 Ready. 미리보기에선 실시간 수업이 `ENOENT mkdir /var/task/.classflow` — Upstash Redis 키가 Production 전용이라 파일 저장으로 떨어짐(코드 문제 아님, 브랜치는 lib/live·api/live·강사/학생 화면 변경 0줄)
+- 사용자 결정 "운영에 합치기" → master 빨리감기(f9be9f9..5ac3575), Vercel Production Ready
+- 운영 class.yuniq-coding.shop 강사·학생 두 탭: 샘플 수업 열기(61장), 학생 입장, 슬라이드 따라가기(3·20장), 퀴즈 응답 집계, 판서 동기화, 자동 백업 OK. 처음 11MB PDF 불러올 때 시간 초과·백업 실패 1번 뒤 회복
+- 채팅만 연결 실패: Lightsail 채팅 서버 CHAT_ALLOWED_ORIGINS가 옛 주소만 허용(새 주소 403). 사용자 승인 → AWS 로그인(사용자) → 브라우저 SSH로 ~/classflow-chat-source/chat-server/compose.yaml 백업(compose.yaml.bak-20261125) 후 새 주소 추가, chat 컨테이너만 다시 띄움(DB·gateway 그대로). 새·옛 주소 모두 200, 학생 → 강사 메시지 확인
+- 저장소 compose.yaml도 같은 줄로 커밋(21d612e), master·브랜치 푸시, 태그 v0.9
+- 운영 DB 테스트 흔적: 수업 세션 1uuxkf(샘플)·채팅 메시지 1개
+- 남은 것: 유라님 v0.9 직접 확인(운영 구글·네이버 실제 로그인 포함), 첫 로그인 뒤 운영 계정에 관리자 역할 넣기
