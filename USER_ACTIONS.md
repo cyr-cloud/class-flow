@@ -10,12 +10,12 @@
 ### 도메인 (LAUNCH-G1) — 새로 살 필요 없음
 - [x] `yuniq-coding.shop`은 이미 사 둔 상태(사용자 확인, 2026-11-20). 네임서버가 Vercel(ns1·ns2.vercel-dns.com)이고 지금 `www.yuniq-coding.shop`으로 연결돼 있어요.
 - 세 사이트는 **한 도메인의 하위 주소**를 써요(무료). 스토어 `yuniq-coding.shop` · 클래스플로우 `class.yuniq-coding.shop` · 강사풀 `pool.yuniq-coding.shop`
-- [ ] Vercel의 ClassFlow 프로젝트 → Settings → Domains에 `class.yuniq-coding.shop` 추가(DNS는 자동). 연결되면 알려 주세요.
+- [x] `class.yuniq-coding.shop` 연결(2026-11-25). 도메인은 rkdldk37 계정 `yuniqcodings-projects`에 있어서 그 DNS에 CNAME `class`·TXT `_vercel`을 넣고 yuco `class-flow`에서 확인. https 200
 
 ### 운영 DB (OPS)
 - [x] 운영용 Supabase `classflow-prod`(ref `xytojvrpsksavwjfhwwh`, Seoul) 만듦(2026-11-25). 무료 자리 때문에 `my-service`는 정지(1년 안에 다시 켤 수 있음). 마이그레이션 23개는 제가 넣음
   - v1.0 공개 전에 Pro 업그레이드 여부 결정(무료는 일주일 접속 없으면 자동 정지될 수 있음)
-- [ ] Vercel `yuco` 팀 → `class-flow` → Settings → Environment Variables에 값을 직접 넣어요(Production·Preview 둘 다):
+- [x] Vercel `yuco` 팀 → `class-flow` 환경 변수 7개(2026-11-25, 공개용 5개 Config·Production+Preview, 비밀 2개 Secret·Production):
   - `NEXT_PUBLIC_SITE_URL` = `https://class.yuniq-coding.shop`, `NEXT_PUBLIC_SUPABASE_URL` = `https://xytojvrpsksavwjfhwwh.supabase.co`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`(classflow-prod → Settings → API Keys의 publishable 키)
   - `AUTH_GOOGLE_ENABLED=1`, `AUTH_NAVER_ENABLED=1`
   - `SUPABASE_SERVICE_ROLE_KEY`(classflow-prod → Settings → API Keys의 secret 키, 절대 공개 금지)
@@ -23,7 +23,7 @@
 - [ ] classflow-prod → Authentication → URL Configuration: Site URL = `https://class.yuniq-coding.shop`, Redirect URLs에 `https://class.yuniq-coding.shop/auth/callback` 추가
 - [ ] 구글: Google Cloud `yuniqcoding-auth` → OAuth 클라이언트 → 승인된 리디렉션 URI에 `https://xytojvrpsksavwjfhwwh.supabase.co/auth/v1/callback` 추가 → classflow-prod → Authentication → Sign In / Providers → Google 켜고 같은 클라이언트 ID·secret 넣기
 - [ ] 네이버: 네이버 개발자센터 앱 → Callback URL에 `https://xytojvrpsksavwjfhwwh.supabase.co/auth/v1/callback` 추가 → classflow-prod에 사용자 지정 공급자 `naver`를 개발 DB와 같은 값으로 만들기
-- [ ] Vercel `class-flow` → Settings → Domains에 `class.yuniq-coding.shop` 추가(위 도메인 칸과 같은 일)
+- [x] Vercel `class-flow` 도메인 추가(위 도메인 칸과 같은 일)
 
 ### 배포 뒤
 - [ ] **v0.9 직접 확인 체크리스트**(노션으로 드려요) 확인 → "통과"

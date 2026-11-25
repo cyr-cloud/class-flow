@@ -213,3 +213,4 @@
 - 개발과 비교: 표 17·RLS 17·정책 28·버킷 gallery(공개)·paid-content(비공개) 같음. 함수는 개발에만 rls_auto_enable(화면 설정이 만든 것) 1개 차이
 - Vercel 실제 위치: yuco 팀 class-flow (처음에 다른 계정 팀이라고 잘못 안내했다가 바로잡음)
 - 남은 것(사용자): Vercel 환경 변수, 도메인, Supabase URL 설정, 구글·네이버 공급자
+- 2026-11-25 이어서: Vercel 환경 변수 7개(사용자 입력, 이름·환경 확인). 도메인 오타 class.yuniq-coding.sho → .shop 수정(사용자). yuniq-coding.shop은 rkdldk37 계정 yuniqcodings-projects 소유라 그 DNS에 CNAME class → cda93576bf3743df.vercel-dns-017.com, TXT _vercel(vc-domain-verify) 추가(사용자 허락). 8.8.8.8 조회 OK, Refresh 후 https://class.yuniq-coding.shop 200(아직 예전 master 버전)
