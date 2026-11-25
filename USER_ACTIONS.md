@@ -20,7 +20,7 @@
   - `AUTH_GOOGLE_ENABLED=1`, `AUTH_NAVER_ENABLED=1`
   - `SUPABASE_SERVICE_ROLE_KEY`(classflow-prod → Settings → API Keys의 secret 키, 절대 공개 금지)
   - `CRON_SECRET`(16자 이상 아무 무작위 문자열) — 매일 정리 작업이 이걸로 돌아요
-- [ ] classflow-prod → Authentication → URL Configuration: Site URL = `https://class.yuniq-coding.shop`, Redirect URLs에 `https://class.yuniq-coding.shop/auth/callback` 추가
+- [x] (2026-11-25 확인) classflow-prod → Authentication → URL Configuration: Site URL = `https://class.yuniq-coding.shop`, Redirect URLs에 `https://class.yuniq-coding.shop/auth/callback` 추가
 - [ ] 구글: Google Cloud `yuniqcoding-auth` → OAuth 클라이언트 → 승인된 리디렉션 URI에 `https://xytojvrpsksavwjfhwwh.supabase.co/auth/v1/callback` 추가 → classflow-prod → Authentication → Sign In / Providers → Google 켜고 같은 클라이언트 ID·secret 넣기
 - [ ] 네이버: 네이버 개발자센터 앱 → Callback URL에 `https://xytojvrpsksavwjfhwwh.supabase.co/auth/v1/callback` 추가 → classflow-prod에 사용자 지정 공급자 `naver`를 개발 DB와 같은 값으로 만들기
 - [x] Vercel `class-flow` 도메인 추가(위 도메인 칸과 같은 일)

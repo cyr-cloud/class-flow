@@ -214,3 +214,4 @@
 - Vercel 실제 위치: yuco 팀 class-flow (처음에 다른 계정 팀이라고 잘못 안내했다가 바로잡음)
 - 남은 것(사용자): Vercel 환경 변수, 도메인, Supabase URL 설정, 구글·네이버 공급자
 - 2026-11-25 이어서: Vercel 환경 변수 7개(사용자 입력, 이름·환경 확인). 도메인 오타 class.yuniq-coding.sho → .shop 수정(사용자). yuniq-coding.shop은 rkdldk37 계정 yuniqcodings-projects 소유라 그 DNS에 CNAME class → cda93576bf3743df.vercel-dns-017.com, TXT _vercel(vc-domain-verify) 추가(사용자 허락). 8.8.8.8 조회 OK, Refresh 후 https://class.yuniq-coding.shop 200(아직 예전 master 버전)
+- 2026-11-25: classflow-prod URL Configuration 확인 — Site URL https://class.yuniq-coding.shop, Redirect https://class.yuniq-coding.shop/auth/callback(사용자가 넣음). 앱은 로그인·Origin 검사를 NEXT_PUBLIC_SITE_URL 하나로 하므로 미리보기 주소에서는 로그인 불가 → 미리보기는 실시간 수업 확인용. Google·Naver 공급자는 아직 꺼짐
