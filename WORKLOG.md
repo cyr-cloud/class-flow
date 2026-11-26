@@ -242,3 +242,4 @@
 - /api/auth/status + components/HeaderAccount.tsx, AppHeader 오른쪽. /teacher·/student·/login·/auth에선 숨김
 - 테스트 113·tsc·eslint·build 통과, 커밋 14dded9 → 운영. 로그아웃 상태 status 응답·PC·375px(넘침 없음)·학생 화면 숨김 확인. 캡처 generated/worklog/2026-11-25/HEADER-LOGIN/
 - 로그인 뒤 마이페이지·관리자 표시는 사용자 첫 로그인 때 확인
+- 2026-11-26 이어서: 사용자 결정으로 모든 화면에 표시(로그인·auth 화면만 제외). 학생 수업 화면에선 마이페이지·관리자 새 탭(rel=noopener), 로그인은 같은 탭 + next로 복귀(새 탭이면 응답자 식별자가 새로 생겨 한 학생이 둘로 셈). 테스트 114·tsc·eslint·build, 커밋 addb3c9 → 운영 강사·학생 화면에 「로그인」(next=/student/1uuxkf, /teacher/1uuxkf) 확인. 새 탭 동작은 로그인 뒤 확인
