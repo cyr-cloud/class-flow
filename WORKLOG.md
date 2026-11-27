@@ -243,3 +243,10 @@
 - 테스트 113·tsc·eslint·build 통과, 커밋 14dded9 → 운영. 로그아웃 상태 status 응답·PC·375px(넘침 없음)·학생 화면 숨김 확인. 캡처 generated/worklog/2026-11-25/HEADER-LOGIN/
 - 로그인 뒤 마이페이지·관리자 표시는 사용자 첫 로그인 때 확인
 - 2026-11-26 이어서: 사용자 결정으로 모든 화면에 표시(로그인·auth 화면만 제외). 학생 수업 화면에선 마이페이지·관리자 새 탭(rel=noopener), 로그인은 같은 탭 + next로 복귀(새 탭이면 응답자 식별자가 새로 생겨 한 학생이 둘로 셈). 테스트 114·tsc·eslint·build, 커밋 addb3c9 → 운영 강사·학생 화면에 「로그인」(next=/student/1uuxkf, /teacher/1uuxkf) 확인. 새 탭 동작은 로그인 뒤 확인
+
+## 운영 관리자 지정 · 2026-11-27
+
+- 사용자가 운영 상단 「로그인」으로 구글 첫 로그인(닉네임·동의 완료). 운영 DB auth.users 1명(google) 확인(이메일은 가려서 조회)
+- `update public.profiles set roles = roles ∪ {admin}` (id 4a43c9fb…) → roles admin·student
+- 확인: /api/auth/status {signedIn:true, admin:true}, 상단 「관리자」·「마이페이지」, /admin 열림(최유라님), 학생 수업 화면에서 두 링크 target=_blank rel=noopener
+- 구글 운영 로그인 실제 동작 확인됨(v0.9 체크리스트 항목). 네이버는 아직
